@@ -1459,3 +1459,472 @@ textarea.field {
   place-items: center;
   border: 2px solid var(--paper);
 }
+
+/* ============================ UTILITIES ============================ */
+
+.fullw { width: 100%; }
+.spaced { margin-top: var(--s-2); }
+
+.notice {
+  background: var(--gold-soft);
+  border: 1px solid rgba(245, 179, 36, .45);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.okmsg {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--up-text);
+  margin-top: var(--s-1);
+}
+
+/* Destructive actions read as destructive — but red is TIME PRESSURE elsewhere,
+   so this uses the heat token on a border and label only, never as a fill that
+   would compete with the timer. */
+.btn.danger {
+  color: var(--heat-text);
+  border: 1px solid rgba(232, 69, 44, .4);
+  background: var(--card);
+}
+
+/* ============================ PAY ============================ */
+
+.paywrap, .createwrap, .setwrap, .adminwrap, .paywall {
+  padding: var(--s-6) var(--s-4);
+}
+
+.paysteps {
+  list-style: none;
+  display: grid;
+  gap: var(--s-3);
+  margin: var(--s-4) 0;
+}
+
+.paysteps li {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--body);
+}
+
+.paysteps .s {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.qrbox {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  box-shadow: var(--shadow-1);
+  display: grid;
+  gap: var(--s-3);
+  justify-items: center;
+  margin-bottom: var(--s-4);
+}
+
+.qr svg {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+
+.payintent {
+  width: 100%;
+  text-decoration: none;
+}
+
+.utrform {
+  margin-top: var(--s-6);
+  border-top: 1px solid var(--line);
+  padding-top: var(--s-4);
+}
+
+.utrform .btn {
+  width: 100%;
+  margin-top: var(--s-4);
+}
+
+/* ============================ PAYWALL ============================ */
+
+.perks {
+  list-style: none;
+  display: grid;
+  gap: var(--s-2);
+  margin: var(--s-4) 0;
+}
+
+.perks li {
+  font-size: 14px;
+  color: var(--body);
+  padding-left: 22px;
+  position: relative;
+}
+
+.perks li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: var(--up-text);
+  font-weight: 700;
+}
+
+.priceline {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  margin: var(--s-4) 0;
+}
+
+.paywall .btn { width: 100%; margin-bottom: var(--s-2); text-decoration: none; }
+.paywall .subline { margin: var(--s-4) 0 var(--s-2); }
+
+.soon {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  margin-bottom: var(--s-3);
+}
+
+.soon p:first-child { font-weight: 700; }
+
+/* ============================ ADMIN ============================ */
+
+.adminwrap section { margin-top: var(--s-6); }
+.grantform .btn { width: 100%; margin-top: var(--s-4); }
+
+.queue { list-style: none; display: grid; gap: var(--s-3); margin-top: var(--s-3); }
+
+.qrow {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+  box-shadow: var(--shadow-1);
+}
+
+.qmeta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-2);
+}
+
+.qutr { font-size: 14px; font-weight: 600; }
+.qactions { display: flex; gap: var(--s-2); margin-top: var(--s-3); }
+.rejform { margin-top: var(--s-2); }
+
+/* ============================ CREATE ============================ */
+
+.segment {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.segment button {
+  flex: 1;
+  min-height: var(--tap);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--card);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.segment button.on {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.createform .btn.pri { width: 100%; margin-top: var(--s-6); }
+
+/* ============================ SPACE CARD ============================ */
+
+.scard {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 13px 14px;
+  box-shadow: var(--shadow-1);
+  text-decoration: none;
+  color: inherit;
+  min-height: var(--tap);
+}
+
+.scard:active { transform: scale(.985); background: var(--press); }
+
+.av {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -.03em;
+  color: #fff;
+  background: var(--ink);
+}
+
+.av.lg { flex-basis: 52px; width: 52px; height: 52px; font-size: 18px; }
+
+.sbody { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.stop { display: flex; align-items: center; gap: var(--s-2); }
+
+.snm {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssub { font-size: 11.5px; color: var(--muted); }
+
+.growing {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--violet-text);
+  background: var(--violet-soft);
+  padding: 2px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+/* ============================ SPACE PAGE ============================ */
+
+.spacehead { display: grid; gap: var(--s-3); }
+.shead { display: flex; gap: var(--s-3); align-items: center; }
+.sdesc { font-size: 14px; line-height: 1.45; color: var(--body); }
+.growbox { display: grid; gap: var(--s-1); }
+.verified { color: var(--violet); margin-left: 6px; }
+
+/* ============================ PROFILE ============================ */
+
+.prof { display: grid; gap: var(--s-2); }
+.phandle { color: var(--violet); font-size: 14px; font-weight: 600; }
+.pbio { font-size: 14px; line-height: 1.45; color: var(--body); }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+.socialchip, .badgechip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+
+.badgechip { font-size: 11px; font-weight: 700; padding: 5px 10px; }
+
+.badgechip.gold {
+  border-color: rgba(245, 179, 36, .5);
+  background: var(--gold-soft);
+  color: var(--gold-text);
+}
+
+.statrow {
+  display: flex;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: var(--s-3) 0;
+}
+
+.statrow > div {
+  flex: 1;
+  text-align: center;
+  padding: 13px 6px;
+  border-right: 1px solid var(--line);
+  display: grid;
+  gap: 2px;
+}
+
+.statrow > div:last-child { border-right: 0; }
+.statrow .v { font-size: 19px; font-weight: 700; letter-spacing: -.03em; }
+
+.statrow .k {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ============================ ACTIVITY ============================ */
+
+.acts { display: grid; gap: var(--s-2); }
+
+.act {
+  display: flex;
+  gap: var(--s-3);
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  color: inherit;
+}
+
+.act .ic {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+
+.abody { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.abody p { font-size: 13.5px; line-height: 1.4; }
+.atime { font-size: 10.5px; font-weight: 600; color: var(--muted); }
+
+/* same_as_you converts best, so it gets the only decorated row. */
+.act.same {
+  border-color: rgba(107, 78, 255, .35);
+  background: linear-gradient(180deg, #F8F6FF, #fff);
+}
+
+.act.same .ic { background: var(--violet-soft); }
+
+.namechips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.chipn {
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 4px 9px;
+  border-radius: 8px;
+}
+
+/* Placeholder strings only. Real names never reach an unentitled client, so
+   there is nothing here to un-blur in DevTools. */
+.chipn.locked { filter: blur(4px); user-select: none; }
+
+.act.same .btn { align-self: start; text-decoration: none; }
+
+/* ============================ CHAT ============================ */
+
+.chathead .spacelink { text-decoration: none; }
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+}
+
+.bubbles {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3);
+}
+
+.bub {
+  max-width: 78%;
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.38;
+  display: grid;
+  gap: 3px;
+}
+
+.bub .who { font-size: 10.5px; font-weight: 700; color: var(--muted); }
+
+.bub.them {
+  background: var(--card);
+  border: 1px solid var(--line);
+  align-self: flex-start;
+  border-bottom-left-radius: 5px;
+}
+
+.bub.me {
+  background: var(--ink);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 5px;
+}
+
+.bub.me .who { color: rgba(255, 255, 255, .55); }
+.bub .who.anon { color: var(--violet-text); }
+.bub.me .who.anon { color: #C9BEFF; }
+
+.composer {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding: 10px 12px;
+  background: var(--paper);
+  position: sticky;
+  bottom: var(--nav-h);
+}
+
+.composer .field { flex: 1; }
+
+.anontog {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--violet-text);
+  background: var(--violet-soft);
+  border: 1px solid transparent;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.anontog.on { border-color: var(--violet); box-shadow: 0 0 0 2px var(--violet-soft); }
+
+/* ============================ SETTINGS ============================ */
+
+.setwrap section { margin-top: var(--s-6); }
+.setlist { display: grid; gap: var(--s-2); margin-top: var(--s-2); }
+.setlist > div { display: flex; justify-content: space-between; gap: var(--s-3); font-size: 14px; }
+.setlist dt { color: var(--muted); }
+.setlist dd { font-weight: 600; text-align: right; }
+.setspaces { list-style: none; display: grid; gap: var(--s-2); margin-top: var(--s-2); }
+.setspaces a { font-size: 14px; font-weight: 600; color: var(--ink); }
+.setwrap form { margin-top: var(--s-6); }
+
+.delbox {
+  border: 1px solid rgba(232, 69, 44, .4);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  display: grid;
+  gap: var(--s-2);
+}

@@ -1,9 +1,9 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAnonClient } from "@/lib/supabase/anon";
-import { rankOptions, type BoardOption } from "@/lib/rank";
+import { rankOptions, type BoardOption, type RankInput } from "@/lib/rank";
 
-export type { BoardOption };
+export type { BoardOption, RankInput };
 
 export type PollRow = {
   id: string;
@@ -113,6 +113,24 @@ export async function hasEntitlement(pollId: string, userId: string | undefined)
   );
 }
 
+/** The user's active 30-day pass, if any. Reads the clock in the data layer so
+ *  callers stay pure. */
+export async function activePass(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("entitlements")
+    .select("kind, expires_at, source")
+    .eq("user_id", userId);
+
+  const now = Date.now();
+  const pass = (data ?? []).find(
+    (e: { kind: string; expires_at: string | null }) =>
+      e.kind === "sub_monthly" &&
+      (e.expires_at === null || new Date(e.expires_at).getTime() > now)
+  );
+  return { pass: pass ?? null, total: (data ?? []).length };
+}
+
 export async function isSpaceMember(spaceId: string, userId: string | undefined) {
   if (!userId) return false;
   const supabase = await createClient();
@@ -131,6 +149,34 @@ export type FeedPoll = PollRow & {
   /** Resolved server-side — see isExpired(). Cards must not read the clock. */
   expired: boolean;
 };
+
+/**
+ * Turns poll rows + their options into cards. Shared by the home feed, a Space
+ * page and a profile, which were each doing this by hand.
+ *
+ * It also owns the clock read. Components must be pure, so `expired` is resolved
+ * here rather than in three different render paths that could disagree.
+ */
+export function buildFeedPolls(
+  rows: PollRow[],
+  options: RankInput[],
+  votedPollIds: Set<string>,
+  now: number = Date.now()
+): FeedPoll[] {
+  const byPoll = new Map<string, RankInput[]>();
+  for (const o of options) {
+    const list = byPoll.get((o as RankInput & { poll_id: string }).poll_id) ?? [];
+    list.push(o);
+    byPoll.set((o as RankInput & { poll_id: string }).poll_id, list);
+  }
+
+  return rows.map((p) => ({
+    ...p,
+    voted: votedPollIds.has(p.id),
+    expired: isExpired(p, now),
+    preview: rankOptions(byPoll.get(p.id) ?? [], p.vote_count).slice(0, 3),
+  }));
+}
 
 /**
  * The two feed rails, from one query.
@@ -169,21 +215,8 @@ export async function getFeed(userId: string | undefined) {
   ]);
 
   const votedOn = new Set((myVotes ?? []).map((v: { poll_id: string }) => v.poll_id));
-  const byPoll = new Map<string, NonNullable<typeof options>>();
-  for (const o of options ?? []) {
-    const list = byPoll.get(o.poll_id) ?? [];
-    list.push(o);
-    byPoll.set(o.poll_id, list);
-  }
-
   const now = Date.now();
-
-  const enriched: FeedPoll[] = rows.map((p) => ({
-    ...p,
-    voted: votedOn.has(p.id),
-    expired: isExpired(p, now),
-    preview: rankOptions(byPoll.get(p.id) ?? [], p.vote_count).slice(0, 3),
-  }));
+  const enriched = buildFeedPolls(rows, (options ?? []) as RankInput[], votedOn, now);
 
   const velocity = (p: FeedPoll) => {
     const hours = Math.max(1, (now - new Date(p.created_at).getTime()) / 3_600_000);
