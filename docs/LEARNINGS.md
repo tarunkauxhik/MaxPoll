@@ -149,6 +149,20 @@ regenerating invalidates the old pair.
 ### Next.js
 16.3.0 current as of 2026-08-03.
 
+**`middleware.ts` is now `proxy.ts`.** Renamed in Next 16; the functionality is
+identical. Source: `node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md`.
+
+This one is genuinely dangerous, because **Supabase's own SSR quickstart still tells
+you to create `middleware.ts`** — and Next 16 does not invoke that file. No error, no
+warning. Sessions silently never refresh and it presents as a random auth bug.
+
+It also lands on top of DECISIONS A2, the most dangerous item in the project: the
+matcher that keeps `Set-Cookie` off the edge-cached board route now lives in a
+differently-named file. Two silent failures stacked on one file.
+
+**`params` and `searchParams` are Promises.** `params: Promise<{ slug: string }>`,
+then `const { slug } = await params`. Every dynamic route and `generateMetadata`.
+
 ---
 
 ## Phase 2 — database
@@ -203,12 +217,12 @@ broken key returns `[]` too. Gate 2 seeds a real vote and asserts the **differen
 
 ## The one most likely to be quietly re-broken
 
-> **DECISIONS A2** — putting the board route behind the Supabase auth middleware
-> silently disables edge caching, because the middleware sets a cookie. There is no
+> **DECISIONS A2** — putting the board route behind the Supabase auth proxy
+> silently disables edge caching, because the proxy sets a cookie. There is no
 > error and nothing looks wrong. The only symptom is the Vercel usage graph climbing
 > with viewer count instead of staying flat.
 >
-> Check `x-vercel-cache: HIT`. The middleware matcher is written in Phase 3 and the
+> Check `x-vercel-cache: HIT`. The `proxy.ts` matcher is written in Phase 3 and the
 > damage is only observable in Phase 5, which is exactly what makes it dangerous.
 
 ---

@@ -24,14 +24,14 @@ _Absent from the original drafts. Largest single latency win available._
 
 ### A2 · `Set-Cookie` disables the edge cache — the biggest landmine
 Vercel's CDN **refuses to cache any response carrying `Set-Cookie`**, and any request
-carrying `Authorization`. `@supabase/ssr` session-refresh middleware sets auth cookies
+carrying `Authorization`. `@supabase/ssr` session-refresh proxy sets auth cookies
 on every response it touches. Route the board through it and `s-maxage=4` becomes
 decorative: every viewer invokes a function, and the whole "viewer count is irrelevant
 to your bill" thesis collapses — silently, with no error anywhere.
 
 Three-part fix, binding on Phases 3 and 5:
 
-1. `middleware.ts` matcher **explicitly excludes** `/api/poll/:id/board`,
+1. `proxy.ts` matcher **explicitly excludes** `/api/poll/:id/board`,
    `/api/poll/:id/messages`, `/og/*`.
 2. Those handlers build an anon Supabase client from `NEXT_PUBLIC_*` keys only. They
    never read or write cookies.
@@ -47,7 +47,7 @@ Gate 5 asserts `x-vercel-cache: HIT`. Not "it felt fast".
 Related: Vercel's CDN is **segmented per region**, so "one invocation per 4s" holds
 *per edge region*. Fine for India-first.
 
-_The drafts gave the header but not the middleware constraint that makes it work._
+_The drafts gave the header but not the proxy constraint that makes it work._
 
 ### A3 · Rank computed at read time; movement uses a snapshot window
 - **No `rank` column.** Computed per request with

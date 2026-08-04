@@ -22,7 +22,9 @@ export function EmptyState({
 }: {
   icon: string;
   message: string;
-  action?: { label: string; onClick: () => void };
+  /** A ready-made <a> or <button>. A ReactNode rather than an onClick so this
+   *  stays usable from Server Components, which is where most empties live. */
+  action?: React.ReactNode;
 }) {
   return (
     <div className="state">
@@ -30,11 +32,7 @@ export function EmptyState({
         {icon}
       </span>
       <p>{message}</p>
-      {action && (
-        <button type="button" className="btn pri" onClick={action.onClick}>
-          {action.label}
-        </button>
-      )}
+      {action}
     </div>
   );
 }

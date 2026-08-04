@@ -32,7 +32,7 @@ you which file answers which question.
 - **Never `count(*)` for vote counts.** Denormalised counters, incremented in the same
   transaction as the insert.
 - **Ranks computed live inside the cached board route.** No cron for this, ever.
-- **The middleware matcher must exclude cached routes.** A `Set-Cookie` on the board
+- **The `proxy.ts` matcher must exclude cached routes.** (Next 16 renamed `middleware.ts`.) A `Set-Cookie` on the board
   response silently disables edge caching with no error — DECISIONS A2.
 - **One cron in `vercel.json` at most**, once daily. Any sub-daily schedule fails the
   deploy on Hobby.

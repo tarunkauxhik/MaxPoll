@@ -168,7 +168,7 @@ curl -sI https://<your-url>/api/poll/<id>/board | grep -i x-vercel-cache
 ```
 
 If it's `MISS` every time, the response is carrying `Set-Cookie` and Vercel is
-refusing to cache it. **Check the middleware matcher first** — see
+refusing to cache it. **Check the `proxy.ts` matcher first** — see
 [DECISIONS](DECISIONS.md) A2. There is no error message for this; the only other
 symptom is the usage graph climbing with viewer count.
 

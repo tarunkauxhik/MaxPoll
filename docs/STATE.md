@@ -128,6 +128,6 @@ pnpm check   # build + lint + typecheck + contrast
 - **Read [DECISIONS.md](DECISIONS.md) before changing anything visual or
   architectural.** It records five platform claims and five colour values that were
   wrong in the original drafts.
-- The most dangerous single item is **A2**: the middleware matcher must exclude cached
+- The most dangerous single item is **A2**: the `proxy.ts` matcher must exclude cached
   routes. It's written in Phase 3 and only observable in Phase 5.
 - Push at gates, not at commits. Every push builds.

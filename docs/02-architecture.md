@@ -51,13 +51,13 @@ every 3s, cached 2s. A real transport is the v2 upgrade *if chat proves used*.
 ### 2. `Set-Cookie` silently disables that cache
 
 Vercel's CDN **refuses to cache any response carrying `Set-Cookie`**, and any request
-carrying `Authorization`. `@supabase/ssr` middleware sets auth cookies on every
+carrying `Authorization`. `@supabase/ssr` proxy (Next 16's renamed middleware) sets auth cookies on every
 response it touches — so routing the board through it makes `s-maxage` decorative,
 with no error and nothing visibly wrong. The only symptom is the usage graph climbing
 with viewer count.
 
 ```ts
-// middleware.ts — cached routes are excluded from the matcher
+// proxy.ts — NOT middleware.ts (renamed in Next 16). Cached routes excluded.
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|api/poll/.*/board|api/poll/.*/messages|og/).*)'],
 };

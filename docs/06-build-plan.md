@@ -59,14 +59,16 @@ pnpm supabase db push --db-url "$SUPABASE_DB_URL"
 
 ## Phase 3 — Auth
 
-**3.1** `@supabase/ssr` client + server helpers, middleware for session refresh.
+**3.1** `@supabase/ssr` client + server helpers, `proxy.ts` for session refresh.
+**Next 16 renamed `middleware.ts` to `proxy.ts`** — Supabase's quickstart still says
+middleware, and that filename is silently ignored. See LEARNINGS.
 **3.2** `/auth/callback` route handler (`exchangeCodeForSession`).
 **3.3** `/onboarding` — handle (unique), display name, **DOB with 18+ gate**, bio,
 socials.
 **3.4** Under-18 → hard stop screen. No soft gate.
 **3.5** Sign out clears the session + `localStorage`.
 
-> ⚠️ **The middleware matcher must exclude `/api/poll/*/board`,
+> ⚠️ **The `proxy.ts` matcher must exclude `/api/poll/*/board`,
 > `/api/poll/*/messages` and `/og/*`.** If it doesn't, those responses carry
 > `Set-Cookie` and Vercel silently refuses to cache them — see
 > [DECISIONS](DECISIONS.md) A2. This is set up in Phase 3 and only *observed* in
@@ -145,7 +147,7 @@ time**.
 > ✅ **Gate 5:** open the same poll in 3 browsers, vote in one → the other two update
 > within ~5s. **`curl -sI …/board | grep x-vercel-cache` → `MISS` then `HIT`.** In
 > Supabase logs, origin hits should be roughly **one per 4s regardless of viewer
-> count**. If hits scale with viewers, caching is broken — check the middleware
+> count**. If hits scale with viewers, caching is broken — check the `proxy.ts`
 > matcher first.
 
 ## Phase 6 — Options, typeahead, moderation

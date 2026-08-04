@@ -154,7 +154,7 @@ that note is the only thing the payer gets back.
 
 A non-admin gets **404, not 403** — don't confirm the route exists.
 
-> **Middleware:** `/admin` and `/pay/*` must go *through* the session middleware;
+> **Proxy:** `/admin` and `/pay/*` must go *through* the session proxy;
 > they need auth cookies. They are **not** exceptions like `/api/poll/*/board`.
 > Do not add them to the [DECISIONS](DECISIONS.md) A2 exclusion list — that list
 > protects edge-cached routes, and these are neither cached nor cacheable.
