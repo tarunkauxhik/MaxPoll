@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mts\"",
     "check:contrast": "node scripts/check-contrast.mjs",
-    "check": "next build && eslint && tsc --noEmit && node scripts/check-contrast.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mts\""
+    "check": "next build && eslint && tsc --noEmit && node scripts/check-contrast.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mts\"",
+    "gates": "node scripts/gates.mjs",
+    "sql": "node scripts/sql.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",
@@ -24,11 +26,13 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pg": "^8.20.3",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "pg": "^8.22.0",
     "supabase": "^2.111.0",
     "typescript": "^5"
   }

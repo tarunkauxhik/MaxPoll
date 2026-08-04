@@ -57,7 +57,7 @@ pnpm supabase db push --db-url "$SUPABASE_DB_URL"
 > key — so assert the differential: `votes` empty **and** `options` on the same
 > request path returning its row. Passed 2026-08-04.
 
-## Phase 3 — Auth
+## Phase 3 — Auth ✅ done
 
 **3.1** `@supabase/ssr` client + server helpers, `proxy.ts` for session refresh.
 **Next 16 renamed `middleware.ts` to `proxy.ts`** — Supabase's quickstart still says
@@ -92,7 +92,7 @@ socials.
 > Use a real-looking domain — Supabase rejects `@example.com` outright, so a probe
 > using it passes for the wrong reason.
 
-## Phase 4 — Poll core (the critical path)
+## Phase 4 — Poll core ✅ done
 
 Build in this exact order:
 
@@ -116,7 +116,7 @@ scroll lock)
 > - `options.vote_count` and `polls.vote_count` match the actual row count in `votes`
 > - Board endpoint returns in **<150ms**
 
-## Phase 5 — Live board (no websockets)
+## Phase 5 — Live board ✅ done
 
 **5.1** `GET /api/poll/[id]/board` → options `ORDER BY vote_count DESC` from the
 **denormalised counter**. Never `count(*)`. Rank via `row_number()` at read time.
@@ -150,7 +150,7 @@ time**.
 > count**. If hits scale with viewers, caching is broken — check the `proxy.ts`
 > matcher first.
 
-## Phase 6 — Options, typeahead, moderation
+## Phase 6 — Options, typeahead, moderation ✅ done
 
 **6.1** Add-option with trigram typeahead (250ms debounce), suggestions showing
 **rank + vote count**
@@ -164,7 +164,7 @@ of votes is far messier
 > ✅ **Gate 6:** type "narendr" → "Narendra Modi #2 · 82 votes" appears. Merge two
 > options → counts sum, no votes lost, ranks recompute.
 
-## Phase 7 — Everything else
+## Phase 7 — Everything else ✅ done
 
 **7.1** Create poll (3/week limit enforced **server-side**)
 **7.2** Spaces: browse, create, join, 20-member results gate
@@ -188,7 +188,7 @@ change** (WhatsApp caches previews hard)
 > ✅ **Gate 7:** paste a poll link into a real WhatsApp chat → the preview shows the
 > current leader and vote count.
 
-## Phase 8 — Ship
+## Phase 8 — Ship 🟡 seed + cron done
 
 **8.1** Confirm the production deploy is green
 **8.2** Set `NEXT_PUBLIC_PAYMENTS_MODE=manual_upi` plus `NEXT_PUBLIC_UPI_VPA` and

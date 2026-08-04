@@ -346,3 +346,49 @@ TypeScript directly and ships `node:test`, so this cost **zero dependencies** �
 
 `.mts` rather than `.ts` so Node treats it as ESM without `"type": "module"` in
 `package.json`, which would change how Next resolves everything else.
+
+### D6 · Profiles live at `/u/[handle]`, rewritten from `/@handle`
+The design specifies `maxpoll.vercel.app/@handle`. In the App Router a folder
+starting with `@` is the **parallel-route slot** convention, so `app/@[handle]`
+would be a named slot and would never serve a URL — silently.
+
+The page is at `app/u/[handle]`; `next.config.ts` rewrites `/@:handle` → `/u/:handle`.
+The public URL is exactly what the design asked for.
+
+### D7 · One `buildFeedPolls()`, and the clock lives in the data layer
+The home feed, a Space page and a profile each turned poll rows into cards, each
+with its own copy of the enrichment and its own `Date.now()`. React 19's purity
+rule flagged the clock reads, and following it properly meant extracting the
+shared function rather than silencing the rule.
+
+The payoff is bigger than the lint: those three surfaces could previously have
+disagreed about whether a poll was closed. Now `isExpired()` decides once.
+
+Same reasoning made `Timer` use `useSyncExternalStore` instead of
+`useState` + `useEffect` + a `mounted` flag — the clock is an external mutable
+source, which is precisely what that hook is for, and it removes the hydration
+mismatch rather than working around it.
+
+### D8 · Gate probes run against the real database, with real sessions
+`pnpm gates` is not a unit test. It creates users, votes, merges and pays against
+the live project, then deletes everything.
+
+Anonymous probes cannot test the policies that matter. The first version had no
+session tokens and every "as a signed-in user" check quietly ran as anon — two
+of them **passed for the wrong reason**. Sessions are minted through the admin
+API's magic-link flow (secret-key only), and the script now aborts rather than
+degrading to anon.
+
+**Rule of thumb worth keeping:** in an RLS probe, `401` means the probe is
+broken; `403` is the policy actually refusing an authenticated caller.
+
+### D9 · Seed data is a script, never a migration
+`db push` applies every migration, so a seed migration would ship demo content to
+production — and we run one project for both (B10). `supabase/seed.sql` is applied
+on demand by `scripts/sql.mjs` and removed with `pnpm sql --wipe`.
+
+It votes through `cast_vote()` rather than inserting counts, so the seed exercises
+the same path production does. A seed that wrote `vote_count` by hand would mask
+exactly the bug Gate 4 exists to catch.
+
+`pg` is a devDependency for this and nothing else; no application code imports it.

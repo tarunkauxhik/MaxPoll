@@ -251,3 +251,68 @@ Before deleting, every hex value in the HTML was diffed against `globals.css` +
 (WhatsApp's own bubble colours in the preview mockup, and the mockup page's own
 scaffolding). One real gap surfaced and was captured: the OG image gradient
 `linear-gradient(135deg,#111114,#2A2145 60%,#6B4EFF)`.
+
+---
+
+## Phases 3-7 — app build
+
+### `app/@[handle]` is a parallel route slot, not a URL
+The design puts profiles at `maxpoll.vercel.app/@handle`. In the App Router a
+folder beginning with `@` is the **named-slot convention**, so `app/@[handle]`
+becomes a parallel route and never serves a URL at all. No error — the page just
+doesn't exist.
+
+Fix: the page lives at `app/u/[handle]`, with a rewrite in `next.config.ts`
+mapping `/@:handle` → `/u/:handle`. Public URL unchanged.
+
+### React 19's purity rules catch real bugs, not style
+Two rules fire hard in Next 16 and both found genuine problems:
+
+- **`Date.now()` during render.** Reading the clock in a component meant the feed,
+  a Space page and a profile could each decide "is this poll closed" differently.
+  Fixed by `isExpired()` in the data layer, which also removed the same
+  enrichment logic duplicated across three pages (`buildFeedPolls`).
+- **`setState` in an effect body.** The Timer used a `mounted` flag to dodge a
+  hydration mismatch. `useSyncExternalStore` is what React provides for an
+  external mutable source like the wall clock, and removes the flag entirely.
+
+### A `"use server"` file may only export async functions
+`export const ADJECTIVES = [...]` in an actions file is a **build error**, not a
+lint warning: *"A 'use server' file can only export async functions, found
+object."* Constants go in their own module.
+
+### Node's ESM resolver needs explicit `.ts` extensions
+The bundler resolves `./format`; Node (which runs `node --test`) does not. Any
+lib file reachable from a test must import with the extension — `./format.ts`.
+`allowImportingTsExtensions` in tsconfig keeps `tsc` happy.
+
+### Testing RLS *as a signed-in user* without a browser
+Anonymous probes cannot test the policies that matter, and the first version of
+`scripts/gates.mjs` silently ran every "as a user" check as anon — where two of
+them **passed for the wrong reason**.
+
+Password grant is unavailable (the Email provider is off, deliberately). The way
+through: the admin API mints a magic link and verifying it returns a real session:
+
+```
+POST /auth/v1/admin/generate_link  {type:"magiclink", email}   → hashed_token
+GET  /auth/v1/verify?type=magiclink&token=…                    → 303, session in the URL fragment
+```
+
+Admin-only and secret-key-only, so it's a test affordance, not a hole.
+
+**The tell that the first run was fake:** denials returned `401`. With real
+sessions the same denials return `403`. 401 means "not authenticated"; 403 means
+"authenticated and refused" — which is the thing being tested. If an RLS probe
+returns 401, the probe is broken, not the policy.
+
+The script now aborts if it cannot mint sessions rather than degrading to anon.
+
+### Seed data cannot be a migration
+`db push` applies every migration, so a seed migration would ship demo content to
+production. The CLI has no "run this SQL file" command either, so
+`scripts/sql.mjs` (dev-only `pg`) runs `supabase/seed.sql` and `--wipe` removes it.
+
+Seeding votes through `cast_vote()` rather than raw inserts is deliberate: a seed
+that writes `vote_count` by hand would hide exactly the bug Gate 4 hunts. The
+seeded database independently confirmed 54 vote rows === 54 summed counters.
