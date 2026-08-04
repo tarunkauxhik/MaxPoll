@@ -1,40 +1,87 @@
+/* ============================================================
+   MaxPoll — design tokens + component CSS
+   Tokens: RefDocs/05-ui-spec.md §1 (verbatim).
+   Components: ported from RefDocs/maxpoll-prototype.html and
+   maxpoll-landing-activity.html, the visual source of truth.
+   Where the two prototypes disagree, doc 05 §4 wins — each such
+   case is marked `doc05:` inline.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* surface */
+  --paper: #FAFAF7; /* page background */
+  --card: #FFFFFF; /* cards, sheets */
+  --line: #E6E5E0; /* every hairline & border */
+
+  /* text */
+  --ink: #111114; /* primary */
+  --muted: #8A8A94; /* secondary, labels */
+  --body: #55555F; /* long-form paragraphs */
+
+  /* semantic — each colour has ONE job, never decorative */
+  --gold: #F5B324; /* RANK 1 ONLY */
+  --gold-text: #9A6E05; /* gold on white — AA contrast */
+  --gold-soft: #FFFCF3;
+  --violet: #6B4EFF; /* MOVEMENT ONLY: live, climbing, gaps, growing */
+  --violet-soft: #EFEBFF;
+  --heat: #E8452C; /* TIME PRESSURE ONLY: timers, drops */
+  --heat-soft: #FDECE9;
+  --up: #0E8A4F;
+  --up-soft: #E6F6EE; /* rank gain */
+
+  /* geometry */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 24px;
+  --tap: 48px; /* minimum touch target */
+  --shadow: 0 1px 2px rgba(17, 17, 20, .05), 0 8px 24px -12px rgba(17, 17, 20, .12);
+  --ease: cubic-bezier(.22, 1, .36, 1);
+
+  /* layout — not in doc 05; the prototypes are fixed-height mockups and
+     never had to solve for a real scrolling page */
+  --col: 480px; /* centred content column */
+  --topbar-h: 54px;
+  --nav-h: 62px; /* bottom nav height, reserved as scroll inset */
+  --rail-w: 88px; /* left rail at >=768px */
+
+  /* z-index scale — declared once so layers never get invented ad hoc */
+  --z-nav: 20;
+  --z-top: 30;
+  --z-backdrop: 40;
+  --z-sheet: 50;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  min-height: 100dvh; /* not 100vh — mobile browser chrome */
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Emoji: system stack only. Apple Color Emoji is proprietary and cannot be
+   bundled as a webfont — see docs/01-DECISIONS.md (A5). */
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-ui), system-ui, -apple-system, "Apple Color Emoji",
+    "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 
 a {
@@ -42,8 +89,738 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* Every number, without exception. Tabular figures so live counts don't jitter. */
+.num {
+  font-family: var(--font-num), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Accessibility floor — absent from the prototypes, required by doc 05 §8 */
+:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* ============================ TYPOGRAPHY ============================ */
+/* Type scale — doc 05 §2 */
+
+.t-hero {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 900;
+  font-size: 41px;
+  line-height: .96;
+  letter-spacing: -.045em;
+  margin: 0;
+}
+
+.t-title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 25px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  margin: 0;
+}
+
+.t-card {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1.15;
+  letter-spacing: -.025em;
+  margin: 0;
+}
+
+.t-sec {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.t-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.wordmark {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 900;
+  font-size: 19px;
+  letter-spacing: -.05em;
+}
+
+.wordmark i {
+  font-style: normal;
+  color: var(--violet);
+}
+
+/* ============================ SHELL ============================ */
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell-col {
+  width: 100%;
+  max-width: var(--col);
+  margin: 0 auto;
+  flex: 1;
+  /* reserve room so the last row never hides behind the fixed nav */
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-top);
+  background: rgba(250, 250, 247, .86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--topbar-h);
+}
+
+.top h1,
+.top h2 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  margin: 0;
+  letter-spacing: -.01em;
+  flex: 1;
+}
+
+.top .spacer {
+  flex: 1;
+}
+
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-nav);
+  border-top: 1px solid var(--line);
+  background: rgba(250, 250, 247, .94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  padding: 7px 6px calc(10px + env(safe-area-inset-bottom));
+  gap: 2px;
+}
+
+.nav a {
+  flex: 1;
+  min-height: var(--tap);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  padding: 5px 0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition: color .18s var(--ease);
+}
+
+.nav a[aria-current="page"] {
+  color: var(--ink);
+}
+
+.nav .ic {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+
+.nav .create .ic {
+  background: var(--ink);
+  color: #fff;
+  width: 38px;
+  height: 32px;
+  border-radius: 11px;
+  margin-top: -4px;
+}
+
+/* >=768px: the same markup becomes a left rail. CSS only — no JS, no resize
+   listener, no duplicated tree. */
+@media (min-width: 768px) {
+  .nav {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    width: var(--rail-w);
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    padding: 12px 8px;
+  }
+
+  .nav a {
+    flex: 0 0 auto;
+    font-size: 11px;
+  }
+
+  .shell {
+    padding-left: var(--rail-w);
+  }
+
+  .shell-col {
+    padding-bottom: 24px;
+  }
+}
+
+/* ============================ BUTTONS ============================ */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--tap);
+  border-radius: var(--r-md);
+  font-family: var(--font-ui), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  transition: transform .16s var(--ease), opacity .16s;
+}
+
+.btn:active {
+  transform: scale(.975);
+}
+
+.btn.pri {
+  background: var(--ink);
+  color: #fff;
+}
+
+.btn.sec {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.btn.vio {
+  background: var(--violet);
+  color: #fff;
+  box-shadow: 0 6px 20px -8px var(--violet);
+}
+
+/* doc05: §4.7 says sm is 36px; prototype uses 38px. Doc 05 wins. */
+.btn.sm {
+  min-height: 36px;
+  font-size: 13px;
+  border-radius: var(--r-sm);
+  width: auto;
+  padding: 0 14px;
+}
+
+/* ============================ OPTION ROW ============================ */
+/* doc 05 §4.1 — the most important component. Five variants. */
+
+.board {
+  padding: 2px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 13px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  min-height: var(--tap);
+  transition: transform .34s var(--ease), border-color .2s, box-shadow .2s;
+}
+
+.opt:active {
+  transform: scale(.985);
+}
+
+.opt .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--violet-soft);
+  z-index: 0;
+  transition: width .5s var(--ease);
+}
+
+.opt > * {
+  position: relative;
+  z-index: 1;
+}
+
+.opt .rk {
+  font-family: var(--font-num), monospace;
+  font-weight: 700;
+  font-size: 16px;
+  width: 26px;
+  color: var(--muted);
+  letter-spacing: -.04em;
+}
+
+.opt .body {
+  flex: 1;
+  min-width: 0;
+}
+
+.opt .nm {
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -.01em;
+}
+
+.opt .sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.opt .pct {
+  font-family: var(--font-num), monospace;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -.03em;
+}
+
+/* variant: rank 1 — gold, earned */
+.opt.g1 {
+  border-color: rgba(245, 179, 36, .45);
+  background: linear-gradient(180deg, var(--gold-soft), #fff);
+}
+
+.opt.g1 .rk {
+  color: var(--gold);
+}
+
+.opt.g1 .fill {
+  background: rgba(245, 179, 36, .14);
+}
+
+/* variant: the user's own pick */
+.opt.mine {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.tagme {
+  background: var(--ink);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 99px;
+}
+
+/* variant: small (under-list) */
+.opt.sm {
+  padding: 9px 12px;
+}
+
+.opt.sm .nm {
+  font-size: 13.5px;
+}
+
+.opt.sm .rk {
+  font-size: 13px;
+  width: 22px;
+}
+
+.opt.sm .pct {
+  font-size: 13px;
+}
+
+/* variant: locked — placeholder content only. Real names never reach the
+   client without a server-side entitlement check (doc 06 §3.6). */
+.locked {
+  filter: blur(4.5px);
+  opacity: .55;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* movement badge */
+.mv {
+  font-family: var(--font-num), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 5px;
+}
+
+.mv.up {
+  color: var(--up);
+  background: var(--up-soft);
+}
+
+.mv.dn {
+  color: var(--heat);
+  background: var(--heat-soft);
+}
+
+.mv.new {
+  color: var(--violet);
+  background: var(--violet-soft);
+}
+
+/* ============================ GAP LINE ============================ */
+/* doc 05 §4.2 — the growth engine. Always free, never blurred. */
+
+.gap {
+  margin: 1px 12px;
+  padding: 7px 12px;
+  border-radius: var(--r-sm);
+  background: var(--violet-soft);
+  color: var(--violet);
+  font-size: 11.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.gap b {
+  font-family: var(--font-num), monospace;
+}
+
+/* ============================ TIMER ============================ */
+/* doc 05 §4.3 — the only dark block on a paper page. */
+
+.timerbar {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--r-md);
+  padding: 11px 14px;
+  margin: 0 12px 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.timerbar .ring {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  position: relative;
+}
+
+.timerbar .ring svg {
+  transform: rotate(-90deg);
+}
+
+.timerbar .ring .t {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-num), monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.timerbar .lab {
+  flex: 1;
+}
+
+.timerbar .lab .k {
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .55);
+  font-weight: 700;
+}
+
+.timerbar .lab .v {
+  font-family: var(--font-num), monospace;
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -.03em;
+  margin-top: 1px;
+}
+
+.timerbar .lab .v em {
+  font-style: normal;
+  color: var(--gold);
+}
+
+.timerbar .prog {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--heat);
+}
+
+.timerbar.urgent {
+  background: linear-gradient(100deg, #2A0F0A, #7A1E10);
+}
+
+/* ============================ CHIPS ============================ */
+
+.counts {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  font-family: var(--font-num), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  padding: 4px 9px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chip.hot {
+  background: var(--heat-soft);
+  border-color: rgba(232, 69, 44, .25);
+  color: var(--heat);
+}
+
+/* ============================ POLL CARD ============================ */
+
+.feed {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pcard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  transition: transform .2s var(--ease);
+  cursor: pointer;
+}
+
+.pcard:active {
+  transform: scale(.985);
+}
+
+.pcard .space {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--violet);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mini {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 11px 0;
+}
+
+.mrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.mrow .r {
+  width: 15px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mrow .nm {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mrow .bar {
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line);
+  flex: 0 0 70px;
+  overflow: hidden;
+}
+
+.mrow .bar i {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  border-radius: 99px;
+}
+
+.mrow.g .bar i {
+  background: var(--gold);
+}
+
+/* ============================ LIVE DOT ============================ */
+
+.livedot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--violet);
+  position: relative;
+  display: inline-block;
+  flex: 0 0 6px;
+}
+
+.livedot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 99px;
+  background: var(--violet);
+  opacity: .28;
+  animation: livepulse 1.9s infinite;
+}
+
+@keyframes livepulse {
+  0% { transform: scale(.6); opacity: .4; }
+  70% { transform: scale(1.5); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* ============================ SHEET ============================ */
+/* doc 05 §4.6 — join Space, paywall, share, destructive confirm */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-backdrop);
+  background: rgba(17, 17, 20, .45);
+  animation: fadein .2s var(--ease);
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-sheet);
+  margin: 0 auto;
+  max-width: var(--col);
+  background: var(--card);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 22px 18px calc(22px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 40px -14px rgba(17, 17, 20, .3);
+  border-top: 1px solid var(--line);
+  animation: sheetup .28s var(--ease);
+}
+
+.sheet h2,
+.sheet h3 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 21px;
+  margin: 0 0 6px;
+  letter-spacing: -.03em;
+}
+
+.grab {
+  width: 36px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--line);
+  margin: 0 auto 16px;
+}
+
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheetup {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* ============================ FIELD ============================ */
+
+.field {
+  width: 100%;
+  min-height: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 0 14px;
+  font-size: 16px; /* >=16px or iOS zooms the page on focus */
+  background: var(--card);
+  color: var(--ink);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px var(--violet-soft);
+}
+
+/* ============================ DISCLOSURE ============================ */
+/* doc 05 §4.12 — load-bearing. Never smaller than 11px. */
+
+.discl {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 9px 11px;
+  display: flex;
+  gap: 7px;
+  line-height: 1.4;
 }
