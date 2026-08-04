@@ -192,22 +192,42 @@ Hobby's 100 deployments/day.
 
 ## C — Design corrections
 
-### C1 · Two colour tokens failed WCAG AA and were changed
+### C1 · Five colour tokens failed WCAG AA and were changed
 
-| Token | Was | Ratio | Now | Ratio |
+| Where | Was | Ratio | Now | Ratio |
 |---|---|---|---|---|
-| `--muted` on `--paper` | `#8A8A94` | **3.27:1 ✗** | `#6B6B75` | **5.04:1 ✓** |
-| violet as text on `--violet-soft` | `#6B4EFF` | **4.33:1 ✗** | `--violet-text: #5B3EE8` | **5.45:1 ✓** |
+| `--muted` on `--paper` | `#8A8A94` | **3.27:1 ✗** | `#6B6B75` | 5.04:1 ✓ |
+| violet as text on `--violet-soft` | `#6B4EFF` | **4.33:1 ✗** | `--violet-text: #5B3EE8` | 5.46:1 ✓ |
+| `--up` as text (▲ badge) | `#0E8A4F` | **3.94:1 ✗** | `--up-text: #0A7442` | 5.23:1 ✓ |
+| `--heat` as text (▼ badge, time chip) | `#E8452C` | **3.45:1 ✗** | `--heat-text: #C2321C` | 4.87:1 ✓ |
+| `--gold-text` on `--gold-soft` | `#9A6E05` | **4.44:1 ✗** | `#8F6605` | 5.03:1 ✓ |
 
-Measured, not eyeballed. `--muted` carries nearly all secondary text — vote sublines,
-nav labels, timestamps — so a failure there is a failure almost everywhere.
+All five came from the design drafts and had been carried forward unquestioned.
+`--muted` alone carries nearly all secondary text — sublines, nav labels, timestamps
+— so a failure there is a failure almost everywhere.
 
-**The brand violet `#6B4EFF` is unchanged.** It stays the fill, live dot and button
-background, because those are surfaces, not text. Only *violet used as text* moved.
-`--gold-text: #9A6E05` was already correct at 4.56:1.
+**The brand colours are unchanged.** `#6B4EFF`, `#F5B324`, `#E8452C` and `#0E8A4F`
+are still the fills, live dot, timer ring and bars, because those are *surfaces*.
+Each now has a `-text` sibling for when the same colour carries type. Never
+substitute one for the other. No colour's *job* changed: gold is still rank 1 only,
+violet movement only, red time only.
 
-No colour's *job* changed: gold is still rank 1 only, violet movement only, red time
-only.
+**This is now enforced, not remembered.** `pnpm check:contrast` parses the shipped
+`globals.css` and checks all 17 pairs, exiting non-zero on failure. It's part of
+`pnpm check`. Hand-arithmetic during the audit caught only two of the five — the
+other three surfaced when the numbers were actually computed. Measure, don't reason.
+
+### C1b · `--line` stays low-contrast; form controls get `--line-strong`
+`--line` (#E6E5E0) is 1.21:1 on paper, which fails WCAG 1.4.11's 3:1 for UI component
+boundaries. Kept anyway: it's a decorative separator, and cards are identified by
+their surface and shadow rather than their border.
+
+Form controls are the exception — an input's border genuinely *is* what identifies it
+as an input, and `.field` sits on `--card` against `--paper` (1.02:1, invisible
+without a border). Those use `--line-strong` (#8F8E87, 3.14:1).
+
+Pushing every hairline to 3:1 would turn a deliberately light, airy design heavy for
+no accessibility gain.
 
 ### C2 · OptionRow is a `<button>`, not a clickable div
 The prototypes used `<div class="opt">` with `cursor:pointer`. That is unreachable by

@@ -17,44 +17,75 @@ reach for a colour to decorate, use `--line` or `--muted` instead.
 
 ```css
 /* surface */
---paper:#FAFAF7;   /* page background — warm white, NOT cream */
---card:#FFFFFF;    /* cards, sheets */
---line:#E6E5E0;    /* every hairline & border */
+--paper:#FAFAF7;        /* page background — warm white, NOT cream */
+--card:#FFFFFF;         /* cards, sheets */
+--line:#E6E5E0;         /* decorative hairlines & separators */
+--line-strong:#8F8E87;  /* form control borders — WCAG 1.4.11 needs >=3:1 */
 
 /* text */
---ink:#111114;     /* primary */
---muted:#6B6B75;   /* secondary, labels */
---body:#55555F;    /* long-form paragraphs */
+--ink:#111114;          /* primary */
+--body:#55555F;         /* long-form paragraphs */
+--muted:#6B6B75;        /* secondary, labels */
 
-/* semantic — one job each, never decorative */
---gold:#F5B324;         /* RANK 1 ONLY — medal logic, earned */
---gold-text:#9A6E05;    /* gold as text on white */
+/* semantic — one job each, never decorative.
+   Each has a -text sibling: the brand colour is a SURFACE colour, and used
+   as text it fails contrast. Never substitute one for the other. */
+--gold:#F5B324;         /* RANK 1 ONLY — fills, rank digit, timer ring */
+--gold-text:#8F6605;    /* gold as text */
 --gold-soft:#FFFCF3;
---violet:#6B4EFF;       /* MOVEMENT ONLY: live, climbing, gaps, growing */
---violet-text:#5B3EE8;  /* violet as text on --violet-soft */
+--violet:#6B4EFF;       /* MOVEMENT ONLY — fills, live dot, button bg */
+--violet-text:#5B3EE8;  /* violet as text */
 --violet-soft:#EFEBFF;
---heat:#E8452C;         /* TIME PRESSURE ONLY: timers, ▼ drops */
+--heat:#E8452C;         /* TIME PRESSURE ONLY — bars, fills */
+--heat-text:#C2321C;    /* heat as text */
 --heat-soft:#FDECE9;
---up:#0E8A4F;           /* ▲ rank gain */
+--up:#0E8A4F;           /* ▲ rank gain — fills */
+--up-text:#0A7442;      /* up as text */
 --up-soft:#E6F6EE;
+
+--press:rgba(17,17,20,.045);  /* pressed background */
 ```
 
-### Contrast — measured, not assumed
+### Contrast — measured, and enforced
 
-| Pair | Ratio | |
+```bash
+pnpm check:contrast     # parses globals.css, checks all 17 pairs, exits 1 on failure
+```
+
+| Pair | Ratio | Where |
 |---|---|---|
-| `--ink` on `--paper` | 17.4:1 | ✓ AAA |
-| `--body` on `--paper` | 7.3:1 | ✓ AAA |
-| `--muted` on `--paper` | **5.04:1** | ✓ AA |
-| `--gold-text` on white | 4.56:1 | ✓ AA |
-| `--violet-text` on `--violet-soft` | 5.45:1 | ✓ AA |
-| `--up` on `--up-soft` | 4.8:1 | ✓ AA |
-| `--heat` on `--heat-soft` | 4.6:1 | ✓ AA |
+| `--ink` on `--paper` | 18.03:1 | body text |
+| `--body` on `--paper` | 7.04:1 | paragraphs |
+| `--muted` on `--paper` | 5.04:1 | sublines, labels, nav |
+| `--gold-text` on `--gold-soft` | 5.03:1 | gold badge |
+| `--violet` on `--card` | 5.05:1 | space label, wordmark |
+| `--violet-text` on `--violet-soft` | 5.46:1 | gap line, `NEW` badge |
+| `--up-text` on `--up-soft` | 5.23:1 | ▲ badge |
+| `--heat-text` on `--heat-soft` | 4.87:1 | ▼ badge, time chip |
+| `--line-strong` on `--paper` | 3.14:1 | input borders |
 
-The prototypes used `--muted:#8A8A94` (**3.27:1 — fails AA**) and violet `#6B4EFF`
-as gap-line text (**4.33:1 — fails**). Both were corrected. The *brand* violet is
-unchanged — `#6B4EFF` is still the fill, live dot, and button background, because
-those are surfaces, not text.
+**Five tokens shipped failing AA and had to be corrected.** They came from the
+design drafts and had been carried forward unquestioned:
+
+| Token | Was | Ratio |
+|---|---|---|
+| `--muted` | `#8A8A94` | 3.27:1 ✗ |
+| violet as text | `#6B4EFF` | 4.33:1 ✗ |
+| `--up` as text | `#0E8A4F` | 3.94:1 ✗ |
+| `--heat` as text | `#E8452C` | 3.45:1 ✗ |
+| `--gold-text` on `--gold-soft` | `#9A6E05` | 4.44:1 ✗ |
+
+Hand-arithmetic caught only two of the five. **Run the checker; don't reason about
+it, and never judge by eye.**
+
+The *brand* colours are unchanged — `#6B4EFF`, `#F5B324`, `#E8452C`, `#0E8A4F` are
+still the fills, dots and bars, because those are surfaces. Only their use *as text*
+moved. No colour's job changed.
+
+`--line` stays at 1.21:1 deliberately. It's a decorative separator, not a component
+boundary — cards are identified by their surface and shadow. Only form controls,
+where the border *is* what identifies the control, use `--line-strong`. Pushing every
+hairline to 3:1 would turn a deliberately light design heavy.
 
 **No dark mode in v1.** A scoreboard reads better on paper, and light is cheaper to
 render on budget Android. Revisit post-launch.

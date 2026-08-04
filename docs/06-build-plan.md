@@ -183,7 +183,7 @@ publicly**
 ## Testing discipline
 
 ```bash
-pnpm build && pnpm lint && pnpm exec tsc --noEmit   # before every commit
+pnpm check   # build + lint + typecheck + contrast — before every commit
 ```
 
 **Unit:** rank computation · gap calculation · trigram normalisation · signature

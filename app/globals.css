@@ -14,23 +14,33 @@
   /* surface */
   --paper: #FAFAF7; /* page background */
   --card: #FFFFFF; /* cards, sheets */
-  --line: #E6E5E0; /* every hairline & border */
+  --line: #E6E5E0; /* decorative hairlines & separators */
+  --line-strong: #8F8E87; /* form control borders — 3.14:1, WCAG 1.4.11 */
 
-  /* text */
-  --ink: #111114; /* primary */
-  --muted: #8A8A94; /* secondary, labels */
-  --body: #55555F; /* long-form paragraphs */
+  /* text — every pair below is >=4.5:1 on --paper, measured */
+  --ink: #111114; /* primary          17.4:1 */
+  --body: #55555F; /* paragraphs        7.3:1 */
+  --muted: #6B6B75; /* secondary, labels 5.04:1 — was #8A8A94 at 3.27:1, failed AA */
 
-  /* semantic — each colour has ONE job, never decorative */
-  --gold: #F5B324; /* RANK 1 ONLY */
-  --gold-text: #9A6E05; /* gold on white — AA contrast */
+  /* semantic — each colour has ONE job, never decorative.
+     The -text variants exist because the brand colour is a surface colour;
+     used as text it fails contrast. Never swap one for the other. */
+  --gold: #F5B324; /* RANK 1 ONLY — fills, rank digit, ring */
+  --gold-text: #8F6605; /* gold as text     5.16 card / 5.03 gold-soft */
   --gold-soft: #FFFCF3;
-  --violet: #6B4EFF; /* MOVEMENT ONLY: live, climbing, gaps, growing */
+  --violet: #6B4EFF; /* MOVEMENT ONLY — fills, dots, button backgrounds */
+  --violet-text: #5B3EE8; /* violet as text   5.46 on violet-soft */
   --violet-soft: #EFEBFF;
-  --heat: #E8452C; /* TIME PRESSURE ONLY: timers, drops */
+  --heat: #E8452C; /* TIME PRESSURE ONLY — bars, fills */
+  --heat-text: #C2321C; /* heat as text     4.87 heat-soft / 5.33 paper */
   --heat-soft: #FDECE9;
-  --up: #0E8A4F;
-  --up-soft: #E6F6EE; /* rank gain */
+  --up: #0E8A4F; /* rank gain — fills */
+  --up-text: #0A7442; /* up as text       5.23 on up-soft */
+  --up-soft: #E6F6EE;
+
+  /* pressed — a background change, because transform alone is unreliable
+     on Android and nudges layout bounds */
+  --press: rgba(17, 17, 20, .045);
 
   /* geometry */
   --r-sm: 10px;
@@ -38,8 +48,19 @@
   --r-lg: 20px;
   --r-xl: 24px;
   --tap: 48px; /* minimum touch target */
-  --shadow: 0 1px 2px rgba(17, 17, 20, .05), 0 8px 24px -12px rgba(17, 17, 20, .12);
   --ease: cubic-bezier(.22, 1, .36, 1);
+
+  /* spacing — layout rhythm and all new components. Component-internal
+     padding stays as the design drew it; those are optical choices. */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-6: 24px;
+
+  /* elevation — a scale, not one-offs */
+  --shadow-1: 0 1px 2px rgba(17, 17, 20, .05), 0 8px 24px -12px rgba(17, 17, 20, .12);
+  --shadow-2: 0 -12px 40px -14px rgba(17, 17, 20, .3);
 
   /* layout — not in doc 05; the prototypes are fixed-height mockups and
      never had to solve for a real scrolling page */
@@ -77,7 +98,7 @@ body {
 }
 
 /* Emoji: system stack only. Apple Color Emoji is proprietary and cannot be
-   bundled as a webfont — see docs/01-DECISIONS.md (A5). */
+   bundled as a webfont — see docs/DECISIONS.md (A5). */
 body,
 button,
 input,
@@ -98,11 +119,19 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
-/* Accessibility floor — absent from the prototypes, required by doc 05 §8 */
+/* Accessibility floor — see docs/04-design.md §9 */
 :focus-visible {
   outline: 2px solid var(--violet);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* A violet ring on --ink is nearly invisible. Dark surfaces get a light one. */
+.btn.pri:focus-visible,
+.timerbar :focus-visible,
+.nav .create:focus-visible {
+  outline-color: #fff;
+  outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -202,6 +231,33 @@ a {
   min-height: var(--topbar-h);
 }
 
+/* Depth cue once content slides under the bar. Scroll-driven animation, so
+   there is no scroll listener and no JS at all; browsers without
+   animation-timeline simply never show it. Animates opacity only. */
+.top::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 16px;
+  background: linear-gradient(rgba(17, 17, 20, .1), rgba(17, 17, 20, 0));
+  opacity: 0;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .top::after {
+    animation: scroll-shadow linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 24px;
+  }
+}
+
+@keyframes scroll-shadow {
+  to { opacity: 1; }
+}
+
 .top h1,
 .top h2 {
   font-family: var(--font-display), sans-serif;
@@ -235,7 +291,7 @@ a {
   flex: 1;
   min-height: var(--tap);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px; /* 10px in the mockup; nav labels are controls, not decoration */
   font-weight: 600;
   letter-spacing: .02em;
   padding: 5px 0;
@@ -356,10 +412,17 @@ a {
   gap: 7px;
 }
 
+/* A <button>, not a div — it's the primary action of the whole product and
+   must be keyboard-reachable. `width:100%` and the font resets undo the UA
+   button styles. */
 .opt {
   display: flex;
   align-items: center;
   gap: 11px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
@@ -368,11 +431,20 @@ a {
   overflow: hidden;
   cursor: pointer;
   min-height: var(--tap);
-  transition: transform .34s var(--ease), border-color .2s, box-shadow .2s;
+  transition: transform .34s var(--ease), border-color .2s, box-shadow .2s,
+    background-color .12s;
 }
 
+/* Background change as well as scale: :active transform alone is unreliable
+   on Android, and scaling by itself doesn't read as "pressed" on touch. */
 .opt:active {
   transform: scale(.985);
+  background-color: var(--press);
+}
+
+.opt:disabled {
+  cursor: default;
+  opacity: .55;
 }
 
 .opt .fill {
@@ -495,17 +567,17 @@ a {
 }
 
 .mv.up {
-  color: var(--up);
+  color: var(--up-text);
   background: var(--up-soft);
 }
 
 .mv.dn {
-  color: var(--heat);
+  color: var(--heat-text);
   background: var(--heat-soft);
 }
 
 .mv.new {
-  color: var(--violet);
+  color: var(--violet-text);
   background: var(--violet-soft);
 }
 
@@ -517,7 +589,7 @@ a {
   padding: 7px 12px;
   border-radius: var(--r-sm);
   background: var(--violet-soft);
-  color: var(--violet);
+  color: var(--violet-text);
   font-size: 11.5px;
   font-weight: 600;
   display: flex;
@@ -627,7 +699,7 @@ a {
 .chip.hot {
   background: var(--heat-soft);
   border-color: rgba(232, 69, 44, .25);
-  color: var(--heat);
+  color: var(--heat-text);
 }
 
 /* ============================ POLL CARD ============================ */
@@ -644,7 +716,7 @@ a {
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   padding: 14px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-1);
   transition: transform .2s var(--ease);
   cursor: pointer;
 }
@@ -762,7 +834,7 @@ a {
   background: var(--card);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
   padding: 22px 18px calc(22px + env(safe-area-inset-bottom));
-  box-shadow: 0 -12px 40px -14px rgba(17, 17, 20, .3);
+  box-shadow: var(--shadow-2);
   border-top: 1px solid var(--line);
   animation: sheetup .28s var(--ease);
 }
@@ -796,10 +868,13 @@ a {
 
 /* ============================ FIELD ============================ */
 
+/* Form controls use --line-strong: an input's boundary is what identifies it
+   as an input, so WCAG 1.4.11 wants >=3:1 there. Decorative hairlines keep
+   --line — making every separator 3:1 would turn a light design heavy. */
 .field {
   width: 100%;
   min-height: var(--tap);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
   padding: 0 14px;
   font-size: 16px; /* >=16px or iOS zooms the page on focus */
@@ -811,6 +886,70 @@ a {
   outline: none;
   border-color: var(--violet);
   box-shadow: 0 0 0 3px var(--violet-soft);
+}
+
+/* ============================ STATES ============================ */
+/* Loading, empty and error. The mockups had none of these; all three are
+   required before any screen ships. Copy: docs/03-ux-flows.md. */
+
+.skel {
+  background: var(--line);
+  border-radius: var(--r-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer is a transform, not a background-position sweep, so it stays off
+   the main thread. Killed by prefers-reduced-motion, leaving a static block. */
+.skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .65), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  to { transform: translateX(100%); }
+}
+
+/* Matches .opt's height exactly, so swapping skeleton for real rows causes
+   no layout shift. */
+.skel-opt {
+  height: 48px;
+}
+
+.state {
+  padding: 32px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.state .ic {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.state p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 30ch;
+}
+
+.state .btn {
+  width: auto;
+  min-width: 160px;
+}
+
+/* Errors say what happened and what to do. Never an apology. */
+.state.err p {
+  color: var(--heat-text);
 }
 
 /* ============================ DISCLOSURE ============================ */

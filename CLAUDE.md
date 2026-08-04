@@ -54,8 +54,8 @@ you which file answers which question.
 ## Commands
 
 ```bash
-pnpm dev                                          # localhost:3000
-pnpm build && pnpm lint && pnpm exec tsc --noEmit # all three before committing
+pnpm dev        # localhost:3000
+pnpm check      # build + lint + typecheck + contrast — before every commit
 ```
 
 <!-- BEGIN:nextjs-agent-rules -->

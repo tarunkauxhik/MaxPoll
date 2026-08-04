@@ -53,11 +53,16 @@ rm -rf .next && pnpm dev
 ### Before every commit
 
 ```bash
-pnpm build && pnpm lint && pnpm exec tsc --noEmit
+pnpm check          # build + lint + typecheck + contrast
 ```
 
-All three must pass. `pnpm build` is the one that catches real breakage — `lint` and
-`tsc` won't notice a broken server component.
+Four checks: build, lint, typecheck, and contrast. `build` is the one that catches
+real breakage — `lint` and `tsc` won't notice a broken server component.
+`check:contrast` parses the shipped `globals.css` and fails if any text pair drops
+below WCAG AA; it exists because five tokens shipped failing it once.
+
+Run one at a time if you prefer: `pnpm build` · `pnpm lint` · `pnpm typecheck` ·
+`pnpm check:contrast`.
 
 ### Common local problems
 
@@ -218,8 +223,8 @@ If a secret key is ever committed or pasted publicly:
 # run
 pnpm dev                                  # http://localhost:3000
 
-# check (all three before committing)
-pnpm build && pnpm lint && pnpm exec tsc --noEmit
+# check — before every commit
+pnpm check                                # build + lint + typecheck + contrast
 
 # database (Phase 2 onward)
 pnpm supabase db push                     # apply migrations
