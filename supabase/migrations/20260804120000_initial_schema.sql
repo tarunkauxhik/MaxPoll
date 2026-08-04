@@ -92,19 +92,63 @@ create unique index votes_poll_user_uniq on votes (poll_id, user_id) where user_
 create index on votes (poll_id, device_id);
 create index on votes (option_id);
 
+-- The single source of access truth. Every payment rail writes here and nowhere
+-- else, so votes_read_entitled below never has to know how the money arrived.
 create table entitlements (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles on delete cascade,
   poll_id uuid references polls on delete cascade,      -- null = subscription
   kind text not null check (kind in ('poll_unlock','sub_monthly')),
   expires_at timestamptz,
-  razorpay_payment_id text,
+  -- DECISIONS D2. 'comp' hand-grants access (a friend, a bug apology) without
+  -- inventing a fake payment.
+  source text not null check (source in ('manual_upi','razorpay','comp')),
+  payment_ref text,                     -- UTR for manual_upi, payment id for razorpay
   created_at timestamptz default now()
 );
--- Makes the client-verify and webhook paths idempotent: both landing is harmless.
+-- Idempotency. A UTR and a Razorpay payment id could theoretically collide as
+-- strings, so the source is part of the key.
 create unique index entitlements_payment_uniq
-  on entitlements (razorpay_payment_id) where razorpay_payment_id is not null;
+  on entitlements (source, payment_ref) where payment_ref is not null;
 create index on entitlements (user_id, poll_id);
+
+-- The manual UPI ledger — DECISIONS D1. orders records the payment, entitlements
+-- records the access; verify_order() is the only bridge between them.
+create table orders (
+  id uuid primary key default gen_random_uuid(),
+  -- Shown to the payer and sent as the UPI `tr` field, so it must stay short and
+  -- alphanumeric — a UUID does not fit. Defaulted, so it is never client-authored.
+  ref text unique not null default 'MP' || upper(substr(md5(gen_random_uuid()::text), 1, 6)),
+  user_id uuid not null references profiles on delete cascade,
+  poll_id uuid references polls on delete cascade,      -- null for the 30-day pass
+  kind text not null check (kind in ('poll_unlock','pass_30d')),
+  -- Generated, not passed in. The admin panel shows this as "expected", and it is
+  -- the ONLY amount check a manual pipeline has — a UPI intent's `am` is editable
+  -- in several apps and a static QR carries no amount at all. A client that could
+  -- write this could show the admin "₹9 expected" on a ₹99 order.
+  -- Mirrored by PRICES in lib/payments.ts; change both or neither.
+  amount_paise int generated always as (
+    case kind when 'pass_30d' then 9900 else 900 end
+  ) stored,
+  utr text,                             -- 12-digit reference, submitted by the payer
+  contact text,                         -- optional; user_id is the real identity
+  status text not null default 'pending'
+    check (status in ('pending','submitted','verified','rejected')),
+  admin_note text,                      -- the only thing a rejected payer gets back
+  created_at timestamptz default now(),
+  submitted_at timestamptz,
+  decided_at timestamptz,
+  decided_by uuid references profiles
+);
+-- One UTR unlocks exactly once. Without this, one person pays ₹9 and forwards the
+-- reference number to fifty friends.
+create unique index orders_utr_uniq on orders (upper(btrim(utr))) where utr is not null;
+-- One open order per user per thing — stops the admin queue filling with junk.
+-- `nulls not distinct` matters: poll_id is null for the pass, and the default
+-- unique semantics would treat every one of those nulls as a different row.
+create unique index orders_open_uniq on orders (user_id, poll_id, kind)
+  nulls not distinct where status in ('pending','submitted');
+create index on orders (status, created_at);   -- the admin queue's only query
 
 create table badges (
   id uuid primary key default gen_random_uuid(),
@@ -210,6 +254,45 @@ $$;
 revoke execute on function search_options(uuid, text) from public;
 grant  execute on function search_options(uuid, text) to anon, authenticated;
 
+-- Approve a manual UPI payment: flip the order and grant access in ONE
+-- transaction. Half of this happening is someone paying and not getting in, or
+-- getting in without a ledger row. Both are worse than failing outright.
+--
+-- security definer with a pinned search_path, same reasoning as cast_vote
+-- (DECISIONS A6). Execute is revoked from every client role — only service_role
+-- reaches this, from the admin panel. There is deliberately no client path.
+create or replace function verify_order(p_order uuid, p_admin uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare o orders;
+begin
+  select * into o from orders
+   where id = p_order and status = 'submitted'
+   for update;
+  if not found then raise exception 'NOT_PENDING'; end if;
+
+  insert into entitlements (user_id, poll_id, kind, source, payment_ref, expires_at)
+  values (
+    o.user_id,
+    o.poll_id,
+    case o.kind when 'pass_30d' then 'sub_monthly' else 'poll_unlock' end,
+    'manual_upi',
+    upper(btrim(o.utr)),
+    -- DECISIONS D4: the ₹99 tier is a 30-day pass, not a subscription. No
+    -- mandate, no auto-renew, and votes_read_entitled already expires it.
+    case o.kind when 'pass_30d' then now() + interval '30 days' end
+  );
+
+  update orders
+     set status = 'verified', decided_at = now(), decided_by = p_admin
+   where id = p_order;
+end $$;
+
+revoke execute on function verify_order(uuid, uuid) from public, anon, authenticated;
+
 -- ============================================================ RLS
 -- Enabled on every table. A table with RLS on and no matching policy denies
 -- everything to anon/authenticated; service_role bypasses RLS entirely.
@@ -221,6 +304,7 @@ alter table polls         enable row level security;
 alter table options       enable row level security;
 alter table votes         enable row level security;
 alter table entitlements  enable row level security;
+alter table orders        enable row level security;
 alter table badges        enable row level security;
 alter table follows       enable row level security;
 alter table activity      enable row level security;
@@ -271,6 +355,32 @@ create policy votes_read_entitled on votes for select using (
 -- entitlements: self read only. Writes are service_role (webhook + verify), which
 -- bypasses RLS, so there is deliberately no insert/update policy here.
 create policy entitlements_read on entitlements for select using (auth.uid() = user_id);
+
+-- orders: you can create your own and attach a UTR to it. You can never approve
+-- one, and you can never see anyone else's.
+--
+-- Note what is NOT here: no admin select policy. The admin panel reads through
+-- the secret key, which bypasses RLS entirely — so other people's orders aren't
+-- protected by a policy that has to be written correctly, they're unreachable
+-- because no policy exposes them at all.
+create policy orders_insert   on orders for insert with check (auth.uid() = user_id);
+create policy orders_read_own on orders for select using (auth.uid() = user_id);
+-- Scoped to 'pending' on purpose: once a UTR is submitted the row is the admin's.
+-- A client can attach a reference number. It can never mark itself verified, and
+-- `utr is not null` stops an empty submission clogging the queue.
+create policy orders_submit_utr on orders for update
+  using (auth.uid() = user_id and status = 'pending')
+  with check (auth.uid() = user_id and status = 'submitted' and utr is not null);
+
+-- RLS decides WHICH rows you may touch; it says nothing about which COLUMNS. The
+-- policy above would otherwise let a payer flip their own pending ₹99 order to
+-- kind='poll_unlock' and pay ₹9 for it. Column grants are the right tool.
+revoke update on orders from anon, authenticated;
+grant  update (utr, contact, status, submitted_at) on orders to authenticated;
+-- Same reasoning at insert: kind and poll_id are chosen once, and everything a
+-- payer must not author (status, admin_note, decided_*) is left out.
+revoke insert on orders from anon, authenticated;
+grant  insert (user_id, poll_id, kind, contact) on orders to authenticated;
 
 create policy badges_read on badges for select using (true);
 

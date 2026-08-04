@@ -1,0 +1,84 @@
+/**
+ * The one payment switch. Everything payment-shaped reads from here.
+ *
+ * Phase 1 collects money over manual UPI (docs/05-payments.md); Razorpay is the
+ * later rail and its modes are reserved but unimplemented. Both write to the
+ * same `entitlements` table, so nothing downstream of the money cares which
+ * rail was used.
+ */
+
+export const PAYMENT_MODES = [
+  "coming_soon",
+  "manual_upi",
+  "razorpay_test",
+  "razorpay_live",
+] as const;
+
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
+
+/** Paise. Mirrored by the generated `orders.amount_paise` column — change both. */
+export const PRICES = { poll_unlock: 900, pass_30d: 9900 } as const;
+
+export type OrderKind = keyof typeof PRICES;
+
+/**
+ * Fails closed. An unset, misspelt, or half-deployed env var must never land on
+ * a mode that takes money — and manual UPI additionally needs a payee to send
+ * it to, so a missing VPA degrades to coming_soon rather than rendering a
+ * payment screen that quietly points nowhere.
+ */
+export function paymentMode(): PaymentMode {
+  const raw = process.env.NEXT_PUBLIC_PAYMENTS_MODE;
+  const mode = PAYMENT_MODES.includes(raw as PaymentMode)
+    ? (raw as PaymentMode)
+    : "coming_soon";
+
+  if (mode === "manual_upi" && !process.env.NEXT_PUBLIC_UPI_VPA) return "coming_soon";
+  // ponytail: Razorpay modes are reserved, not built. Drop this when §5 lands.
+  if (mode === "razorpay_test" || mode === "razorpay_live") return "coming_soon";
+
+  return mode;
+}
+
+export const paymentsEnabled = () => paymentMode() !== "coming_soon";
+
+/** Rupees for display. Every rendered amount goes through `.num` — DECISIONS B6. */
+export const rupees = (paise: number) =>
+  (paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+
+/**
+ * NPCI linking-spec intent URI. `tr` is the spec's transaction-reference field
+ * and is where the order ref belongs; `tn` is a free-text note the payer can
+ * edit, so it is never read back as identification.
+ *
+ * The amount here is a *hint* — several UPI apps let the payer change it, and a
+ * static QR carries none. The real amount check is a human comparing
+ * `orders.amount_paise` against the merchant app. See docs/05-payments.md §3.
+ */
+export function upiIntentUrl(ref: string, paise: number) {
+  const vpa = process.env.NEXT_PUBLIC_UPI_VPA;
+  if (!vpa) throw new Error("NEXT_PUBLIC_UPI_VPA is not set");
+
+  const q = new URLSearchParams({
+    pa: vpa,
+    pn: process.env.NEXT_PUBLIC_UPI_PAYEE_NAME || "MaxPoll",
+    am: (paise / 100).toFixed(2),
+    cu: "INR",
+    tr: ref,
+    tn: `MaxPoll ${ref}`,
+  });
+  return `upi://pay?${q}`;
+}
+
+/** UTRs are 12 digits. Length is all we can check client-side; the admin does the rest. */
+export const isValidUtr = (utr: string) => /^\d{12}$/.test(utr.trim());
+
+/** Server-only. An empty allowlist means nobody, never everybody. */
+export function isAdmin(userId: string | undefined | null) {
+  if (!userId) return false;
+  return (process.env.ADMIN_USER_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .includes(userId);
+}

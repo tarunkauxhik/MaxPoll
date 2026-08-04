@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mts\"",
     "check:contrast": "node scripts/check-contrast.mjs",
-    "check": "next build && eslint && tsc --noEmit && node scripts/check-contrast.mjs"
+    "check": "next build && eslint && tsc --noEmit && node scripts/check-contrast.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mts\""
   },
   "dependencies": {
     "next": "16.3.0",
