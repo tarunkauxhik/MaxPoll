@@ -69,9 +69,21 @@ socials.
 
 > ⚠️ **No password flows exist.** Sign up and Log in are the same button → same
 > Google handler. Do not build forgot/reset password.
+>
+> Building no password UI is **not** what closes that surface — the **Email provider
+> must be off in the Supabase dashboard**, or `POST /auth/v1/signup` stays live and
+> anyone can create accounts with the publishable key. Gate 3 checks this.
 
 > ✅ **Gate 3:** sign in → onboarding → home. Sign out → landing. Refresh mid-session
-> keeps you signed in. A DOB of 2010 is rejected.
+> keeps you signed in. A DOB of 2010 is rejected. And:
+> ```bash
+> curl -s -X POST "$SUPABASE_URL/auth/v1/signup" -H "apikey: $PUBLISHABLE_KEY" \
+>   -H "Content-Type: application/json" \
+>   -d '{"email":"probe@gmail.com","password":"whatever123"}'
+> # must return an error, NOT a user object
+> ```
+> Use a real-looking domain — Supabase rejects `@example.com` outright, so a probe
+> using it passes for the wrong reason.
 
 ## Phase 4 — Poll core (the critical path)
 

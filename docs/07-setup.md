@@ -77,14 +77,22 @@ Google sign-in plugs into.
   browser, anyone can read every vote and every name. It never gets a
   `NEXT_PUBLIC_` prefix, and Gate 2 greps the built bundle to prove it didn't
 
-### 1.3 Turn on the Google provider (placeholder)
+### 1.3 Turn Email **off**, and Google on
 
 1. Left sidebar → **Authentication** → **Sign In / Providers**
-2. Find **Google**, toggle it **on**
-3. Leave Client ID and Secret empty — section 2 fills them
-4. Copy the **Callback URL (for OAuth)** shown in that panel. It looks like
+2. ⚠️ **Find Email and toggle it OFF.** It is **on by default**, and leaving it on
+   means anyone can create a real account by calling `POST /auth/v1/signup` directly
+   — the publishable key needed to do that ships in the browser bundle by design.
+   Building no password UI does not close that door. Verified against this project:
+   a signup with an arbitrary address created a genuine user row.
+
+   MaxPoll has exactly one door, and it's Google. This is the toggle that makes the
+   "no password surface" claim actually true.
+3. Find **Google**, toggle it **on**
+4. Leave Client ID and Secret empty — section 2 fills them
+5. Copy the **Callback URL (for OAuth)** shown in that panel. It looks like
    `https://<your-ref>.supabase.co/auth/v1/callback`. Google needs this exact string
-5. **Save**
+6. **Save**
 
 ```
 === SEND ME AFTER SECTION 1 ===

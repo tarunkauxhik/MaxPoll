@@ -112,6 +112,22 @@ Audience / Clients / Data Access**. Direct link:
   publishing to Production isn't possible until there's a real domain. Testing mode
   works fully; only listed test users (up to 100) can sign in
 
+### Supabase enables email+password signup by default — we had to turn it off
+A fresh project has the **Email** provider on with `disable_signup: false`. Building
+no password UI does **not** close it: `POST /auth/v1/signup` is live, and the
+publishable key needed to call it ships in the browser bundle by design.
+
+Verified on the real project, not assumed — a signup with an arbitrary email created
+a genuine `auth.users` row (test user deleted immediately afterwards, project back
+to zero users).
+
+That directly contradicts the "no password surface" design decision. It's a spam
+vector, and it produces accounts that can never complete onboarding. **Turn Email
+off in the dashboard**; Google must be the only provider.
+
+Note: Supabase rejects `@example.com` as `email_address_invalid`, so a test that uses
+it will pass for the wrong reason and look like the hole is closed.
+
 ### Razorpay
 **Account & Settings → API Keys** (under *Website and app settings*) → Generate Key.
 Test mode needs no KYC. **The key secret is displayed once and is never retrievable** —
