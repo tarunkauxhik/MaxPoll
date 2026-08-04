@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MaxPoll — landing, activity, profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFAF7; --card:#fff; --ink:#111114; --muted:#8A8A94; --line:#E6E5E0;
+  --gold:#F5B324; --violet:#6B4EFF; --violet-soft:#EFEBFF; --heat:#E8452C; --heat-soft:#FDECE9;
+  --r:14px; --ease:cubic-bezier(.22,1,.36,1);
+  --shadow:0 1px 2px rgba(17,17,20,.05),0 8px 24px -12px rgba(17,17,20,.12);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#E9E8E3;font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px;
+  color:var(--ink);-webkit-font-smoothing:antialiased;padding:20px 12px 60px;
+  display:flex;flex-direction:column;align-items:center}
+.num{font-family:'Space Mono',monospace;font-variant-numeric:tabular-nums}
+.stage{width:100%;max-width:1180px}
+.head{text-align:center;margin-bottom:22px}
+.head h1{font-family:'Archivo';font-weight:900;font-size:21px;letter-spacing:-.03em;margin:0 0 4px}
+.head p{margin:0;color:#6d6d76;font-size:13px}
+.grid{display:flex;flex-wrap:wrap;gap:22px;justify-content:center}
+.frame{width:390px;flex:0 0 390px}
+.frame>.label{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#6d6d76;
+  margin:0 0 8px 4px;display:flex;gap:8px;align-items:center}
+.frame>.label span{background:var(--ink);color:#fff;border-radius:99px;padding:2px 7px;font-size:10px}
+.phone{height:800px;background:var(--paper);border-radius:30px;overflow:hidden;position:relative;
+  display:flex;flex-direction:column;border:1px solid rgba(17,17,20,.09);
+  box-shadow:0 2px 4px rgba(0,0,0,.06),0 24px 48px -20px rgba(0,0,0,.28)}
+.scroll{flex:1;overflow-y:auto}.scroll::-webkit-scrollbar{width:0}
+
+.top{position:sticky;top:0;z-index:20;background:rgba(250,250,247,.86);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:10px;min-height:54px}
+.top h2{font-family:'Archivo';font-weight:700;font-size:15px;margin:0;flex:1;letter-spacing:-.01em}
+.back{font-size:19px;width:24px}
+.wordmark{font-family:'Archivo';font-weight:900;font-size:19px;letter-spacing:-.05em}
+.wordmark i{font-style:normal;color:var(--violet)}
+
+.nav{border-top:1px solid var(--line);background:rgba(250,250,247,.94);backdrop-filter:blur(14px);
+  display:flex;padding:7px 6px 10px;gap:2px}
+.nav a{flex:1;text-align:center;text-decoration:none;color:var(--muted);font-size:10px;font-weight:600;
+  padding:5px 0;display:flex;flex-direction:column;align-items:center;gap:3px}
+.nav a .ic{font-size:17px;line-height:1}
+.nav a.on{color:var(--ink)}
+.nav a.create .ic{background:var(--ink);color:#fff;width:38px;height:32px;border-radius:11px;
+  display:grid;place-items:center;font-size:19px;margin-top:-4px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:var(--r);
+  font-family:'Space Grotesk';font-weight:700;font-size:15px;border:none;cursor:pointer;width:100%;
+  transition:transform .16s var(--ease)}
+.btn:active{transform:scale(.975)}
+.btn.pri{background:var(--ink);color:#fff}
+.btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn.vio{background:var(--violet);color:#fff;box-shadow:0 6px 20px -8px var(--violet)}
+.btn.sm{min-height:36px;font-size:13px;border-radius:10px;width:auto;padding:0 14px}
+
+/* ============ LANDING ============ */
+.land{padding:0;background:var(--paper)}
+.lnav{display:flex;align-items:center;padding:16px;gap:10px;border-bottom:1px solid var(--line)}
+.hero{padding:34px 22px 28px;text-align:center;position:relative;overflow:hidden}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--violet);background:var(--violet-soft);
+  padding:5px 11px;border-radius:99px;margin-bottom:16px}
+.hero h1{font-family:'Archivo';font-weight:900;font-size:41px;line-height:.96;letter-spacing:-.045em;margin:0 0 13px}
+.hero h1 em{font-style:normal;color:var(--violet)}
+.hero p{font-size:15px;color:#55555f;line-height:1.45;margin:0 auto 22px;max-width:290px}
+
+/* live demo board in hero = the thesis */
+.demo{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:13px;
+  box-shadow:var(--shadow);text-align:left;margin-bottom:20px}
+.demo .dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.demo .dt{font-family:'Archivo';font-weight:800;font-size:14px;letter-spacing:-.02em}
+.drow{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;margin-bottom:5px;
+  position:relative;overflow:hidden;background:var(--paper);transition:transform .5s var(--ease)}
+.drow .fill{position:absolute;inset:0 auto 0 0;background:var(--violet-soft)}
+.drow>*{position:relative;z-index:1}
+.drow .rk{font-family:'Space Mono';font-weight:700;font-size:13px;width:20px;color:var(--muted)}
+.drow .nm{flex:1;font-weight:600;font-size:13.5px}
+.drow .pc{font-family:'Space Mono';font-weight:700;font-size:13px}
+.drow.one{background:linear-gradient(180deg,#FFFCF3,#fff);border:1px solid rgba(245,179,36,.4)}
+.drow.one .rk{color:var(--gold)}.drow.one .fill{background:rgba(245,179,36,.14)}
+.mv{font-family:'Space Mono';font-size:9.5px;font-weight:700;padding:2px 5px;border-radius:5px}
+.mv.up{color:#0E8A4F;background:#E6F6EE}.mv.dn{color:var(--heat);background:var(--heat-soft)}
+.gapline{background:var(--violet-soft);color:var(--violet);border-radius:9px;padding:7px 11px;
+  font-size:11.5px;font-weight:600;margin-top:8px;text-align:left}
+.gapline b{font-family:'Space Mono'}
+
+.social{display:flex;justify-content:center;gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:8px}
+.social div{flex:1;padding:15px 6px;text-align:center;border-right:1px solid var(--line)}
+.social div:last-child{border:none}
+.social .v{font-family:'Space Mono';font-weight:700;font-size:19px;letter-spacing:-.03em}
+.social .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+
+.how{padding:26px 22px}
+.how h3{font-family:'Archivo';font-weight:800;font-size:20px;letter-spacing:-.03em;margin:0 0 18px;text-align:center}
+.step{display:flex;gap:13px;margin-bottom:18px;align-items:flex-start}
+.step .n{font-family:'Space Mono';font-weight:700;font-size:11px;color:var(--violet);background:var(--violet-soft);
+  width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:0 0 24px;margin-top:1px}
+.step .t{font-weight:700;font-size:14.5px;margin-bottom:2px;letter-spacing:-.01em}
+.step .d{font-size:13px;color:var(--muted);line-height:1.4}
+.cta{padding:0 22px 30px}
+.foot{padding:20px 22px 26px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);text-align:center}
+
+/* ============ TIMER — the eye-catcher ============ */
+.timerbar{display:flex;align-items:center;gap:11px;background:var(--ink);color:#fff;
+  border-radius:14px;padding:11px 14px;margin:0 12px 12px;position:relative;overflow:hidden}
+.timerbar .ring{width:34px;height:34px;flex:0 0 34px;position:relative}
+.timerbar .ring svg{transform:rotate(-90deg)}
+.timerbar .ring .t{position:absolute;inset:0;display:grid;place-items:center;
+  font-family:'Space Mono';font-size:9px;font-weight:700}
+.timerbar .lab{flex:1}
+.timerbar .lab .k{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:700}
+.timerbar .lab .v{font-family:'Space Mono';font-weight:700;font-size:19px;letter-spacing:-.03em;margin-top:1px}
+.timerbar .lab .v em{font-style:normal;color:var(--gold)}
+.timerbar .prog{position:absolute;left:0;bottom:0;height:3px;background:var(--heat)}
+.timerbar.urgent{background:linear-gradient(100deg,#2A0F0A,#7A1E10)}
+.pulse{animation:pl 2s infinite}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ============ FEED ============ */
+.feed{padding:14px;display:flex;flex-direction:column;gap:12px}
+.sectlabel{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:7px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.pcard .space{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--violet);
+  margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.pcard h3{font-family:'Archivo';font-weight:800;font-size:17px;line-height:1.15;margin:0 0 11px;letter-spacing:-.025em}
+.counts{display:flex;gap:7px;margin-bottom:11px}
+.chip{font-family:'Space Mono';font-size:11px;font-weight:700;background:var(--paper);border:1px solid var(--line);
+  padding:4px 9px;border-radius:8px;display:flex;align-items:center;gap:5px}
+.chip.hot{background:var(--heat-soft);border-color:rgba(232,69,44,.25);color:var(--heat)}
+.mini{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+.mrow{display:flex;align-items:center;gap:8px;font-size:13px}
+.mrow .r{width:14px;color:var(--muted);font-size:11px;font-weight:700}
+.mrow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .bar{height:5px;border-radius:99px;background:var(--line);flex:0 0 70px;overflow:hidden}
+.mrow .bar i{display:block;height:100%;background:var(--ink)}
+.mrow.g .bar i{background:var(--gold)}
+.livedot{width:6px;height:6px;border-radius:99px;background:var(--violet);position:relative;display:inline-block}
+.livedot::after{content:'';position:absolute;inset:-3px;border-radius:99px;background:var(--violet);opacity:.3;animation:pu 1.9s infinite}
+@keyframes pu{0%{transform:scale(.6);opacity:.4}70%{transform:scale(1.6);opacity:0}100%{opacity:0}}
+
+/* activity button in header */
+.actbtn{position:relative;width:38px;height:38px;border-radius:12px;background:var(--card);
+  border:1px solid var(--line);display:grid;place-items:center;font-size:16px}
+.dot{position:absolute;top:-3px;right:-3px;background:var(--heat);color:#fff;font-family:'Space Mono';
+  font-size:9px;font-weight:700;min-width:17px;height:17px;border-radius:99px;display:grid;place-items:center;
+  border:2px solid var(--paper);padding:0 3px}
+
+/* ============ ACTIVITY ============ */
+.act{padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+.arow{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px;
+  display:flex;gap:11px;align-items:flex-start;box-shadow:var(--shadow)}
+.arow .ic{width:34px;height:34px;border-radius:11px;flex:0 0 34px;display:grid;place-items:center;font-size:15px;background:var(--paper)}
+.arow .bd{flex:1;min-width:0}
+.arow .tx{font-size:13.5px;line-height:1.4}
+.arow .tx b{font-weight:700}
+.arow .tm{font-size:10.5px;color:var(--muted);margin-top:4px;font-weight:600}
+.arow.pay{border-color:rgba(107,78,255,.35);background:linear-gradient(180deg,#F8F6FF,#fff)}
+.arow.pay .ic{background:var(--violet-soft)}
+.blurnames{margin-top:9px;display:flex;gap:5px;flex-wrap:wrap}
+.nchip{font-size:11.5px;font-weight:600;background:var(--paper);border:1px solid var(--line);
+  padding:4px 9px;border-radius:8px}
+.nchip.lock{filter:blur(4px);user-select:none}
+.unlock{margin-top:10px;display:flex;align-items:center;gap:8px}
+
+/* ============ PROFILE ============ */
+.phero{padding:22px 16px 16px;text-align:center;border-bottom:1px solid var(--line)}
+.pname{font-family:'Archivo';font-weight:900;font-size:24px;letter-spacing:-.035em;margin:0}
+.phandle{color:var(--violet);font-size:13px;font-weight:600;margin-top:3px}
+.pbio{font-size:13px;color:#55555f;margin-top:9px;line-height:1.45}
+.socrow{display:flex;gap:7px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.soc{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 11px;
+  border-radius:99px;border:1px solid var(--line);background:var(--card)}
+.badges{display:flex;gap:6px;justify-content:center;margin-top:11px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:5px 10px;
+  border-radius:99px;border:1px solid var(--line);background:var(--card)}
+.badge.g{border-color:rgba(245,179,36,.5);background:#FFFCF3;color:#9A6E05}
+.follows{display:flex;border-bottom:1px solid var(--line)}
+.follows div{flex:1;padding:14px 6px;text-align:center;border-right:1px solid var(--line)}
+.follows div:last-child{border:none}
+.follows .v{font-family:'Space Mono';font-weight:700;font-size:20px;letter-spacing:-.03em}
+.follows .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.pactions{padding:13px 14px;display:flex;gap:8px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;padding:0 14px;border-bottom:1px solid var(--line);gap:18px}
+.tabs a{padding:12px 0;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs a.on{color:var(--ink);border-color:var(--ink)}
+
+/* ============ JOIN SPACE GATE ============ */
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;
+  padding:22px 18px;box-shadow:0 -12px 40px -14px rgba(17,17,20,.3);border-top:1px solid var(--line);z-index:40}
+.grab{width:36px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 16px}
+.sheet h3{font-family:'Archivo';font-weight:800;font-size:21px;margin:0 0 6px;letter-spacing:-.03em}
+.sheet p.l{margin:0 0 16px;font-size:13.5px;color:var(--muted);line-height:1.45}
+.spaceprev{display:flex;align-items:center;gap:12px;background:var(--paper);border-radius:14px;padding:13px;margin-bottom:16px}
+.sav{width:46px;height:46px;border-radius:13px;flex:0 0 46px;display:grid;place-items:center;
+  font-family:'Archivo';font-weight:900;color:#fff;letter-spacing:-.04em}
+.perks{list-style:none;padding:0;margin:0 0 16px;display:flex;flex-direction:column;gap:9px}
+.perks li{display:flex;gap:9px;font-size:13.5px}
+.perks .t{color:var(--violet);font-weight:700}
+.pricerow{display:flex;align-items:baseline;gap:7px;margin-bottom:13px}
+.amt{font-family:'Space Mono';font-weight:700;font-size:31px;letter-spacing:-.04em}
+.per{font-size:12.5px;color:var(--muted)}
+.tiny{font-size:11px;color:var(--muted);text-align:center;margin-top:11px}
+.discl{font-size:11px;color:var(--muted);background:var(--paper);border:1px solid var(--line);
+  border-radius:10px;padding:9px 11px;margin:0 12px 12px;display:flex;gap:7px;line-height:1.4}
+
+.notes{max-width:800px;margin:44px auto 0;background:var(--paper);border-radius:20px;padding:26px 28px;border:1px solid rgba(17,17,20,.09)}
+.notes h2{font-family:'Archivo';font-weight:900;font-size:19px;margin:0 0 4px;letter-spacing:-.03em}
+.notes h3{font-family:'Archivo';font-weight:700;font-size:14px;margin:22px 0 7px}
+.notes p,.notes li{font-size:13.5px;line-height:1.55;color:#3A3A42}
+.notes ul{padding-left:18px}
+.notes code{font-family:'Space Mono';font-size:12px;background:#EDECE7;padding:1px 5px;border-radius:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:440px){.frame{flex:0 0 100%;width:100%}}
+</style>
+</head>
+<body>
+<div class="stage">
+<div class="head">
+  <h1>MaxPoll — landing, activity, social profile</h1>
+  <p>Premium feel: one signature motion, disciplined colour, iOS emoji only.</p>
+</div>
+
+<div class="grid">
+
+<!-- ============ 1. LANDING (logged out) ============ -->
+<div class="frame">
+  <p class="label"><span>01</span> maxpoll.vercel.app — logged out</p>
+  <div class="phone">
+    <div class="scroll land">
+      <div class="lnav">
+        <div class="wordmark">Max<i>Poll</i></div>
+        <div style="flex:1"></div>
+        <button class="btn sm sec">Log in</button>
+        <button class="btn sm pri">Sign up</button>
+      </div>
+
+      <div class="hero">
+        <span class="eyebrow"><span class="livedot"></span> 2,412 voting right now</span>
+        <h1>Settle it.<br>On the <em>record</em>.</h1>
+        <p>Make a poll about anything. Watch names climb. Everyone sees who's winning — live.</p>
+
+        <div class="demo">
+          <div class="dh">
+            <span class="dt">Best 1st year teacher</span>
+            <span class="chip hot">🔥 4h left</span>
+          </div>
+          <div class="drow one"><div class="fill" style="width:34%"></div><span class="rk">01</span><span class="nm">Rajma Sir</span><span class="pc">34%</span></div>
+          <div class="drow"><div class="fill" style="width:24%"></div><span class="rk">02</span><span class="nm">Verma Ma'am</span><span class="mv up">▲1</span><span class="pc">24%</span></div>
+          <div class="drow"><div class="fill" style="width:19%"></div><span class="rk">03</span><span class="nm">Anand Sir</span><span class="mv dn">▼1</span><span class="pc">19%</span></div>
+          <div class="gapline">↑ <b>17 votes</b> and Anand Sir takes #2</div>
+        </div>
+
+        <button class="btn pri">Start a poll — it's free</button>
+      </div>
+
+      <div class="social">
+        <div><div class="v">84k</div><div class="k">Voters</div></div>
+        <div><div class="v">12k</div><div class="k">Polls</div></div>
+        <div><div class="v">340</div><div class="k">Spaces</div></div>
+      </div>
+
+      <div class="how">
+        <h3>How it works</h3>
+        <div class="step"><span class="n">1</span><div><div class="t">Pick a Space</div><div class="d">Your college, your office, your fandom — or start one.</div></div></div>
+        <div class="step"><span class="n">2</span><div><div class="t">Make the poll</div><div class="d">Add a few names. Anyone can add more.</div></div></div>
+        <div class="step"><span class="n">3</span><div><div class="t">Drop the link</div><div class="d">Paste it in the group. Watch the board move live.</div></div></div>
+        <div class="step"><span class="n">4</span><div><div class="t">See who voted</div><div class="d">Every vote is on the record. Unlock the full list any time.</div></div></div>
+      </div>
+
+      <div class="cta"><button class="btn vio">Continue with Google</button></div>
+      <div class="foot">Votes on MaxPoll are public. 18+.<br>maxpoll.vercel.app</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 2. FEED (logged in) ============ -->
+<div class="frame">
+  <p class="label"><span>02</span> Home feed — after sign up</p>
+  <div class="phone">
+    <div class="top">
+      <div class="wordmark">Max<i>Poll</i></div>
+      <div style="flex:1"></div>
+      <div class="actbtn">🔔<span class="dot">7</span></div>
+    </div>
+    <div class="scroll">
+      <div class="feed">
+        <div class="sectlabel">🔥 Top performing today</div>
+
+        <div class="pcard">
+          <div class="space"><span class="livedot"></span> DTU · 1st year</div>
+          <h3>Best 1st year teacher</h3>
+          <div class="counts">
+            <span class="chip">🗳️ 340 votes</span>
+            <span class="chip">👥 28 options</span>
+            <span class="chip hot">⏳ 4h left</span>
+          </div>
+          <div class="mini">
+            <div class="mrow g"><span class="r num">1</span><span class="nm">Rajma Sir</span><span class="bar"><i style="width:88%"></i></span></div>
+            <div class="mrow"><span class="r num">2</span><span class="nm">Verma Ma'am</span><span class="bar"><i style="width:61%"></i></span></div>
+            <div class="mrow"><span class="r num">3</span><span class="nm">Anand Sir</span><span class="bar"><i style="width:44%"></i></span></div>
+          </div>
+        </div>
+
+        <div class="pcard">
+          <div class="space">INDIA</div>
+          <h3>Most overrated Indian rapper</h3>
+          <div class="counts">
+            <span class="chip">🗳️ 12,408 votes</span>
+            <span class="chip">👥 61 options</span>
+            <span class="chip">⏳ 2d left</span>
+          </div>
+          <div class="mini">
+            <div class="mrow g"><span class="r num">1</span><span class="nm">🔒 vote to reveal</span><span class="bar"><i style="width:0"></i></span></div>
+          </div>
+        </div>
+
+        <div class="sectlabel">📈 Moving fast</div>
+        <div class="pcard">
+          <div class="space"><span class="livedot"></span> NSUT</div>
+          <h3>Best canteen on campus</h3>
+          <div class="counts">
+            <span class="chip">🗳️ 891 votes</span>
+            <span class="chip">👥 14 options</span>
+            <span class="chip hot">⚡ gap closing</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a class="on"><span class="ic">◆</span>Home</a>
+      <a><span class="ic">◇</span>Spaces</a>
+      <a class="create"><span class="ic">+</span></a>
+      <a><span class="ic">○</span>Profile</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ============ 3. JOIN SPACE GATE ============ -->
+<div class="frame">
+  <p class="label"><span>03</span> Join Space to vote</p>
+  <div class="phone">
+    <div class="top"><span class="back">←</span><h2>DTU · 1st year</h2></div>
+    <div class="scroll">
+      <div style="padding:16px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--violet);margin-bottom:7px">DTU · 1ST YEAR</div>
+        <h1 style="font-family:'Archivo';font-weight:900;font-size:26px;letter-spacing:-.04em;line-height:1.05;margin:0 0 12px">Best 1st year teacher</h1>
+        <div class="counts"><span class="chip">🗳️ 340 votes</span><span class="chip">👥 28 options</span></div>
+      </div>
+
+      <!-- TIMER: the eye-catcher -->
+      <div class="timerbar">
+        <div class="ring">
+          <svg width="34" height="34"><circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="3"/>
+          <circle cx="17" cy="17" r="14" fill="none" stroke="#F5B324" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="88" stroke-dashoffset="58"/></svg>
+          <div class="t">34%</div>
+        </div>
+        <div class="lab">
+          <div class="k">Voting closes in</div>
+          <div class="v">04<em>:</em>12<em>:</em>07</div>
+        </div>
+        <span style="font-size:19px" class="pulse">⏳</span>
+        <div class="prog" style="width:34%"></div>
+      </div>
+
+      <div style="height:200px"></div>
+    </div>
+
+    <div class="sheet">
+      <div class="grab"></div>
+      <h3>Join DTU to vote 🎓</h3>
+      <p class="l">You're voting inside a Space. Joining adds it to your feed.</p>
+      <div class="spaceprev">
+        <div class="sav" style="background:var(--ink)">DT</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px">DTU</div>
+          <div style="font-size:12px;color:var(--muted)"><span class="num">1,240</span> members · <span class="num">18</span> live polls</div>
+        </div>
+        <span class="livedot"></span>
+      </div>
+      <div class="discl" style="margin:0 0 14px">🔓 <span>Votes on MaxPoll are public. Your name will be visible on this poll.</span></div>
+      <button class="btn pri">Join DTU &amp; cast my vote</button>
+      <p class="tiny">Free. Leave any time.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 4. ACTIVITY ============ -->
+<div class="frame">
+  <p class="label"><span>04</span> Activity — the return engine</p>
+  <div class="phone">
+    <div class="top"><span class="back">←</span><h2>Activity</h2><span style="font-size:12px;color:var(--violet);font-weight:700">Mark read</span></div>
+    <div class="scroll">
+      <div class="act">
+
+        <div class="arow pay">
+          <div class="ic">👀</div>
+          <div class="bd">
+            <div class="tx"><b>9 people</b> voted exactly like you on <b>Best 1st year teacher</b>.</div>
+            <div class="blurnames">
+              <span class="nchip">@sneha</span>
+              <span class="nchip lock">@rahul.99</span>
+              <span class="nchip lock">@ipsita</span>
+              <span class="nchip lock">@dev</span>
+              <span class="nchip lock">+6</span>
+            </div>
+            <div class="unlock">
+              <button class="btn vio sm" style="width:auto">Unlock names · ₹9</button>
+            </div>
+            <div class="tm">2h ago</div>
+          </div>
+        </div>
+
+        <div class="arow">
+          <div class="ic">🏆</div>
+          <div class="bd">
+            <div class="tx"><b>Best canteen on campus</b> closed. <b>Night canteen</b> won with 41%.</div>
+            <div class="tm">Yesterday · NSUT</div>
+          </div>
+        </div>
+
+        <div class="arow">
+          <div class="ic">📈</div>
+          <div class="bd">
+            <div class="tx">Your option <b>Anand Sir</b> climbed to <b>#3</b>. Only 17 votes from #2.</div>
+            <div class="tm">3h ago</div>
+          </div>
+        </div>
+
+        <div class="arow">
+          <div class="ic">💬</div>
+          <div class="bd">
+            <div class="tx"><b>@rohan.k</b> replied to you in <b>Best 1st year teacher</b> chat.</div>
+            <div class="tm">4h ago</div>
+          </div>
+        </div>
+
+        <div class="arow">
+          <div class="ic">🔥</div>
+          <div class="bd">
+            <div class="tx"><b>47 people</b> are chatting on a poll you voted in right now.</div>
+            <div class="tm">Live</div>
+          </div>
+        </div>
+
+        <div class="arow">
+          <div class="ic">👤</div>
+          <div class="bd">
+            <div class="tx"><b>@ipsita</b> started following you.</div>
+            <div class="tm">Yesterday</div>
+          </div>
+        </div>
+
+        <div class="arow">
+          <div class="ic">⭐</div>
+          <div class="bd">
+            <div class="tx">You earned <b>Added-Won</b> — an option you added finished #1.</div>
+            <div class="tm">2d ago</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <nav class="nav">
+      <a class="on"><span class="ic">◆</span>Home</a><a><span class="ic">◇</span>Spaces</a>
+      <a class="create"><span class="ic">+</span></a><a><span class="ic">○</span>Profile</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ============ 5. PROFILE ============ -->
+<div class="frame">
+  <p class="label"><span>05</span> Profile — social graph, shareable</p>
+  <div class="phone">
+    <div class="top"><h2>Profile</h2><div style="flex:1"></div><span style="font-size:16px">🔗</span><span style="font-size:16px">⚙️</span></div>
+    <div class="scroll">
+      <div class="phero">
+        <h1 class="pname">Arjun M.</h1>
+        <div class="phandle">@arjun.exe</div>
+        <p class="pbio">first year · certified canteen critic 🍜</p>
+        <div class="socrow">
+          <span class="soc">📷 @arjun.exe</span>
+          <span class="soc">𝕏 @arjunm</span>
+        </div>
+        <div class="badges">
+          <span class="badge g">🏆 Top Creator · DTU</span>
+          <span class="badge">⭐ Added-Won ×3</span>
+        </div>
+      </div>
+      <div class="follows">
+        <div><div class="v">1,204</div><div class="k">Followers</div></div>
+        <div><div class="v">312</div><div class="k">Following</div></div>
+        <div><div class="v">14</div><div class="k">Polls</div></div>
+      </div>
+      <div class="pactions">
+        <button class="btn pri sm" style="flex:1;min-height:42px">Follow</button>
+        <button class="btn sec sm" style="flex:1;min-height:42px">Share profile</button>
+      </div>
+      <div class="tabs"><a class="on">Created</a><a>Voted</a><a>Badges</a></div>
+      <div class="feed" style="padding-top:12px">
+        <div class="pcard">
+          <div class="space">DTU · 1st year</div>
+          <h3 style="font-size:15px">Best 1st year teacher</h3>
+          <div class="counts"><span class="chip">🗳️ 341</span><span class="chip">👥 28</span><span class="chip hot">⏳ 4h</span></div>
+        </div>
+        <div class="pcard">
+          <div class="space">DTU</div>
+          <h3 style="font-size:15px">Worst subject this sem</h3>
+          <div class="counts"><span class="chip">🗳️ 88</span><span class="chip">👥 9</span><span class="chip">✅ closed</span></div>
+        </div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a><span class="ic">◆</span>Home</a><a><span class="ic">◇</span>Spaces</a>
+      <a class="create"><span class="ic">+</span></a><a class="on"><span class="ic">●</span>Profile</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ============ 6. PAYWALL — NAMES ============ -->
+<div class="frame">
+  <p class="label"><span>06</span> ₹9 — the names</p>
+  <div class="phone">
+    <div class="top"><span class="back">←</span><h2>Best 1st year teacher</h2></div>
+    <div class="scroll">
+      <div class="discl">🔓 <span>Votes on this poll are public — every voter agreed before voting.</span></div>
+      <div style="padding:0 12px">
+        <div class="drow one" style="padding:13px;margin-bottom:7px"><div class="fill" style="width:34%"></div>
+          <span class="rk">01</span><span class="nm" style="font-size:15px">Rajma Sir</span><span class="pc">34%</span></div>
+        <div style="background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Voted for Rajma Sir · 116</div>
+          <div class="blurnames">
+            <span class="nchip">@sneha</span><span class="nchip">@rohan.k</span>
+            <span class="nchip lock">@dev.rj</span><span class="nchip lock">@ipsita</span>
+            <span class="nchip lock">@aman</span><span class="nchip lock">@karan</span>
+            <span class="nchip lock">@nid</span><span class="nchip lock">+109</span>
+          </div>
+        </div>
+      </div>
+      <div style="height:250px"></div>
+    </div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <h3>See who voted 👀</h3>
+      <p class="l">Names on every option, for this poll.</p>
+      <ul class="perks">
+        <li><span class="t">✓</span> Full voter list on all 28 options</li>
+        <li><span class="t">✓</span> Exact counts &amp; the whole under-list</li>
+        <li><span class="t">✓</span> Who voted the same as you</li>
+      </ul>
+      <div class="pricerow"><span class="amt">₹9</span><span class="per">one time · this poll</span></div>
+      <button class="btn vio">Pay ₹9 with UPI</button>
+      <p class="tiny"><b style="color:var(--violet)">₹99/month</b> unlocks every poll + unlimited creating</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="notes">
+  <h2>Design decisions</h2>
+
+  <h3>The landing page leads with a live board, not a headline</h3>
+  <p>The hero <i>is</i> the product — a working leaderboard with a real gap line. Someone who has never heard of MaxPoll understands it in two seconds without reading. The "2,412 voting right now" eyebrow does the social proof job that a wall of feature copy usually fails at.</p>
+
+  <h3>The timer</h3>
+  <p>Inverted to dark — it's the only dark block on a paper-white page, so it pulls the eye without needing colour noise. A gold progress ring plus a monospaced <code>04:12:07</code> countdown, with a red bar draining along the bottom edge. Under one hour the whole block shifts to a deep red gradient and the ⏳ pulses. Countdown digits are monospaced so the block doesn't twitch every second.</p>
+
+  <h3>Counts everywhere, detail behind ₹9</h3>
+  <p>Every card shows <code>🗳️ 340 votes</code> and <code>👥 28 options</code>. Totals are free — they're proof of life and they create the urge. Per-option splits and names are the paid layer.</p>
+
+  <h3>Activity is the return engine</h3>
+  <p>With no push notifications on web, this screen is what pulls people back — so the badge count sits in the header on every screen. The highest-converting row is <b>"9 people voted exactly like you"</b> with two names visible and the rest blurred: it's personal, it's curiosity about specific people, and one name showing proves it's real rather than a tease.</p>
+
+  <h3>Premium comes from restraint</h3>
+  <ul>
+    <li><b>One motion.</b> Rank rows sliding on recompute. Everything else is still. Scattered animation reads as amateur; one orchestrated moment reads as considered.</li>
+    <li><b>Three colours with jobs.</b> Gold = rank 1. Violet = movement. Red = time. Nothing decorative.</li>
+    <li><b>Archivo 900</b> for titles at tight tracking, monospace for every number.</li>
+    <li><b>Real numbers everywhere</b> — 1,240 members, 18 live polls, 2,412 voting. Density signals scale.</li>
+    <li><b>iOS emoji only</b> — set <code>font-family:'Apple Color Emoji'</code> first, and ship an SBIX fallback so Android renders the same glyphs. Mixed emoji sets are the fastest way to look like a side project.</li>
+  </ul>
+
+  <h3>The disclosure line is load-bearing</h3>
+  <p>🔓 <i>"Votes on MaxPoll are public. Your name will be visible on this poll."</i> — on the landing page, in the join sheet before the first vote, and on the poll itself. This is what separates selling depth from selling a betrayal, and it's the difference between a business and an FTC case. Do not make it small.</p>
+</div>
+</div>
+</body>
+</html>
