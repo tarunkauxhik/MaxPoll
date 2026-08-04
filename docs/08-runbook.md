@@ -69,6 +69,7 @@ Run one at a time if you prefer: `pnpm build` · `pnpm lint` · `pnpm typecheck`
 | Symptom | Fix |
 |---|---|
 | `EADDRINUSE :3000` | Another dev server is running. Close it, or `pnpm dev -- -p 3001` |
+| Dev server dies with a bare `[ELIFECYCLE] ... exit code 1` | A `pnpm build` ran while it was live — both write `.next/` and the locks collide on Windows. Stop the dev server before building |
 | Fonts look wrong on first load | Normal on a cold start — Next fetches and self-hosts them once, then caches |
 | Changes not appearing | `rm -rf .next && pnpm dev` |
 | `pnpm: command not found` | It's bundled with Node here — reopen the terminal |

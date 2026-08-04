@@ -40,6 +40,17 @@ version after any scaffold.
 In Next 16 it's the default bundler, so `package.json` scripts are plain `next dev` /
 `next build` — the `--turbopack` flag from older guides is gone.
 
+### Don't run `pnpm build` while `pnpm dev` is running
+On Windows both write to `.next/`, and the file locks collide — the dev server dies
+with a bare `[ELIFECYCLE] Command failed with exit code 1` and no explanation. Stop
+the dev server first, or run the build in a separate checkout.
+
+### The bottom nav pointed at three routes that didn't exist
+`/spaces`, `/create` and `/profile` 404'd, which meant Gate 1 couldn't actually be
+verified: the nav's `aria-current` active state has nothing to activate, and the
+1440px left-rail check lands on a 404 page that doesn't render `AppShell` at all.
+Fixed with three placeholder pages. **A shell whose navigation 404s isn't a shell.**
+
 ### `next dev` rewrites CLAUDE.md
 It appends an agent-rules block on every run and re-creates it if removed. Committed
 rather than fought. `agentRules: false` in `next.config.ts` disables it, but the block

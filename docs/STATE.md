@@ -71,6 +71,8 @@ pnpm check   # build + lint + typecheck + contrast
 5. The two `.num` rows (`1111111111` / `8888888888`) are exactly the same width
 6. **Tab** reaches every option row; the Accessibility pane shows `button`, not
    `generic`; Enter activates it
+6b. Tap each nav item — all four load (they're placeholders until Phase 7) and the
+   active one goes dark. No 404s
 7. Focus rings are visible on **both** light and dark surfaces (try the Primary button)
 8. DevTools → Rendering → emulate `prefers-reduced-motion`: the live dot stops pulsing
    **and** the skeleton shimmer stops
