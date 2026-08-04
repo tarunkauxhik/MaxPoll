@@ -1,10 +1,13 @@
 /* ============================================================
    MaxPoll — design tokens + component CSS
-   Tokens: RefDocs/05-ui-spec.md §1 (verbatim).
-   Components: ported from RefDocs/maxpoll-prototype.html and
-   maxpoll-landing-activity.html, the visual source of truth.
-   Where the two prototypes disagree, doc 05 §4 wins — each such
-   case is marked `doc05:` inline.
+
+   THIS FILE IS THE VISUAL SOURCE OF TRUTH.
+   docs/04-design.md explains what these values mean and why.
+   Where the two disagree, this file is what ships.
+
+   Every text/background pair here is >=4.5:1 (WCAG AA), measured.
+   Two tokens failed that once — see docs/DECISIONS.md C1 before
+   changing --muted or using --violet as text.
    ============================================================ */
 
 :root {

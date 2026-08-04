@@ -1,55 +1,61 @@
 # MaxPoll — read this first
 
-Live poll/leaderboard web app. India, Gen Z, 18+. Ships to `maxpoll.vercel.app`
-on Vercel Hobby + Supabase Free. Budget is ₹0; latency is a feature.
+Live poll/leaderboard web app. India, Gen Z, 18+. Ships to `maxpoll.vercel.app` on
+Vercel Hobby + Supabase Free. Budget is ₹0; latency is a feature.
 
-**Start every session by reading [docs/00-STATE.md](docs/00-STATE.md)** — current phase,
-what's done, what's next, what's blocked.
+**Start every session by reading [docs/STATE.md](docs/STATE.md)** — current phase,
+what's done, what's next, what's blocked. Then [docs/README.md](docs/README.md) tells
+you which file answers which question.
 
 | Doc | What's in it |
 |---|---|
-| [docs/00-STATE.md](docs/00-STATE.md) | Live status. Update at every gate. |
-| [docs/01-DECISIONS.md](docs/01-DECISIONS.md) | Why things are the way they are. Supersedes RefDocs where they conflict. |
-| [docs/02-SETUP.md](docs/02-SETUP.md) | Accounts, env vars, tooling. |
-| [docs/03-LEARNINGS.md](docs/03-LEARNINGS.md) | Gotchas found the hard way. |
-| `RefDocs/` | Original spec drafts. Not final — 01-DECISIONS overrides them. |
+| [docs/STATE.md](docs/STATE.md) | Live status. Update at every gate |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Why things are as they are. **Overrides every other doc** |
+| [docs/LEARNINGS.md](docs/LEARNINGS.md) | Gotchas, and the verified free-tier numbers |
+| [docs/06-build-plan.md](docs/06-build-plan.md) | What to build next, and the gate that says it's done |
+| [docs/07-setup.md](docs/07-setup.md) | External service setup, click-by-click |
+| [docs/08-runbook.md](docs/08-runbook.md) | Run · test · deploy · tear down |
 
 ## Non-negotiables
 
-- **Visual source of truth** is `RefDocs/maxpoll-prototype.html` +
-  `maxpoll-landing-activity.html`. Do not invent UI, colours, or layouts.
+- **Visual source of truth** is `app/globals.css`, explained by
+  [docs/04-design.md](docs/04-design.md). Do not invent UI, colours, or layouts.
   Unspecified anywhere → ask, don't improvise.
 - **Every number** wrapped in `.num` (Space Mono, tabular figures). Live counts
   jitter otherwise, and that is the fastest way a leaderboard looks cheap.
 - **Colour has one job each.** Gold = rank 1 only. Violet = movement only.
-  Red = time pressure only. Reaching for a colour to decorate → use `--line`
-  or `--muted`.
-- **Never `count(*)` for vote counts.** Denormalised counters, incremented in
-  the same transaction as the insert.
+  Red = time pressure only. Reaching for a colour to decorate → use `--line` or
+  `--muted`.
+- **Contrast is measured, not eyeballed.** Every text pair ≥4.5:1. Two tokens already
+  failed this once — see DECISIONS C1.
+- **Interactive elements are real `<button>` / `<a>`.** Never a clickable div.
+- **Never `count(*)` for vote counts.** Denormalised counters, incremented in the same
+  transaction as the insert.
 - **Ranks computed live inside the cached board route.** No cron for this, ever.
-- **One cron in `vercel.json` at most**, once daily. Any sub-daily schedule
-  fails the deploy on Hobby.
-- **Voter names gated server-side by entitlement.** Never sent to the client
-  and blurred in CSS — anyone can open DevTools.
+- **The middleware matcher must exclude cached routes.** A `Set-Cookie` on the board
+  response silently disables edge caching with no error — DECISIONS A2.
+- **One cron in `vercel.json` at most**, once daily. Any sub-daily schedule fails the
+  deploy on Hobby.
+- **Voter names gated server-side by entitlement.** Never sent to the client and
+  blurred in CSS — anyone can open DevTools.
 - **No password flows.** Google OAuth only. No forgot/reset password.
 - **Payments read `NEXT_PUBLIC_PAYMENTS_MODE`, fail closed to `coming_soon`.**
 
 ## Working rules
 
-- **One phase per session**, per `RefDocs/07-build-guide.md`. Stop at the gate,
-  hand over the verification steps, `/clear`, then continue.
+- **One phase per session.** Stop at the gate, hand over the verification steps,
+  `/clear`, then continue.
 - **pnpm**, not npm. No global installs — check what's on the machine first.
-- Commit per logical unit, push at each gate. Conventional commit subjects.
-- Ponytail is installed and applies: skip → reuse → stdlib → platform →
-  existing dep → one line → minimum. No dependency added before the phase that
-  actually needs it.
+- Commit per logical unit; **push at gates, not at commits** (every push builds).
+- Update `STATE.md` at every gate, and `LEARNINGS.md` whenever something costs time.
+- Ponytail applies: skip → reuse → stdlib → platform → existing dep → one line →
+  minimum. No dependency added before the phase that needs it.
 
 ## Commands
 
 ```bash
-pnpm dev      # localhost:3000
-pnpm build    # must pass before any commit that touches app code
-pnpm lint
+pnpm dev                                          # localhost:3000
+pnpm build && pnpm lint && pnpm exec tsc --noEmit # all three before committing
 ```
 
 <!-- BEGIN:nextjs-agent-rules -->
