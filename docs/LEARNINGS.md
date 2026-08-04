@@ -128,13 +128,76 @@ off in the dashboard**; Google must be the only provider.
 Note: Supabase rejects `@example.com` as `email_address_invalid`, so a test that uses
 it will pass for the wrong reason and look like the hole is closed.
 
-### Razorpay
+### UPI
+Zero MDR on P2M for small merchants, so ₹9 nets ₹9. The 2026 parliamentary push to
+reintroduce MDR is scoped to merchants above ~₹1 crore turnover.
+
+The NPCI linking spec has a **`tr` field** for the merchant's own transaction
+reference. Use it. `tn` is a free-text note the payer can edit, so anything read back
+as identification must ride `tr`, and the ref must be short and alphanumeric — a UUID
+does not fit.
+
+The `am` (amount) in an intent URI is a **hint**: several UPI apps let the payer edit
+it, and a static QR carries no amount at all. Manual pipelines cannot enforce price in
+software.
+
+### Razorpay (unused — deferred, DECISIONS D1)
 **Account & Settings → API Keys** (under *Website and app settings*) → Generate Key.
 Test mode needs no KYC. **The key secret is displayed once and is never retrievable** —
 regenerating invalidates the old pair.
 
 ### Next.js
 16.3.0 current as of 2026-08-03.
+
+---
+
+## Phase 2 — database
+
+### Connection strings: percent-encode the password
+The DB password contained `/` and `&`. Both are structural in a URI, so the
+unencoded string silently truncates and you get `password authentication failed` —
+an error that points at the wrong thing entirely. `5L/pzY&F` → `5L%2FpzY%26F`.
+
+### The pooler host is `aws-0-` or `aws-1-` and you cannot guess
+Both resolve in DNS, so a lookup doesn't disambiguate. The errors do:
+- wrong host → `ENOTFOUND tenant/user <ref> not found`
+- **right host, wrong password** → `password authentication failed`
+
+Which means the two failures are diagnostic. Getting "tenant not found" on one host
+and "password failed" on the other tells you the second host is correct.
+
+Session pooler on **5432**, not the transaction pooler on 6543 — transaction mode
+can't run all the DDL.
+
+### `supabase db push` needs Docker only for a cache it doesn't need
+Applying migrations against a remote URL prints a wall of
+`failed to connect to the docker API` and then succeeds anyway. That's the local
+migrations-catalog cache, not the migration. Look for
+`{"message":"Finished supabase db push."}` and verify against the live database —
+don't read the Docker noise as failure.
+
+### RLS picks rows. Column grants pick columns.
+A policy scoped to `status = 'pending'` still lets the client rewrite *any column* of
+that row — including price and product kind. `revoke insert, update` then re-grant
+the specific columns. Generated columns are stronger still: `amount_paise` is
+computed from `kind` and simply cannot be written.
+
+This applies to **every client-writable table with a status or price column**, not
+just orders.
+
+### Unique indexes treat NULLs as distinct
+`unique (user_id, poll_id, kind)` does not stop a user opening fifty orders when
+`poll_id` is null — every null is its own row. Postgres 15+ has `nulls not distinct`.
+
+### PostgREST returns 401 for permission-denied, not 403
+A revoked function `execute` surfaces as `401` with `42501 permission denied for
+function …`. Asserting on 403 fails a test that is actually passing, and 401 looks
+like a bad API key when it isn't.
+
+### An empty table passes a security test for the wrong reason
+`select * from votes` returning `[]` proves nothing when the table is empty — and a
+broken key returns `[]` too. Gate 2 seeds a real vote and asserts the **differential**:
+`votes` empty *and* `options` readable on the same request path.
 
 ---
 

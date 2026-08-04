@@ -91,19 +91,32 @@ Vote unlimited · see ranks, percentages and the gap · add options · totals
 - Full under-list
 - Who voted the same as you
 
-**₹99/month or ₹599/year**
+**₹99 — a 30-day pass**
 - Names + counts on every poll · unlimited poll creation · private polls (link-only,
   results to creator) · extend/restart timers · creator analytics
+
+A pass, not a subscription: manual UPI has no mandate, so there is nothing to
+auto-renew and the payer re-pays when it lapses ([DECISIONS](DECISIONS.md) D4).
 
 ### Why ₹9 one-time, not a subscription
 UPI Autopay needs a mandate — several taps of friction for nine rupees. Nobody sets
 that up. One-time UPI is a two-tap impulse buy at peak curiosity, and it repeats
-naturally per poll. ₹99/mo is the upgrade for people who've paid ₹9 three times.
+naturally per poll. ₹99 is the upgrade for people who've paid ₹9 three times.
 
 ### Payment economics ✅
-Razorpay standard TDR is **2% + GST, percentage-based, no flat per-transaction fee**.
-₹9 nets ≈ ₹8.79. Bank-to-bank UPI carries government-mandated zero MDR; Razorpay's
-2% is their platform fee on top. RuPay-credit-on-UPI is 2.15% + GST — immaterial at ₹9.
+Phase 1 collects over **manual UPI** direct to a PhonePe Business VPA.
+Government-mandated **zero MDR** on UPI P2M for small merchants, so **₹9 nets ₹9**.
+(The 2026 parliamentary discussion about reintroducing MDR is scoped to merchants
+above roughly ₹1 crore turnover — not this.)
+
+Razorpay, when it eventually replaces the manual queue, is 2% + GST — ₹9 nets ≈ ₹8.79.
+**You'd be buying automation, not margin.** Which is fine, but only once the manual
+verification actually costs more attention than 21 paise a sale.
+
+The real cost of the manual rail isn't fees, it's the drop-off from making people
+type a 12-digit reference. Track `utr_submitted / order_created`
+([05-payments.md](05-payments.md) §8) — that ratio, not the fee, is what says when
+to switch.
 
 **Never charge to see ranks, percentages, or the gap.** Those create the urgency that
 drives sharing. Hiding them would fight your own growth loop.

@@ -202,8 +202,9 @@ Irreversible. In this order:
 3. **Google Cloud** — either delete just the OAuth client (Clients → ⋮ → Delete), or
    shut down the whole project (IAM & Admin → Settings → **Shut down**). Project
    shutdown has a **30-day recovery window**
-4. **Razorpay** — test mode holds nothing billable. Nothing to delete. Leave the
-   account or close it from Account Settings
+4. **PhonePe for Business** — holds no billable resources. **Settle any balance to
+   your bank first**, then leave the account dormant or close it from the app.
+   Razorpay, if it was ever set up, is test-mode only and has nothing to delete
 5. **GitHub** — the repo is yours. Keep it; it costs nothing and holds the history
 
 ### Rotating a leaked key
@@ -216,6 +217,15 @@ If a secret key is ever committed or pasted publicly:
 4. Rotating the **publishable** key is unnecessary — it's designed to be public and
    RLS is what protects the data
 
+**The database password is a separate secret** and rotating it is separate work:
+Settings → Database → **Reset database password**, then update `SUPABASE_DB_URL` in
+`.env.local` (percent-encode any `/ & @ : ?` in the new password, or the URI parses
+wrong and you get a confusing `password authentication failed`).
+
+> ⚠️ **Outstanding:** the current DB password was pasted into a chat transcript on
+> 2026-08-04. Nothing but migrations uses it, so rotating now is cheap. Do it before
+> real users exist.
+
 ---
 
 ## 5 · Quick reference
@@ -225,11 +235,14 @@ If a secret key is ever committed or pasted publicly:
 pnpm dev                                  # http://localhost:3000
 
 # check — before every commit
-pnpm check                                # build + lint + typecheck + contrast
+pnpm check                                # build + lint + typecheck + contrast + tests
+pnpm test                                 # just the unit tests
 
-# database (Phase 2 onward)
-pnpm supabase db push                     # apply migrations
-pnpm supabase db dump -f backup.sql       # snapshot — no backups on free
+# database. We never ran `supabase link` (it wants a browser PAT), so pass the
+# session-pooler URL directly. Port 5432 — the transaction pooler on 6543 cannot
+# run all our DDL.
+pnpm supabase db push --db-url "$SUPABASE_DB_URL"
+pnpm supabase db dump  --db-url "$SUPABASE_DB_URL" -f backup.sql   # no backups on free
 
 # ship
 git push origin main                      # production deploy

@@ -264,3 +264,85 @@ ranked data, and light is cheaper to render on budget Android. Adding it roughly
 doubles token and QA work, and every gate after would test two themes.
 
 Revisit post-launch with real usage data, not assumptions.
+
+---
+
+## D — Payments (decided 2026-08-04, supersedes the Razorpay-first drafts)
+
+### D1 · Manual UPI ships first; Razorpay is the later rail
+Phase 1 collects money over a PhonePe-for-Business VPA: the payer sends ₹9 from
+their own UPI app, submits the 12-digit UTR, and an admin matches it against the
+merchant app before access unlocks.
+
+**Zero MDR** — ₹9 nets ₹9 against ₹8.79 through Razorpay — and, more to the point,
+no gateway integration, no webhook signature surface, and no KYC waiting period
+between "idea" and "someone can pay me". The cost is a human in the loop, which is
+the right trade at launch volume. Razorpay's mode values are reserved in the enum
+and its test keys sit unused; the switch is [05-payments.md](05-payments.md) §5 and
+changes nothing about access control.
+
+**Flagged and overridden:** Vercel Hobby forbids commercial use, and manual UPI is
+commercial use exactly as much as Razorpay was — the rail switch does not change
+that. Production ships live anyway, deliberately. If enforced, the penalty is
+project suspension, not a warning. Code still defaults to `coming_soon`, so going
+live is an env var set on purpose rather than something a bad deploy can flip.
+
+### D2 · `orders` is the ledger, `entitlements` is the grant
+Two tables, and `verify_order()` is the only bridge between them.
+
+The tempting shortcut is to let the payment row *be* the access row. Declining it is
+what let the entire payment rail change without touching `votes_read_entitled` —
+the policy that actually protects voter names — and it is why Razorpay will later
+write only entitlements and need no second access path. It also keeps a *rejected*
+order distinguishable from one that never existed, which the payer-facing screen
+needs.
+
+`entitlements.razorpay_payment_id` accordingly became `source` + `payment_ref`, with
+the unique index on the pair. `source='comp'` hand-grants access without inventing a
+fake payment.
+
+### D2b · RLS chooses rows; column grants choose columns
+`orders` has an update policy scoped to `status = 'pending'`, which looks sufficient
+and is not. A policy says *which rows* you may touch, nothing about *which columns* —
+so a payer could flip their own pending ₹99 order to `kind='poll_unlock'` and pay ₹9
+for it, or write `amount_paise = 1` and have the admin queue cheerfully print
+"₹1 expected".
+
+Two fixes, both in the database:
+- `amount_paise` is a **generated column** off `kind`. Not passed in, not writable.
+- `revoke insert/update on orders`, then re-grant only the columns a payer may
+  author: `(user_id, poll_id, kind, contact)` on insert, `(utr, contact, status,
+  submitted_at)` on update.
+
+Caught by reading the policy back before applying, not by a test. Worth remembering
+as a class of bug: *every* client-writable table with a status column has this shape.
+
+### D3 · Admin is an env allowlist, not an `is_admin` column
+`ADMIN_USER_IDS=<uuid>,<uuid>`. A column is a row, and rows can eventually be
+written; an env var can only be changed by a deploy. Adding an admin means editing
+an env var and redeploying, which for a solo project is the right trade.
+
+An empty allowlist means **nobody**, never everybody — tested. A non-admin hitting
+`/admin` gets 404, not 403; don't confirm the route exists.
+
+The panel reads orders through the **secret key**, so there is deliberately no admin
+`select` policy on `orders`. Other people's orders aren't protected by a policy that
+has to be written correctly — they're unreachable because no policy exposes them.
+
+### D4 · ₹99 is a 30-day pass, not a subscription
+Manual UPI has no mandate, so auto-renew is impossible, and re-verifying a UTR by
+hand every month per subscriber does not scale past about ten people.
+`verify_order()` writes `expires_at = now() + 30 days` onto the existing
+`sub_monthly` entitlement kind, so the existing RLS expires it correctly with **no
+policy change**. The payer re-pays when it lapses.
+
+Real recurring billing is a reason to switch to Razorpay, not a reason to fake it.
+
+### D5 · A test runner arrived, and it is stdlib
+B4 said "a test runner when there's a pure function worth testing". Fail-closed
+payment mode selection and the admin allowlist are that function. Node 24 runs
+TypeScript directly and ships `node:test`, so this cost **zero dependencies** —
+`lib/payments.test.mts`, wired into `pnpm check`.
+
+`.mts` rather than `.ts` so Node treats it as ESM without `"type": "module"` in
+`package.json`, which would change how Next resolves everything else.

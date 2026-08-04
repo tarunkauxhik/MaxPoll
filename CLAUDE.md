@@ -39,7 +39,14 @@ you which file answers which question.
 - **Voter names gated server-side by entitlement.** Never sent to the client and
   blurred in CSS — anyone can open DevTools.
 - **No password flows.** Google OAuth only. No forgot/reset password.
-- **Payments read `NEXT_PUBLIC_PAYMENTS_MODE`, fail closed to `coming_soon`.**
+- **Payments read `NEXT_PUBLIC_PAYMENTS_MODE`, fail closed to `coming_soon`.** Four
+  values: `coming_soon` · `manual_upi` · `razorpay_test` · `razorpay_live`. Phase 1
+  ships manual UPI; Razorpay is reserved and unbuilt. All logic in `lib/payments.ts`.
+- **`orders` is the payment ledger; `entitlements` is the access grant.** Never merge
+  them. Access is granted *only* through `verify_order()`, and a UTR unlocks exactly
+  once — the unique index enforces it, not app code.
+- **RLS picks rows, not columns.** Any client-writable table with a status or price
+  column also needs `revoke`/`grant` at column level — DECISIONS D2b.
 
 ## Working rules
 
@@ -55,7 +62,8 @@ you which file answers which question.
 
 ```bash
 pnpm dev        # localhost:3000
-pnpm check      # build + lint + typecheck + contrast — before every commit
+pnpm check      # build + lint + typecheck + contrast + tests — before every commit
+pnpm test       # node:test on lib/**/*.test.mts — no framework, stdlib only
 ```
 
 <!-- BEGIN:nextjs-agent-rules -->

@@ -1,28 +1,63 @@
 # State
 
-_Last updated: 2026-08-04 · Phase 1 code complete. Blocked on Phase 0 accounts._
+_Last updated: 2026-08-04 · Phase 2 applied, **Gate 2 passed**. Payments switched to
+manual UPI. Next: Phase 3 (auth)._
 
 ## Where we are
 
 | Phase | Status |
 |---|---|
-| 0 — Accounts (Supabase, Google, Vercel, Razorpay) | ⬜ **Not started — yours to do.** [07-setup.md](07-setup.md) |
-| 1 — Scaffold + shell | ✅ Built and verified. Gate 1 pending your browser check |
-| 2 — Database schema + RLS | ⛔ **Blocked on Phase 0** (Supabase) |
-| 3 — Auth | ⛔ Blocked on Phase 0 (Supabase + Google) |
+| 0 — Accounts (Supabase, Google, Vercel) | ✅ Done and verified live |
+| 1 — Scaffold + shell | ✅ Built. Gate 1 pending your browser check |
+| 2 — Database schema + RLS | ✅ **Applied to the live project. Gate 2 passed** |
+| 3 — Auth | ⬜ **Next** |
 | 4 — Poll core | ⬜ |
 | 5 — Live board | ⬜ |
 | 6 — Options, typeahead, moderation | ⬜ |
-| 7 — Everything else + payments | ⬜ |
+| 7 — Everything else + payments UI + `/admin` | ⬜ |
 | 8 — Ship | ⬜ |
+| 9 — Razorpay | ⬜ Not scheduled. Trigger is operational — DECISIONS D1 |
 
 ## What you need to do next
 
-**Follow [07-setup.md](07-setup.md).** ~45–60 minutes, all free, no card. It ends with
-copy-paste blocks — send those values back and Phase 2 starts immediately.
+Nothing blocking. Two things you can do whenever:
 
-Sections 1–3 (Supabase, Google, Vercel) unblock everything. Section 4 (Razorpay) isn't
-needed until Phase 7 and can wait.
+1. **[07-setup.md](07-setup.md) §4 — PhonePe for Business.** Not needed until Phase 7,
+   but it's the only step with a **human approval delay**, so starting early is free.
+   Send back the VPA and the display name.
+2. **Rotate the database password** ([08-runbook.md](08-runbook.md)) — it was pasted
+   into a chat transcript. Only migrations use it, so this is cheap right now.
+
+## Done in Phase 2
+
+- All **13 tables** applied to `biwcdpefkzrkkdajfyaj`, `pg_trgm` installed, RLS on
+  every one of them
+- `cast_vote()`, `search_options()`, `verify_order()` — all `security definer` with a
+  pinned `search_path`, execute revoked from `public`
+- **Payments switched to manual UPI** ([DECISIONS](DECISIONS.md) D1–D5). Because the
+  migration had never been run, `orders` and the generalised `entitlements` cost zero
+  extra migrations
+- `lib/payments.ts` — the four-value mode flag, fails closed. First unit tests in the
+  project, via `node:test`, **zero dependencies added**
+
+### Gate 2 — passed 2026-08-04
+
+Seeded a real vote, then with the **publishable** key:
+
+| Check | Result |
+|---|---|
+| `votes` → zero rows | ✅ `[]` |
+| `options` on the same path → readable | ✅ 1 row — proves the `[]` is RLS, not a dead key |
+| `orders` / `entitlements` → zero rows | ✅ |
+| `verify_order` RPC | ✅ `42501 permission denied` |
+| `amount_paise` supplied by a client | ✅ rejected — it's a generated column |
+| Teardown | ✅ user + poll deleted, database empty again |
+
+The differential matters: an empty table returns `[]` and so does a broken key. Only
+the pair proves anything.
+
+> ⚠️ **PostgREST returns 401, not 403, for `42501 permission denied`.** Don't assert
+> on 403 — it looks like an auth failure and isn't.
 
 ## Done in Phase 1
 
@@ -52,9 +87,9 @@ needed until Phase 7 and can wait.
 - New: [07-setup.md](07-setup.md) (verified click-by-click) and
   [08-runbook.md](08-runbook.md) (run · test · deploy · tear down)
 
-`pnpm check` passes: build, lint, typecheck, contrast.
+`pnpm check` passes: build, lint, typecheck, contrast, tests.
 
-## Gate 1 — verify in a browser before Phase 2
+## Gate 1 — still worth doing in a browser
 
 ```bash
 pnpm dev     # http://localhost:3000

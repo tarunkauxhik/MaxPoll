@@ -133,14 +133,23 @@ content. **Never on arrival.**
    ✓ Who voted the same as you
    ₹9  one time · this poll
    [ Pay ₹9 with UPI ]
-   ₹99/month unlocks every poll + unlimited creating
+   ₹99 unlocks every poll for 30 days + unlimited creating
 ```
 
 Headline copy: **"See the exact names of voters."** Plain, not clever.
 
-**States to build:** processing · success (unblur) · failed
-(`Payment didn't go through. You weren't charged.` + retry) · already-owned (skip the
-sheet entirely).
+Tapping the CTA goes to `/pay/[ref]` — a page, not a modal. There is no gateway
+overlay to keep alive, and the payer will leave to their UPI app and come back, so a
+URL they can return to is the right container.
+
+**States to build:** pending (QR + intent link + UTR form) · submitted
+(`Got it — checking your payment. Usually within a few hours.`) · verified (unblur) ·
+rejected (the admin's note, verbatim) · already-owned (skip the sheet entirely).
+
+Note the honest difference from a gateway: **there is no "failed" state.** A UPI
+payment either never happens — in which case the order sits `pending` and the payer
+just leaves — or it happens and gets verified. Don't invent a failure screen for a
+transaction MaxPoll never sees.
 
 Full pipeline in [05-payments.md](05-payments.md).
 

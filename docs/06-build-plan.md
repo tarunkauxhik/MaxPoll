@@ -12,7 +12,7 @@ Current position: [STATE.md](STATE.md).
 
 ## Phase 0 — Accounts (manual, yours)
 
-Supabase · Google OAuth · Razorpay test keys · Vercel import.
+Supabase · Google OAuth · Vercel import · **PhonePe for Business** (needed by Phase 7).
 Click-by-click: [07-setup.md](07-setup.md).
 
 > ✅ **Gate 0:** `.env.local` holds a Supabase URL, publishable key and secret key.
@@ -27,30 +27,35 @@ left rail at 768px, 480px column) · `vercel.json` pinned to `bom1`.
 > request to `fonts.gstatic.com` · CLS 0 · Lighthouse performance ≥95 · every text
 > pair ≥4.5:1 · focus rings visible · nav doesn't cover content.
 
-## Phase 2 — Database
+## Phase 2 — Database ✅ done
 
 **2.1** Schema from [02-architecture.md](02-architecture.md), including
 `create extension pg_trgm`.
-**2.2** `cast_vote()` — `security definer` **with `set search_path`**, execute
-revoked from `public`. Plus the typeahead function.
-**2.3** **RLS on every table**, then policies:
+**2.2** `cast_vote()` and `verify_order()` — `security definer` **with `set
+search_path`**, execute revoked from `public`. Plus the typeahead function.
+**2.3** **RLS on all 13 tables**, then policies:
 - `profiles` — public read, self write
 - `polls`/`options` — public read (non-hidden), creator write
 - `votes` — **insert only; select restricted to entitlement holders**
 - `entitlements` — self read, service-role write only
+- `orders` — insert/read own, UTR update while pending; **no admin policy at all**
 - `messages` — public read (non-hidden), authenticated insert
 
-**2.4** Migrations live in the repo:
+**2.4** Column-level grants on `orders` — RLS picks rows, not columns (DECISIONS D2b).
+**2.5** `lib/payments.ts` + `lib/payments.test.mts`.
+**2.6** Migrations live in the repo. `link` needs a browser PAT, so push straight at
+the **session pooler** (5432 — the transaction pooler on 6543 can't run all this DDL):
 ```bash
-pnpm add -D supabase
-pnpm supabase init
-pnpm supabase link --project-ref <ref>
-pnpm supabase db push
+pnpm supabase db push --db-url "$SUPABASE_DB_URL"
 ```
 
 > ✅ **Gate 2 — the security check that matters most:** with the **publishable**
 > key, `select * from votes` for a poll you haven't paid for → **must return zero
 > rows.** If it returns names, stop and fix RLS before anything else.
+>
+> **Seed a real vote first.** An empty table returns `[]` too, and so does a broken
+> key — so assert the differential: `votes` empty **and** `options` on the same
+> request path returning its row. Passed 2026-08-04.
 
 ## Phase 3 — Auth
 
@@ -166,7 +171,14 @@ of votes is far messier
 **7.5** Chat: `GET /api/poll/[id]/messages?since=` polled at 3s, cached 2s, anon toggle
 **7.6** Settings incl. **delete account** (DPDP — null the `user_id` on votes, don't
 delete them, so counts don't retroactively change)
-**7.7** Payments per [05-payments.md](05-payments.md) — **all 12 tests**
+**7.7** Payments — **manual UPI**, per [05-payments.md](05-payments.md). Schema and
+`lib/payments.ts` already shipped in Phase 2; this phase is the surface:
+- `/pay/[ref]` — QR (server-rendered SVG, zero client JS) + `upi://` intent link +
+  UTR form + the four status screens
+- `/admin` — the pending queue, Verify/Reject server actions, `ADMIN_USER_IDS`
+  allowlist, **404 for non-admins**
+- `qrcode` is the one dependency this adds, and it is server-only
+- Run **all 11 of Gate P**
 **7.8** OG images: `next/og` `ImageResponse`, edge-cached, **URL versioned on leader
 change** (WhatsApp caches previews hard)
 **7.9** Landing page, with **real** aggregate numbers only
@@ -177,8 +189,9 @@ change** (WhatsApp caches previews hard)
 ## Phase 8 — Ship
 
 **8.1** Confirm the production deploy is green
-**8.2** Set `NEXT_PUBLIC_PAYMENTS_MODE=coming_soon` on **Production** specifically
-(keep `test` on Preview, so every PR preview still has working test-mode payments)
+**8.2** Set `NEXT_PUBLIC_PAYMENTS_MODE=manual_upi` plus `NEXT_PUBLIC_UPI_VPA` and
+`ADMIN_USER_IDS` on **Production** — DECISIONS D1 records the Hobby-ToS call behind
+this. Preview gets the same, so previews are testable end to end
 **8.3** Add `https://maxpoll.vercel.app/auth/callback` to Google OAuth's redirect
 URIs **and** Supabase's redirect allow-list
 **8.4** Vercel Web Analytics on
@@ -187,30 +200,43 @@ publicly**
 **8.6** `vercel.json` has **exactly one** cron entry
 
 > ✅ **Gate 8:** full flow on a real phone on mobile data against the live URL.
-> Google auth works (the Testing-mode click-through is expected). Paywall shows
-> coming-soon in production and works in Preview.
+> Google auth works (the Testing-mode click-through is expected). The UPI intent
+> link opens a real UPI app with ₹9 and the reference prefilled.
+
+## Phase 9 — Razorpay (only when the manual queue stops being viable)
+
+Not scheduled. The trigger is operational, not a date: when verifying UTRs stops
+fitting into one sitting a day. Spec in [05-payments.md](05-payments.md) §5.
+
+Order route · client-verify HMAC · webhook HMAC over the **raw body** with the
+*webhook* secret · both writing `entitlements` with `source='razorpay'`.
+
+**The schema for this is already applied.** Phase 9 adds routes and a dependency,
+and changes nothing about RLS, `entitlements`, or how names are gated — that is
+the whole point of the ledger/grant split (DECISIONS D2).
 
 ---
 
 ## Testing discipline
 
 ```bash
-pnpm check   # build + lint + typecheck + contrast — before every commit
+pnpm check   # build + lint + typecheck + contrast + tests — before every commit
 ```
 
-**Unit:** rank computation · gap calculation · trigram normalisation · signature
-verification · entitlement expiry.
+**Unit** (`node:test`, no framework — DECISIONS D5): payment mode fail-closed and the
+admin allowlist ✅ · rank computation · gap calculation · trigram normalisation ·
+entitlement expiry.
 
 **E2E:** the critical path (link → vote → sign in → **vote lands**) · double-vote
-blocked · two accounts one browser both land · paywall coming-soon · add-option
-dedupe.
+blocked · two accounts one browser both land · UTR reuse rejected · add-option dedupe.
 
 **Security — verify each manually:**
 - [ ] The Supabase **secret** key never reaches the client (grep the built bundle)
 - [ ] Voter names never in an API response without entitlement (Network tab, not UI)
-- [ ] Payment amounts server-side only
-- [ ] Webhook signature computed on the raw body
-- [ ] RLS on every table
+- [ ] Payment amounts generated in the DB, never client-authored
+- [ ] Column grants on `orders` — a payer cannot rewrite `kind` (DECISIONS D2b)
+- [ ] `verify_order` execute revoked from `anon` and `authenticated`
+- [ ] RLS on every table ✅ (Gate 2, 2026-08-04)
 - [ ] Rate limits: votes, poll creation, option adds, messages
 - [ ] `.env.local` never committed
 

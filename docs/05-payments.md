@@ -1,211 +1,203 @@
-# Payments (Razorpay)
+# Payments
 
-**Design goal:** fully working in test mode, hard-disabled in production behind one
-flag. Flip one env var to go live later. No code changes to switch.
+**Phase 1 collects money over manual UPI. Razorpay is the later rail** — see §5.
 
-> Production stays `coming_soon` for a second reason: **Vercel Hobby forbids
-> commercial use.** Taking real money requires Vercel Pro first.
+Manual UPI means: the payer sends ₹9 from their own UPI app to a
+PhonePe-for-Business VPA, types the 12-digit UTR back into MaxPoll, and an admin
+matches it against the merchant app before access unlocks.
+
+Why this first: **zero MDR**, so ₹9 nets ₹9 instead of ₹8.79, and there is no
+gateway to integrate, no webhook to secure, and no KYC waiting period between
+"idea" and "someone can pay me". The cost is a human in the loop, which is the
+correct trade at the volume this launches at. When the queue stops being
+viable, §5 switches rails without touching access control.
+
+> **Vercel Hobby forbids commercial use.** Manual UPI is commercial use exactly
+> as much as Razorpay was. Production ships anyway — a deliberate, recorded call
+> ([DECISIONS](DECISIONS.md) D1). The penalty if enforced is project suspension.
 
 ## 1. The switch
 
-```bash
-# .env.local  (development / preview)
-NEXT_PUBLIC_PAYMENTS_MODE=test
-RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
-RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxx
-RAZORPAY_WEBHOOK_SECRET=xxxxxxxxxxxx
+One env var, four values, **fails closed**.
 
-# Vercel production env
-NEXT_PUBLIC_PAYMENTS_MODE=coming_soon
+```bash
+NEXT_PUBLIC_PAYMENTS_MODE=manual_upi
+NEXT_PUBLIC_UPI_VPA=maxpoll@ybl          # empty ⇒ forced to coming_soon
+NEXT_PUBLIC_UPI_PAYEE_NAME=MaxPoll       # what shows on the payer's UPI screen
+ADMIN_USER_IDS=<profile-uuid>            # empty ⇒ nobody reaches /admin
 ```
 
 | Mode | Behaviour |
 |---|---|
-| `test` | Full Razorpay test checkout, real webhook, real entitlement written |
-| `coming_soon` | Sheet renders identically, CTA opens a "Coming soon" panel, **no order created, no Razorpay script loaded** |
-| `live` | Production keys, real money (only on Vercel Pro) |
+| `coming_soon` | Sheet renders identically, CTA opens the coming-soon panel, **no order row created** |
+| `manual_upi` | QR + intent link + UTR form + admin queue |
+| `razorpay_test` / `razorpay_live` | **Reserved, not implemented.** Currently resolve to `coming_soon` |
 
-```ts
-// lib/payments.ts
-export const PAYMENTS_MODE = process.env.NEXT_PUBLIC_PAYMENTS_MODE ?? 'coming_soon';
-export const paymentsEnabled = () => PAYMENTS_MODE === 'test' || PAYMENTS_MODE === 'live';
-```
+Logic lives in [`lib/payments.ts`](../lib/payments.ts), tested by
+`lib/payments.test.mts` (`pnpm test`). Three things that must never regress, and
+each has a test:
 
-**Fail closed:** if the env var is missing or unrecognised, it's `coming_soon`.
-Never default to a state that could charge someone.
-
-### The coming-soon panel
-
-Keep the ₹9 sheet exactly as designed — same copy, same perks, same price. Only the
-CTA changes:
-
-```
-[ Unlocking soon 🔒 ]
-We're finishing payments. Drop your email and
-we'll unlock this poll for you free when it's live.
-[ email field ] [ Notify me ]
-```
-
-Better than hiding the paywall: it measures real intent (how many people tap ₹9)
-while collecting emails — exactly the demand signal needed before paying for Vercel
-Pro.
-
-Log every tap as `paywall_intent` with `poll_id` and `user_id`.
-**That number decides whether payments are worth turning on at all.**
+- anything unrecognised → `coming_soon`
+- `manual_upi` with no VPA → `coming_soon`, because a payment screen pointing at
+  nobody is worse than no payment screen
+- an empty `ADMIN_USER_IDS` means **nobody**, never everybody
 
 ## 2. Architecture
 
 ```
-Client                    Next.js API              Razorpay          Supabase
-  │                            │                       │                 │
-  ├─ tap "Pay ₹9" ────────────►│                       │                 │
-  │                            ├─ create order ───────►│                 │
-  │                            │◄── order_id ──────────┤                 │
-  │◄─── order_id, key_id ──────┤                       │                 │
-  ├─ open Razorpay Checkout ──────────────────────────►│                 │
-  │           (user pays via UPI)                      │                 │
-  │◄─── handler(payment_id, signature) ────────────────┤                 │
-  ├─ POST /api/pay/verify ────►│                       │                 │
-  │                            ├─ verify HMAC          │                 │
-  │                            ├─ write entitlement ──────────────────► │
-  │◄─── unlocked ──────────────┤                       │                 │
-  │                            │                       │                 │
-  │        Razorpay webhook ──►│ /api/pay/webhook      │                 │
-  │                            ├─ verify signature     │                 │
-  │                            ├─ upsert entitlement ─────────────────► │
+Payer                    MaxPoll                 Their UPI app        Admin
+  │                         │                          │                │
+  ├─ tap "Unlock ₹9" ──────►│                          │                │
+  │                         ├─ insert orders (pending) │                │
+  │◄── ref MP7K3QD2, QR ────┤                          │                │
+  ├─ scan / tap ───────────────────────────────────────►│                │
+  │              (pays ₹9 from their own bank)          │                │
+  │◄────────────────── UTR 402318774521 ────────────────┤                │
+  ├─ submit UTR ───────────►│                          │                │
+  │                         ├─ orders → submitted ─────────────────────►│
+  │                         │                          │   matches UTR  │
+  │                         │◄──────── verify_order() ─────────────────┤
+  │                         ├─ insert entitlements                      │
+  │◄── unlocked ────────────┤                                           │
 ```
 
-**Two paths write the entitlement — client verify AND webhook.** The client path
-unlocks instantly (good UX). The webhook is the source of truth (survives the user
-closing the tab mid-payment). The write is **idempotent** on `razorpay_payment_id`,
-so both landing is harmless.
+**`orders` is the ledger. `entitlements` is the access grant.** They are separate
+tables and `verify_order()` is the only bridge. That separation is what lets
+Razorpay arrive later writing *only* entitlements, and it is why the RLS policy
+protecting voter names never had to change when the rail did.
 
-This redundancy is the single most important reliability decision here.
-**Never rely on the client alone.**
+## 3. What software can and cannot enforce here
 
-## 3. Implementation
+Be honest about this, because it drives the whole admin design.
 
-### 3.1 Create order
-```ts
-// app/api/pay/order/route.ts
-import Razorpay from 'razorpay';
-import { paymentsEnabled } from '@/lib/payments';
+**Enforced in the database, not in app code:**
 
-const PRICES = { poll_unlock: 900, sub_monthly: 9900 } as const; // paise
+| Guarantee | Mechanism |
+|---|---|
+| One UTR unlocks exactly once | `unique (upper(btrim(utr)))` — otherwise one payer forwards the reference to fifty friends |
+| One open order per user per thing | `orders_open_uniq`, `nulls not distinct` so the pass isn't exempt |
+| Price cannot be client-authored | `amount_paise` is a **generated column** off `kind` |
+| A payer cannot approve themselves | Update policy scoped to `status = 'pending'`; `verify_order` execute revoked from `anon` and `authenticated` |
+| A payer cannot switch `kind` after paying | **Column-level grants.** RLS chooses rows, not columns — without the grant, a payer flips their own ₹99 order to `poll_unlock` and pays ₹9 |
+| Nobody reads anyone else's order | No admin `select` policy exists at all. The panel reads through the secret key, which bypasses RLS |
 
-export async function POST(req: Request) {
-  if (!paymentsEnabled()) return Response.json({ error: 'COMING_SOON' }, { status: 503 });
+**Not enforceable — this is the human's job:**
 
-  const user = await requireUser(req);                 // 401 if not signed in
-  const { kind, pollId } = await req.json();
-  if (!(kind in PRICES)) return Response.json({ error: 'BAD_KIND' }, { status: 400 });
+The amount. A UPI intent's `am` is editable in several apps, and a static QR
+carries no amount at all. So `orders.amount_paise` is what the payment *should*
+have been, and the admin comparing it against the merchant app **is** the amount
+check. That is why the queue prints `₹9 expected` beside every UTR: if it isn't
+on screen, it doesn't happen.
 
-  if (await hasEntitlement(user.id, pollId, kind))
-    return Response.json({ error: 'ALREADY_OWNED' }, { status: 409 });
+## 4. The flow
 
-  const rzp = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-  });
+### 4.1 Order
 
-  const order = await rzp.orders.create({
-    amount: PRICES[kind],                              // NEVER take amount from client
-    currency: 'INR',
-    receipt: `${kind}_${pollId ?? 'sub'}_${user.id}`.slice(0, 40),
-    notes: { user_id: user.id, poll_id: pollId ?? '', kind },
-  });
+Created server-side on paywall tap. The client sends `kind` and `poll_id` and
+nothing else — `ref` is defaulted by the database, `amount_paise` is generated,
+`status` isn't in the insert grant.
 
-  return Response.json({ orderId: order.id, amount: order.amount, keyId: process.env.RAZORPAY_KEY_ID });
-}
+### 4.2 Pay — `/pay/[ref]`
+
+Server component. 404s if the order isn't yours.
+
+**Mobile** — an intent link built to the NPCI linking spec:
+
+```
+upi://pay?pa=<VPA>&pn=MaxPoll&am=9.00&cu=INR&tr=MP7K3QD2&tn=MaxPoll MP7K3QD2
 ```
 
-> **Security rule:** the amount is decided server-side from a constant map. If the
-> client can send an amount, someone will pay ₹1 for a ₹99 subscription.
+`tr` is the spec's transaction-reference field and is where the ref belongs.
+`tn` is free text the payer can edit, so it is never read back as
+identification. `ref` is short and alphanumeric (`MP` + 6 hex) because a UUID
+does not fit `tr`.
 
-### 3.2 Checkout (client)
-```ts
-async function payForPoll(pollId: string) {
-  const r = await fetch('/api/pay/order', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ kind: 'poll_unlock', pollId }),
-  });
-  if (r.status === 503) return showComingSoon();
-  const { orderId, amount, keyId } = await r.json();
+**Desktop** — the same string as a QR, rendered **server-side as inline SVG**.
+Zero client JS, nothing added to the LCP budget.
 
-  new (window as any).Razorpay({
-    key: keyId, amount, currency: 'INR', order_id: orderId,
-    name: 'MaxPoll', description: 'See the exact names of voters',
-    theme: { color: '#6B4EFF' },
-    handler: async (res: any) => {
-      await fetch('/api/pay/verify', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ ...res, pollId }),
-      });
-      unlockWithAnimation();                 // blur 4.5px → 0, 400ms + count-up
-    },
-    modal: { ondismiss: () => track('payment_abandoned', { pollId }) },
-  }).open();
-}
+**Then the UTR form** — 12 digits, `inputMode="numeric"`. The contact field is
+optional and prefilled from the account email; the payer is already signed in
+and `user_id` is the real identity, so it exists for "reach me if something's
+wrong", not for identification.
+
+### 4.3 States
+
+Instructions, never apologies — house style from [03-ux-flows.md](03-ux-flows.md).
+
+| Status | Screen |
+|---|---|
+| `pending` | Pay, then enter your UTR. Reference `MP7K3QD2` |
+| `submitted` | `Got it — checking your payment. Usually within a few hours.` |
+| `verified` | Unlock animation: blur 4.5px → 0, 400ms, count-up |
+| `rejected` | The admin note verbatim, plus how to reach a human |
+
+**No email is sent.** There is no mail service and adding one costs money; the
+status lives in the app. Add email when someone actually complains about not
+knowing.
+
+### 4.4 Admin — `/admin`
+
+Server component, gated by the `ADMIN_USER_IDS` allowlist. **Not a
+`profiles.is_admin` column** — a column is a row someone might one day be able
+to write; an allowlist is a value only a deploy can change
+([DECISIONS](DECISIONS.md) D3).
+
+```
+MP7K3QD2   ₹9 expected   UTR 402318774521   @tarun   2h ago   [Verify] [Reject]
 ```
 
-Load `https://checkout.razorpay.com/v1/checkout.js` **lazily on first paywall view**
-— not in the root layout. In `coming_soon` mode it never loads at all.
+Verify and Reject are server actions running through the secret key. Verify
+calls `verify_order()`, which flips the order and grants the entitlement **in
+one transaction** — half of that happening is either someone paying and not
+getting in, or getting in with no ledger row. Reject requires a note, because
+that note is the only thing the payer gets back.
 
-### 3.3 Verify (client callback)
-```ts
-// app/api/pay/verify/route.ts
-import crypto from 'crypto';
+A non-admin gets **404, not 403** — don't confirm the route exists.
 
-const expected = crypto
-  .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
-  .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-  .digest('hex');
+> **Middleware:** `/admin` and `/pay/*` must go *through* the session middleware;
+> they need auth cookies. They are **not** exceptions like `/api/poll/*/board`.
+> Do not add them to the [DECISIONS](DECISIONS.md) A2 exclusion list — that list
+> protects edge-cached routes, and these are neither cached nor cacheable.
 
-if (expected !== razorpay_signature) return Response.json({ error:'BAD_SIG' }, { status:400 });
-await grantEntitlement({ userId, pollId, kind, paymentId: razorpay_payment_id });
-```
+### 4.5 The ₹99 tier is a 30-day pass
 
-### 3.4 Webhook (source of truth)
-```ts
-// app/api/pay/webhook/route.ts  — export const runtime = 'nodejs'
-const raw = await req.text();                          // RAW body, before any parsing
-const sig = req.headers.get('x-razorpay-signature')!;
-const expected = crypto
-  .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET!)   // webhook secret ≠ key secret
-  .update(raw).digest('hex');
-if (expected !== sig) return new Response('bad signature', { status: 400 });
+Not a subscription. Manual UPI has no mandate, so auto-renew is impossible;
+re-verifying a UTR by hand every month for every subscriber does not scale past
+about ten people. `verify_order()` writes `expires_at = now() + 30 days` against
+the existing `sub_monthly` entitlement kind, so the existing RLS policy expires
+it correctly with no change ([DECISIONS](DECISIONS.md) D4).
 
-const evt = JSON.parse(raw);
-if (evt.event === 'payment.captured') {
-  const p = evt.payload.payment.entity;
-  await grantEntitlement({
-    userId: p.notes.user_id, pollId: p.notes.poll_id || null,
-    kind: p.notes.kind, paymentId: p.id,
-  });
-}
-return new Response('ok');
-```
+Real recurring billing is a reason to switch to §5, not a reason to fake it here.
 
-**Three things that break webhooks and are easy to miss:**
-1. The signature must be computed on the **raw body string**. Any middleware that
-   parses JSON first breaks it.
-2. The **webhook secret is a different value** from the key secret.
-3. Always return **200 quickly**. Do slow work after responding, or Razorpay retries
-   and you double-process.
+## 5. Razorpay — the later rail
 
-### 3.5 Idempotent grant
-```ts
-await supabaseAdmin.from('entitlements')
-  .upsert({ user_id, poll_id, kind, razorpay_payment_id: paymentId,
-            expires_at: kind === 'sub_monthly' ? addMonths(new Date(),1) : null },
-          { onConflict: 'razorpay_payment_id' });
-```
+**Not built.** Test keys sit unused in `.env.local`; the mode values are
+reserved and currently resolve to `coming_soon`.
 
-The unique index backing this is in [02-architecture.md](02-architecture.md).
+Switch when the manual queue costs more attention than the revenue justifies —
+roughly when verification stops fitting into one sitting a day.
 
-### 3.6 Gating reads — server-side only
+What it needs when that day comes:
+
+1. `POST /api/pay/order` — amount from `PRICES` server-side, **never** from the
+   request body
+2. `POST /api/pay/verify` — HMAC of `order_id|payment_id` with the key secret
+3. `POST /api/pay/webhook` — `runtime = 'nodejs'`, HMAC over the **raw body**
+   with the *webhook* secret (a different value from the key secret), return 200
+   fast or Razorpay retries and you double-process
+4. Both paths write `entitlements` with `source='razorpay'`; the
+   `(source, payment_ref)` unique index already makes that idempotent
+
+**No change to RLS, to `entitlements`, or to how names are gated.** That is the
+whole point of the ledger/grant split — the schema for this is already applied.
+
+Economics for the decision: Razorpay is 2% + GST, so ₹9 nets ≈ ₹8.79 against
+₹9.00 on UPI. You are buying automation, not margin.
+
+## 6. Gating reads — server-side only, unchanged
+
 ```sql
-create policy "names visible only to entitled users" on votes for select using (
+create policy votes_read_entitled on votes for select using (
   exists (select 1 from entitlements e
           where e.user_id = auth.uid()
             and (e.poll_id = votes.poll_id or e.kind = 'sub_monthly')
@@ -213,45 +205,44 @@ create policy "names visible only to entitled users" on votes for select using (
 );
 ```
 
-> **Never send names to the client and blur them in CSS.** Anyone can open DevTools.
-> The blurred chips in the UI must contain **fake placeholder strings** until the
+> **Never send names to the client and blur them in CSS.** Anyone can open
+> DevTools. The blurred chips contain **fake placeholder strings** until the
 > entitlement check passes server-side.
 
-## 4. Test checklist — all 12
+Verified live at Gate 2: with the publishable key, `votes` returns `[]` for a
+poll with a real vote in it, while `options` on the same request path returns
+its row — so the empty array is RLS working, not a dead key.
+
+## 7. Gate P — the manual pipeline
 
 | # | Test | Expected |
 |---|---|---|
-| 1 | `PAYMENTS_MODE=coming_soon` → tap ₹9 | Coming-soon panel, **no network call to Razorpay**, `paywall_intent` logged |
-| 2 | Test mode, `success@razorpay` | Entitlement written, content unblurs with animation |
-| 3 | Test mode, `failure@razorpay` | `Payment didn't go through. You weren't charged.` + retry |
-| 4 | Close the Razorpay modal mid-payment | `payment_abandoned` tracked, no entitlement |
-| 5 | Pay, then close the tab before verify returns | Webhook still writes the entitlement |
-| 6 | Replay the same webhook twice | **Exactly one** entitlement row |
-| 7 | Tamper the amount in the client request | Server ignores it, charges ₹9 |
-| 8 | Forge a signature | 400, no entitlement |
-| 9 | Buy the same poll twice | 409 `ALREADY_OWNED`, no second charge |
-| 10 | Unpaid user calls the names API directly | 403 — names never leave the server |
-| 11 | Subscription expires | Entitlement stops granting, paywall returns |
-| 12 | Pay while signed out | 401 |
+| 1 | `coming_soon` → tap ₹9 | Panel shown, **no order row created** |
+| 2 | order → pay → UTR → verify | Entitlement written, names unblur |
+| 3 | **Reuse a UTR from another order** | Blocked by the unique index, not by app code |
+| 4 | Two open orders, same poll, same account | Blocked by `orders_open_uniq` |
+| 5 | Unentitled user calls the names API directly | 403 — names never leave the server |
+| 6 | Client PATCHes its own order to `verified` | Denied by RLS |
+| 7 | Client PATCHes its own order's `kind` or `amount_paise` | Denied by the column grant |
+| 8 | Non-admin opens `/admin` | 404 |
+| 9 | `verify_order` twice on one order | `NOT_PENDING`, exactly one entitlement |
+| 10 | 30-day pass with `expires_at` in the past | Paywall returns |
+| 11 | Order while signed out | Blocked — there is no anonymous order path |
 
-**Test 10 is the one people skip and the one that actually matters.**
+**Test 5 is the one people skip and the one that actually matters.**
 
-**Test cards / UPI (test mode only):** success UPI `success@razorpay` · failure UPI
-`failure@razorpay` · card `4111 1111 1111 1111`, any future expiry, any CVV.
+## 8. Analytics
 
-## 5. Analytics, wired from day one
+`paywall_view` · `paywall_intent` · `order_created` · `utr_submitted` ·
+`order_verified` · `order_rejected`
 
-`paywall_view` · `paywall_intent` (**the number that decides everything**) ·
-`payment_started` · `payment_success` · `payment_failed` · `payment_abandoned`
+The interesting ratio is **`utr_submitted / order_created`** — the share of
+people who reach the QR and actually complete a payment they have to type a
+reference number for. That number, not `paywall_intent`, is what says whether
+the manual pipeline is costing sales and Razorpay is worth it.
 
-Funnel: voters → paywall views → intent taps → payments. In `coming_soon` mode you
-still get the first three, which is exactly the demand data needed before spending
-money on Vercel Pro.
+## 9. Refunds
 
-## 6. Refunds
-
-**₹99 subscription:** Razorpay Subscriptions, monthly/annual toggle, `Manage` in
-Settings, cancel = access until period end.
-
-**Non-refundable, stated before payment** — MDR isn't returned on refunds, so a ₹9
-refund costs more than the sale.
+Non-refundable, stated before payment. On manual UPI a refund is a UPI transfer
+you send by hand; mark the order `rejected` with a note so the ledger matches
+reality.

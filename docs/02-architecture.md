@@ -14,7 +14,7 @@ numbers before launch — providers move them.**
 | DB | **Supabase Postgres** (Mumbai) | Free, RLS, `pg_trgm` for typeahead |
 | Auth | **Supabase Auth → Google OAuth only** | Free, no SMS cost, no password surface |
 | Live | **Edge-cached HTTP polling** | Not websockets — see below |
-| Payments | **Razorpay** Standard Checkout + webhook | UPI, 2% + GST |
+| Payments | **Manual UPI** — PhonePe Business VPA + UTR + admin verify | 0% MDR. Razorpay is the later rail: DECISIONS D1 |
 | OG images | **`next/og` `ImageResponse`**, edge-cached | Native, no separate render step |
 | Analytics | Vercel Web Analytics | Free on Hobby, no cookie banner |
 | Cron | **Vercel Cron** (`vercel.json`) | Native scheduling, once daily max |
@@ -192,16 +192,50 @@ create table votes (
 create unique index on votes (poll_id, user_id) where user_id is not null;
 create index on votes (poll_id, device_id);   -- velocity flagging
 
+-- The single source of access truth. Every payment rail writes here and nowhere
+-- else, which is why changing rails never touches votes_read_entitled.
 create table entitlements (
   user_id uuid references profiles on delete cascade,
   poll_id uuid references polls on delete cascade,  -- null = subscription
   kind text not null,                     -- 'poll_unlock' | 'sub_monthly'
   expires_at timestamptz,
-  razorpay_payment_id text,
+  source text not null,                   -- 'manual_upi' | 'razorpay' | 'comp'
+  payment_ref text,                       -- UTR, or the Razorpay payment id
   created_at timestamptz default now()
 );
 create unique index entitlements_payment_uniq
-  on entitlements(razorpay_payment_id) where razorpay_payment_id is not null;
+  on entitlements(source, payment_ref) where payment_ref is not null;
+
+-- The manual UPI ledger — DECISIONS D1/D2. orders records the payment,
+-- entitlements records the access, verify_order() is the only bridge.
+create table orders (
+  id uuid primary key default gen_random_uuid(),
+  ref text unique not null,               -- 'MP7K3QD2' — defaulted, rides the UPI `tr` field
+  user_id uuid not null references profiles on delete cascade,
+  poll_id uuid references polls on delete cascade,  -- null for the 30-day pass
+  kind text not null,                     -- 'poll_unlock' | 'pass_30d'
+  amount_paise int generated always as (  -- GENERATED: never client-authored
+    case kind when 'pass_30d' then 9900 else 900 end) stored,
+  utr text,                               -- 12 digits, submitted by the payer
+  contact text,                           -- optional; user_id is the real identity
+  status text not null default 'pending', -- pending | submitted | verified | rejected
+  admin_note text,                        -- the only thing a rejected payer gets back
+  created_at timestamptz default now(),
+  submitted_at timestamptz, decided_at timestamptz,
+  decided_by uuid references profiles
+);
+-- One UTR unlocks once — otherwise one payer forwards the reference to fifty friends
+create unique index orders_utr_uniq on orders (upper(btrim(utr))) where utr is not null;
+-- `nulls not distinct` so the pass (poll_id null) isn't exempt from the limit
+create unique index orders_open_uniq on orders (user_id, poll_id, kind)
+  nulls not distinct where status in ('pending','submitted');
+create index on orders (status, created_at);        -- the admin queue's only query
+
+-- RLS picks rows, not columns. Without these grants a payer flips their own
+-- pending ₹99 order to poll_unlock and pays ₹9 — DECISIONS D2b.
+revoke insert, update on orders from anon, authenticated;
+grant  insert (user_id, poll_id, kind, contact)     on orders to authenticated;
+grant  update (utr, contact, status, submitted_at)  on orders to authenticated;
 
 create table badges (
   id uuid primary key default gen_random_uuid(),

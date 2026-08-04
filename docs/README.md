@@ -16,7 +16,7 @@ says where we are and what's next.
 | What colour, what size, what spacing? | [04-design.md](04-design.md) |
 | How does the ₹9 payment work? | [05-payments.md](05-payments.md) |
 | What am I building next, and how do I know it's done? | [06-build-plan.md](06-build-plan.md) |
-| How do I set up Supabase / Google / Vercel / Razorpay? | [07-setup.md](07-setup.md) |
+| How do I set up Supabase / Google / Vercel / PhonePe? | [07-setup.md](07-setup.md) |
 | How do I run it, test it, deploy it, delete it? | [08-runbook.md](08-runbook.md) |
 
 ## How these files work

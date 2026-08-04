@@ -264,36 +264,79 @@ Function region shown in the dashboard:  ....................
 
 ---
 
-## 4 · Razorpay — payments (test mode only)
+## 4 · PhonePe for Business — how you actually get paid
 
-**What it's for:** the ₹9 unlock. Built and fully tested now, hard-disabled in
-production behind one env var.
+**What it's for:** the ₹9 unlock and the ₹99 pass. The payer sends money from
+their own UPI app to your business VPA, types the 12-digit reference number back
+into MaxPoll, and you approve it from `/admin`.
 
-> Not needed until **Phase 7**. Skip it if you'd rather get to a working product
-> first — nothing before Phase 7 touches it.
+**Zero MDR** — ₹9 arrives as ₹9. There is no gateway, no webhook, and no
+integration to get wrong. See [05-payments.md](05-payments.md).
+
+> Not needed until **Phase 7**. Nothing before it touches payments.
 >
-> Production stays `coming_soon` regardless, for two reasons: real money needs KYC,
-> and **Vercel Hobby forbids commercial use**.
+> ⚠️ Start this early anyway if you can — it is the only step here with a
+> **human approval delay**. Everything else in this document is instant.
 
-### 4.1 Account and keys
+### 4.1 Why a *business* account and not your personal UPI
 
-1. **[razorpay.com](https://razorpay.com)** → **Sign Up** → email + password
-2. Skip / dismiss any business-details prompt. **Test mode needs no KYC**
-3. Top-right toggle → switch to **Test Mode**. ⚠️ Confirm it says Test before going
-   further
-4. **Account & Settings** → under *Website and app settings* → **API Keys**
-5. **Generate Test Key**
-6. ⚠️ A dialog shows **Key Id** and **Key Secret**. **Download the credentials** —
-   the secret is shown once and is never retrievable. Regenerating invalidates the old pair
+Two reasons, and the first is the one that matters to you:
 
-The webhook secret is a **different value** and comes in Phase 7, once a preview URL
-exists to point it at.
+1. **Your personal name is hidden.** A personal VPA shows your legal name on the
+   payer's confirmation screen. A business account shows your **brand name** —
+   strangers on the internet paying you ₹9 see "MaxPoll", not you.
+2. Collecting business payments on a personal VPA is against NPCI norms once
+   there's any volume, and personal accounts carry P2P transaction limits.
+
+### 4.2 Onboard
+
+1. Install **PhonePe Business** (Play Store / App Store) — a different app from
+   consumer PhonePe
+2. Register with the phone number linked to the bank account you want paid into
+3. Business name → **`MaxPoll`**. ⚠️ **This exact string is what payers see.**
+   Check it on a real payment before you launch
+4. Category → *Digital services / Internet services*
+5. Documents. Expect to need **PAN**, a **bank account** (cancelled cheque or a
+   3-month statement), and **Aadhaar or another photo ID**. A **GST certificate**
+   may be requested — if you're under the registration threshold, look for the
+   declaration / "not registered" option rather than abandoning the flow
+6. Wait for approval, then find your **VPA** in the app — it looks like
+   `something@ybl`
+
+### 4.3 If PhonePe won't onboard you
+
+**Google Pay for Business** is the drop-in fallback — same UPI rails, same
+`upi://` intent link, and the only thing that changes in the codebase is the
+`NEXT_PUBLIC_UPI_VPA` string. Nothing in MaxPoll is PhonePe-specific.
+
+Don't fall back to a personal VPA to get unblocked. That's the one option that
+puts your legal name in front of every payer.
+
+### 4.4 Verify it before you trust it
+
+**Send yourself ₹1 from a different phone.** Then check:
+
+- [ ] The payer's screen says **MaxPoll**, not your personal name
+- [ ] The payment lands in PhonePe Business
+- [ ] You can find the **12-digit UTR** in the app's transaction history —
+      this is the number you'll be matching against every single order
+
+That last one is the whole verification loop. If you can't find UTRs easily in
+the app, the admin queue will be painful, and that's worth knowing now.
 
 ```
 === SEND ME AFTER SECTION 4 (Phase 7) ===
-Key Id:      rzp_test_....................
-Key Secret:  ....................
+Business VPA:   ....................@ybl
+Display name:   MaxPoll            (or whatever it actually shows)
+Your profile UUID for admin access — I'll get this from the DB after you first
+sign in, so nothing to send.
 ```
+
+### 4.5 Razorpay — later, not now
+
+Your test keys are already in `.env.local` and unused. Razorpay becomes worth it
+when verifying UTRs by hand stops fitting into one sitting a day —
+[05-payments.md](05-payments.md) §5. Nothing to do today.
 
 ---
 
