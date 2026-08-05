@@ -132,6 +132,25 @@ real names** from `same_as_you_names()` and neutral placeholders behind the blur
 03 §H. The function caps at two inside SQL with no limit or offset parameter, and
 returns nothing at all to a caller who never voted in that poll.
 
+## Performance — measured, and the budget was never actually broken
+
+The poll page read as 262–469ms TTFB against a <200ms budget. Splitting the
+measurement showed most of that was the connection from here, not the server:
+
+| | |
+|---|---|
+| `pretransfer` (DNS + TCP + TLS, India → Vercel) | 75–203ms |
+| **server think time** | **~130–172ms** — inside budget |
+
+Memoisation shipped anyway, for query count rather than latency: `generateMetadata`
+and the page each ran `getPollBySlug` + `getBoard` (and `getBoard` carries
+`snapshot_ranks`, so that fired twice too), and `auth.getUser()` — a real round trip
+to the Auth server, not a cookie read — ran twice on every screen and three times on
+`/`. React `cache()` collapses each to one per request.
+
+Production TTFB median **336ms → 267ms**. See LEARNINGS for why the original
+number was misleading.
+
 ## Gate probes — all 56 passing (2026-08-05)
 
 `pnpm gates` creates two real users with real sessions, exercises the policies as

@@ -466,3 +466,41 @@ The same property is what made the column revokes safe: `cast_vote`, `create_pol
 all definer functions, so revoking the client's UPDATE on `polls`/`options`/`spaces`
 left every internal writer working. That was checked before the first revoke was
 written, not after.
+
+### Measure server time, not your own broadband
+The poll page looked 2× over its <200ms TTFB budget: `curl` reported 262–469ms from
+here. That number was mostly the trip to Vercel, not Vercel.
+
+```
+curl -w "%{time_pretransfer} %{time_starttransfer}"
+   pretransfer 0.075–0.203   (DNS + TCP + TLS from India)
+   ttfb        0.211–0.338
+   difference  ~130–172ms    <- the only part the code controls
+```
+
+So the server was inside budget the whole time and the "violation" was a measurement
+artefact. **`time_starttransfer` minus `time_pretransfer` is the number to hold the
+budget against** — and even that carries one network leg, so treat it as a ceiling.
+
+The memoisation below was still worth doing, but for query count rather than the
+budget: it halves Supabase round trips per poll view, which is Fast Origin Transfer
+and function CPU on a free tier.
+
+### `auth.getUser()` is a network call, and every page made two or three
+`@supabase/ssr` validates the JWT against the Auth server rather than trusting the
+cookie — correctly, since a cookie can be forged. But that makes it a round trip, and
+it was being made by the page *and* by `ActivityBell` in the shell on every screen;
+`app/page.tsx` made three, because `getProfile()` called it again internally.
+
+`getPollBySlug` and `getBoard` were doubled for a different reason: `generateMetadata`
+needs the leader for the share preview and the page needs the board, so both ran twice
+per poll view — and `getBoard` carries the `snapshot_ranks` call, so that fired twice
+as well.
+
+React `cache()` fixes all of it without threading values through props. The one thing
+worth checking before wrapping `getUser` in anything called "cache": it is scoped to a
+single request, so `requireAdmin()` cannot inherit another user's identity. Confirmed
+in `node_modules/next/dist/docs/01-app/01-getting-started/06-fetching-data.md`, where
+the example is `getUser` itself.
+
+Measured on production: TTFB median ~336ms → ~267ms.
