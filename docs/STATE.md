@@ -12,7 +12,7 @@ against the live database. Remaining: your browser checks, and the VPA._
 | 2 — Database schema + RLS | ✅ Applied. **Gate 2 passed** |
 | 3 — Auth | ✅ Built. Sign-in round trip needs a browser |
 | 4 — Poll core | ✅ Built. **Gate 4 passed** (automated part) |
-| 5 — Live board | ✅ Built. Cache `HIT` needs a deployment |
+| 5 — Live board | ✅ **Gate 5 passed live** — `MISS → HIT`, no `Set-Cookie` |
 | 6 — Options, typeahead, moderation | ✅ Built. **Gate 6 passed** |
 | 7 — Screens + payments UI + `/admin` | ✅ Built. **Gate P passed** |
 | 8 — Ship | 🟡 Seed applied, cron wired. Awaiting your checks |
@@ -25,27 +25,39 @@ pnpm gates    # 30 probes against the REAL database, then tears its data down
 pnpm sql supabase/seed.sql   #  seed  ·  pnpm sql --wipe  to remove
 ```
 
-## 🔴 Production is down until you fix one Vercel variable
+## Production is live — 2026-08-05
 
-`maxpoll.vercel.app` returns 500 on every route:
-`Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.`
+The 500-on-every-route outage was a malformed `NEXT_PUBLIC_SUPABASE_URL` in the
+Vercel dashboard, fixed there. The app no longer dies inside supabase-js over it:
+quotes and a pasted `NAME=` prefix are stripped, anything else names the variable
+in the log — [LEARNINGS](LEARNINGS.md).
 
-supabase-js emits that message **only** when the value is set but has no
-`http(s)://` — an unset variable says `supabaseUrl is required.` instead. So
-`NEXT_PUBLIC_SUPABASE_URL` exists in Vercel with a broken value: quotes round it,
-a `NAME=` prefix pasted along with it, or the scheme missing.
+**Verified against `maxpoll.vercel.app`:**
 
-1. Vercel → Settings → Environment Variables → **Production** →
-   `NEXT_PUBLIC_SUPABASE_URL` = `https://biwcdpefkzrkkdajfyaj.supabase.co`
-   — value only, no quotes, no `NAME=`.
-2. Check the rest against the table in [08-runbook.md](08-runbook.md).
-   `NEXT_PUBLIC_SITE_URL` must be `https://maxpoll.vercel.app`, **not** localhost.
-3. **Redeploy.** `NEXT_PUBLIC_*` is baked into the build, so editing the dashboard
-   alone changes nothing.
+| Route | |
+|---|---|
+| `/` · `/spaces` · `/create` · `/p/[slug]` · `/p/[slug]/chat` · `/u/[handle]` | 200 |
+| `/activity` · `/settings` | 307 → sign in |
+| `/admin` | **404** for a non-admin, as designed |
+| `/api/cron/ping` | 200 |
 
-The app now names the offending variable in the log instead of dying inside
-supabase-js, and quotes / `NAME=` prefixes are stripped rather than fatal —
-[LEARNINGS](LEARNINGS.md).
+### Gate 5 — passed on the deployment (the only place it exists)
+
+```
+X-Vercel-Cache: MISS  → HIT (Age 1) → HIT (Age 2)
+Cache-Control: public, max-age=0
+Cdn-Cache-Control: public, s-maxage=4, stale-while-revalidate=10
+Set-Cookie: none
+```
+
+**DECISIONS A2 is now proven end to end**, not just reasoned about: the board is
+served from the edge, so viewer count really is irrelevant to the bill. If this
+ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check.
+
+**Still to confirm in the dashboard:** `NEXT_PUBLIC_SITE_URL` must be
+`https://maxpoll.vercel.app`. A localhost value there sends every production
+Google sign-in to your laptop. The code now ignores a localhost value when
+running on Vercel, but the variable should still be right.
 
 ## What you need to do next
 
@@ -98,12 +110,8 @@ tapped**. This is the highest-damage bug in the product.
 **Board (Gate 5):** open one poll in three browsers, vote in one → the others
 update within ~5s · ranks slide (FLIP, 340ms) rather than jumping.
 
-**On a deployment, not localhost:**
-```bash
-curl -sI https://<url>/api/poll/<id>/board | grep -i x-vercel-cache
-# MISS, then HIT within 4s
-```
-If hits scale with viewers, check the **`proxy.ts`** matcher first — DECISIONS A2.
+✅ The edge-cache half of Gate 5 is **already done** — see above. Only the
+three-browser FLIP check is left, and it needs human eyes.
 
 **Payments:** the paywall shows *"Unlocking soon"* until `NEXT_PUBLIC_UPI_VPA` is
 set. That is the fail-closed path working, not a bug.
