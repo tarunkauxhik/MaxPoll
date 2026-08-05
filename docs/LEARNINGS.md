@@ -504,3 +504,38 @@ in `node_modules/next/dist/docs/01-app/01-getting-started/06-fetching-data.md`, 
 the example is `getUser` itself.
 
 Measured on production: TTFB median ~336ms → ~267ms.
+
+### Google OAuth: non-sensitive scopes never needed verification
+2026-08-05. [07-setup.md](07-setup.md) told us to stay in Testing because "publishing
+requires a verified authorised domain and `*.vercel.app` cannot be verified". That
+invented a launch blocker and it stood for weeks.
+
+MaxPoll requests `openid`, `email`, `profile` — all **non-sensitive**. Google's rules:
+
+- An app using only non-sensitive scopes is **not required to complete verification**.
+  Nothing enters a review queue.
+- Apps requesting only basic profile information show **no unverified-app warning**
+  and get **no 7-day refresh-token expiry** — *even in Testing*.
+- Testing mode's actual limitation is a **100-test-user cap**, added by hand.
+
+So publishing removes the cap and changes nothing else, and it never depended on a
+domain. Verification, brand review and domain ownership only enter the picture for
+sensitive or restricted scopes, or to put a custom logo on the consent screen.
+
+The domain still earns its place — Branding wants a home page, a privacy policy and
+terms that resolve — but as a requirement of *that step*, not of publishing.
+
+**The general lesson:** we wrote a platform constraint into the docs from a plausible
+inference rather than from the platform's documentation, then treated it as settled
+fact. Every other platform claim in this project got verified against a primary source
+(DECISIONS A1–A6). This one didn't, and it was the one that cost the most.
+
+### `URLSearchParams` writes `+` for a space, and UPI apps read it literally
+`upiIntentUrl()` built its query with `URLSearchParams`, which encodes a space as `+`
+— correct for form bodies, wrong inside a `upi://` URI. An app parsing per RFC 3986
+renders the note as `MaxPoll+MP4F2A1B`.
+
+`.replace(/\+/g, "%20")` on the serialised query fixes it; `%20` is read as a space by
+both kinds of parser. Only `tn` (the note the payer reads) carried a space, so nothing
+was functionally broken — but the payment screen is the one place a stray character
+costs trust.

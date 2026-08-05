@@ -487,3 +487,45 @@ client may still write is `read`, on its own rows.
 every vote — N writes on the hottest path in the product. `same_as_you_names()`
 computes the count and the two visible names together at read time, in the query
 `/activity` already runs, so the number is also never stale.
+
+### D6 · Phase 1 collects on a personal VPA, knowingly
+
+`NEXT_PUBLIC_UPI_VPA=tarunkaushikraya@oksbi` is a **personal** handle, not the PhonePe
+for Business VPA [07-setup.md](07-setup.md) §4 specifies. It ships anyway, as a
+deliberate trade: payments work today at zero cost, and the swap to a business VPA is
+one environment variable with no code change.
+
+What it costs, stated plainly so nobody rediscovers it as a surprise:
+
+- **Every payer sees the operator's legal name.** We send `pn=MaxPoll` in the `upi://`
+  intent, but UPI apps display the name resolved from the VPA at the bank, so `pn` does
+  not override it. §4.1's "your personal name is hidden" is not true on this path.
+- Sustained business collection on a personal handle is P2P misuse under NPCI norms,
+  and personal handles carry P2P limits.
+
+Mitigation is one sentence on `/pay/[ref]`, in the existing `.discl` line, saying the
+payment lands in an individual's account. An unexplained personal name on a payment
+screen is the most likely reason a ₹9 purchase gets abandoned — naming it up front
+costs nothing and removes the "is this a scam?" beat.
+
+**Reversing this is one env var and deleting that sentence.** Do it the day PhonePe
+Business is approved.
+
+### D7 · The domain is `viratkohli.tech`, against advice
+
+Recorded because it was a decision and not an accident, and because the reasoning
+matters more than the outcome if it has to be revisited.
+
+The risks were put before the call and accepted: `viratkohli.tech` is the name of a
+living public figure with registered Indian trademarks. Indian courts have repeatedly
+granted personality-rights injunctions to celebrities (Amitabh Bachchan, Anil Kapoor,
+Jackie Shroff); `.tech` is UDRP-bound and a domain that is exactly a famous person's
+name, used commercially, is close to the textbook bad-faith case; and Google's OAuth
+policies prohibit apps that misrepresent affiliation, which "MaxPoll served from
+viratkohli.tech" invites.
+
+**The cost if it has to move** is not just a DNS change: Vercel domains, the Supabase
+Site URL and redirect allowlist, Google's authorised domains and JavaScript origins,
+the Search Console verification, `NEXT_PUBLIC_SITE_URL` and `metadataBase` all point
+at it — and every WhatsApp share already in the wild keeps pointing at the old host.
+Nothing in the code hardcodes it, which is the one thing that makes a move survivable.

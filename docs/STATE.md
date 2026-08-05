@@ -59,6 +59,42 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
 
+## 🚀 Phase 11 — go live (2026-08-05)
+
+**Payments are on.** `NEXT_PUBLIC_UPI_VPA=tarunkaushikraya@oksbi` — a *personal*
+handle, shipped knowingly ([DECISIONS D6](DECISIONS.md)). Every payer sees the
+operator's legal name; `pn=MaxPoll` does not override what the payer's app resolves
+from the bank. The pay screen now says so, which is the cheapest fix for the "who am
+I paying?" moment. Swapping to PhonePe Business later is one env var.
+
+**`/privacy` and `/terms` now exist** — written from the schema, not a template, and
+linked from the landing footer. They were the real blocker: Google's Branding step
+rejects URLs that don't resolve.
+
+**The OAuth blocker never existed.** 07-setup told us to stay in Testing because
+publishing needed a verified domain. Wrong — MaxPoll uses only non-sensitive scopes,
+so no verification, no review queue, and no unverified-app warning even in Testing.
+Testing's one real limit is the **100-test-user cap**. Publishing removes it and
+changes nothing else. Steps are in [07-setup.md](07-setup.md) §2.7.
+
+### Your turn, in this order
+
+1. **Vercel env** → set `NEXT_PUBLIC_PAYMENTS_MODE=manual_upi`,
+   `NEXT_PUBLIC_UPI_VPA=tarunkaushikraya@oksbi`, `NEXT_PUBLIC_UPI_PAYEE_NAME=MaxPoll`,
+   `NEXT_PUBLIC_SITE_URL=https://viratkohli.tech` → **redeploy** (`NEXT_PUBLIC_*` is
+   baked in at build time)
+2. **Domain** → Vercel → Settings → Domains → add `viratkohli.tech`; set the DNS
+   records it prints at get.tech; wait for the certificate
+3. **Supabase** → Authentication → URL Configuration → Site URL
+   `https://viratkohli.tech`, and add `https://viratkohli.tech/**` to Redirect URLs,
+   **keeping** localhost and the vercel.app entries
+4. **Google** → Clients → add `https://viratkohli.tech` to JavaScript origins, then
+   Branding + Publish per §2.7. The redirect URI does **not** change
+5. **Change `CONTACT_EMAIL`** in [app/legal.ts](../app/legal.ts) — it currently ships
+   a work address on two public pages
+6. **Send yourself ₹1** through the real flow before trusting it, and confirm the UTR
+   appears where you'll be reading it
+
 ## What you need to do next
 
 **Nothing is blocking the code.** Three things, in order of value:

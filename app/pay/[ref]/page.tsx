@@ -168,10 +168,16 @@ export default async function PayPage({
 
         <UtrForm orderRef={order.ref} />
 
+        {/* MaxPoll collects on an individual UPI account, so the payer's app shows
+            a person's name and not "MaxPoll". Saying so here is the cheapest fix
+            for the "wait, who am I paying?" moment that otherwise abandons the
+            payment. Remove this line the day the business VPA lands — DECISIONS D6. */}
         <p className="discl">
           <span aria-hidden="true">🔓</span>
           <span>
-            Non-refundable. Pay the exact amount shown, or we can&apos;t match it.
+            Your UPI app will show an individual&apos;s name — MaxPoll is run by one
+            person and collects on a personal account. Non-refundable. Pay the exact
+            amount shown, or we can&apos;t match it.
           </span>
         </p>
       </div>

@@ -76,3 +76,16 @@ test("a quoted env value does not silently disable payments", () => {
   });
   withEnv({ ADMIN_USER_IDS: '"a-uuid, b-uuid"' }, () => assert.equal(isAdmin("b-uuid"), true));
 });
+
+test("the intent URI is readable by a strict RFC 3986 parser", () => {
+  withEnv({ NEXT_PUBLIC_UPI_VPA: "tarunkaushikraya@oksbi" }, () => {
+    const url = upiIntentUrl("MP4F2A1B", 900);
+    // `+` here would render as a literal plus in the payer's note field.
+    assert.ok(!url.includes("+"), `plus survived encoding: ${url}`);
+    assert.match(url, /tn=MaxPoll%20MP4F2A1B/);
+    assert.match(url, /pa=tarunkaushikraya%40oksbi/);
+    // The amount is a hint the payer can edit; the reference is what we match on.
+    assert.match(url, /am=9\.00/);
+    assert.match(url, /tr=MP4F2A1B/);
+  });
+});

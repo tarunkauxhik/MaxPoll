@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Space_Grotesk, Space_Mono } from "next/font/google";
+import { clean } from "@/lib/env";
 import "./globals.css";
 
 // Archivo and Space Grotesk are variable fonts — one file each covers every
@@ -24,6 +25,17 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
+  // Pinned rather than inferred. Next currently guesses this correctly from the
+  // deployment, but the poll page's og:image is a relative path and a wrong guess
+  // means WhatsApp previews point at the wrong host — and the share preview is a
+  // growth mechanic, not a detail (04 §5.16). Falls back to the Vercel URL so
+  // preview deployments still resolve.
+  metadataBase: new URL(
+    clean("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL) ||
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : "http://localhost:3000")
+  ),
   title: "MaxPoll",
   description:
     "Make a poll about anything. Watch names climb a live leaderboard. Every vote is on the record.",

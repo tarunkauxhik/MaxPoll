@@ -76,7 +76,11 @@ export function upiIntentUrl(ref: string, paise: number) {
     tr: ref,
     tn: `MaxPoll ${ref}`,
   });
-  return `upi://pay?${q}`;
+  // URLSearchParams encodes a space as `+`, which is correct for form bodies and
+  // wrong here: a UPI app parsing the URI per RFC 3986 renders a literal plus, so
+  // the payer reads "MaxPoll+MP4F2A1B" on their confirmation screen. `%20` is
+  // read as a space by both kinds of parser.
+  return `upi://pay?${q.toString().replace(/\+/g, "%20")}`;
 }
 
 /** UTRs are 12 digits. Length is all we can check client-side; the admin does the rest. */

@@ -136,19 +136,24 @@ removes forgot/reset flows and an entire attack surface.
 
 3. Agree to the policy → **Create**
 
-### 2.3 Audience — stay in Testing
+### 2.3 Audience — Testing while you build, Production before you launch
 
 1. Left menu → **Audience**
-2. Publishing status must read **Testing**. **Leave it there.**
-3. Under **Test users** → **Add users** → your Gmail address, plus any friends who
-   should be able to sign in. Up to 100
+2. While building, **Testing** is fine. Add yourself under **Test users → Add users**,
+   plus anyone who needs to sign in.
+3. Before real users: **Publish app**. See §2.6.
 
-> **Why stay in Testing:** publishing to Production requires a verified authorised
-> domain, and a `*.vercel.app` subdomain **cannot be verified** — that only becomes
-> possible with a real domain. Testing mode works completely; sign-in just shows an
-> "unverified app" screen with a **Continue** link. That's expected, not a bug.
+> **⚠️ This section used to say "leave it in Testing, publishing needs a verified
+> domain and `*.vercel.app` can't be verified". That was wrong**, and it invented a
+> launch blocker that never existed. Corrected 2026-08-05.
 >
-> Only listed test users can sign in. If a friend can't, they're not on the list.
+> MaxPoll requests only `openid`, `email` and `profile` — all **non-sensitive**.
+> Google does not require verification for those, so nothing goes into a review
+> queue. And because they're basic profile scopes, **there is no "unverified app"
+> warning and no 7-day token expiry even in Testing.**
+>
+> Testing mode's one real limitation is the **100-test-user cap**, each added by
+> hand. That is the only thing publishing changes.
 
 ### 2.4 Data Access — scopes
 
@@ -185,6 +190,34 @@ at onboarding. Nothing else, so the consent screen stays trustworthy.
 
 1. Supabase → **Authentication** → **Sign In / Providers** → **Google**
 2. Paste the Client ID and Client Secret → **Save**
+
+### 2.7 Publish — the step that lets strangers sign in
+
+Do this once `/privacy` and `/terms` are live on your domain. Google's Branding step
+rejects URLs that don't resolve, so this order matters.
+
+1. `console.cloud.google.com` → select the project holding `MaxPoll Web`
+2. **Google Auth Platform → Branding**:
+   - App name `MaxPoll`, user support email, developer contact email
+   - **App home page** `https://<your-domain>`
+   - **Privacy policy** `https://<your-domain>/privacy`
+   - **Terms of service** `https://<your-domain>/terms`
+3. **Authorised domains** → `<your-domain>` **only**. If `supabase.co` appears,
+   remove it — it belongs in redirect URIs, and you cannot verify a domain you don't
+   own.
+4. Verify the domain in [Google Search Console](https://search.google.com/search-console),
+   signed in as **the same Google account that owns the Cloud project** — otherwise
+   the OAuth system won't see the ownership. Add the TXT record wherever your DNS
+   lives (Vercel, if the nameservers point there).
+5. **Data access** → confirm only `openid`, `…/userinfo.email`, `…/userinfo.profile`.
+   All non-sensitive, so **there is nothing to submit and no review to wait for.**
+6. **Audience → Publish app → Confirm.** Status reads *In production*.
+7. **Clients → `MaxPoll Web` → Authorised JavaScript origins** → add
+   `https://<your-domain>`. The **redirect URI does not change** — it points at
+   Supabase.
+
+> **The only proof that matters:** sign in with a Google account that is *not* on the
+> test-user list. Everything else is a setting that looks right.
 
 ```
 === SEND ME AFTER SECTION 2 ===

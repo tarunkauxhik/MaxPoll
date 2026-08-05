@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SignInButton } from "./SignInButton";
 import { n } from "@/lib/format";
 
@@ -135,7 +136,12 @@ export function Landing({
             in.
           </span>
         </p>
-        <p className="hint lcenter">MaxPoll · 18+ · India</p>
+        {/* Google's OAuth Branding step needs these to resolve, and the landing
+            page is where a reviewer lands. */}
+        <p className="hint lcenter">
+          MaxPoll · 18+ · India · <Link href="/privacy">Privacy</Link> ·{" "}
+          <Link href="/terms">Terms</Link>
+        </p>
       </footer>
     </div>
   );
