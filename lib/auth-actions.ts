@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { clean } from "@/lib/env";
 
 /**
  * Sign in AND sign up. Deliberately one function.
@@ -14,9 +15,13 @@ import { headers } from "next/headers";
  */
 export async function signInWithGoogle(next?: string) {
   const supabase = await createClient();
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    `https://${(await headers()).get("host")}`;
+  // `??` was wrong twice over: an empty value in Vercel produced `new URL("/auth/…")`,
+  // and a whole `.env.local` pasted into Vercel leaves the localhost value here,
+  // which bounces every production sign-in to the developer's machine. The request
+  // host is always correct on Vercel, so prefer it whenever the var looks local.
+  const configured = clean("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL);
+  const usable = configured && !(process.env.VERCEL && configured.includes("localhost"));
+  const origin = usable ? configured : `https://${(await headers()).get("host")}`;
 
   const callback = new URL(`${origin}/auth/callback`);
   if (next) callback.searchParams.set("next", next);

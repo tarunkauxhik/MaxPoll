@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { supabaseKey, supabaseUrl } from "@/lib/env";
 
 /**
  * Cookie-free client for the **edge-cached** routes only:
@@ -20,7 +21,7 @@ import { createClient } from "@supabase/supabase-js";
  */
 export const createAnonClient = () =>
   createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    supabaseUrl(),
+    supabaseKey(),
     { auth: { persistSession: false, autoRefreshToken: false } }
   );

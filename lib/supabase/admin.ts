@@ -4,6 +4,7 @@
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
+import { requireEnv, supabaseUrl } from "@/lib/env";
 
 /**
  * Secret-key client. **BYPASSES RLS COMPLETELY.**
@@ -19,7 +20,9 @@ import { createClient } from "@supabase/supabase-js";
  */
 export const createAdminClient = () =>
   createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET_KEY!,
+    supabaseUrl(),
+    // Read here, not in env.ts, so the literal never appears in a module the
+    // client bundle can pull in.
+    requireEnv("SUPABASE_SECRET_KEY", process.env.SUPABASE_SECRET_KEY),
     { auth: { persistSession: false, autoRefreshToken: false } }
   );

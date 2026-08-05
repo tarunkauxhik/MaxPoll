@@ -5,7 +5,14 @@
  * later rail and its modes are reserved but unimplemented. Both write to the
  * same `entitlements` table, so nothing downstream of the money cares which
  * rail was used.
+ *
+ * Every read goes through `clean()`: a value pasted into Vercel with quotes round
+ * it would otherwise fail closed *silently* here, which looks identical to "not
+ * launched yet" — see docs/LEARNINGS.md.
  */
+// Relative + explicit extension: this module is loaded raw by `node --test`,
+// which does not know the `@/` alias. Same reason as lib/rank.ts.
+import { clean } from "./env.ts";
 
 export const PAYMENT_MODES = [
   "coming_soon",
@@ -28,12 +35,12 @@ export type OrderKind = keyof typeof PRICES;
  * payment screen that quietly points nowhere.
  */
 export function paymentMode(): PaymentMode {
-  const raw = process.env.NEXT_PUBLIC_PAYMENTS_MODE;
+  const raw = clean("NEXT_PUBLIC_PAYMENTS_MODE", process.env.NEXT_PUBLIC_PAYMENTS_MODE);
   const mode = PAYMENT_MODES.includes(raw as PaymentMode)
     ? (raw as PaymentMode)
     : "coming_soon";
 
-  if (mode === "manual_upi" && !process.env.NEXT_PUBLIC_UPI_VPA) return "coming_soon";
+  if (mode === "manual_upi" && !vpa()) return "coming_soon";
   // ponytail: Razorpay modes are reserved, not built. Drop this when §5 lands.
   if (mode === "razorpay_test" || mode === "razorpay_live") return "coming_soon";
 
@@ -41,6 +48,8 @@ export function paymentMode(): PaymentMode {
 }
 
 export const paymentsEnabled = () => paymentMode() !== "coming_soon";
+
+const vpa = () => clean("NEXT_PUBLIC_UPI_VPA", process.env.NEXT_PUBLIC_UPI_VPA);
 
 /** Rupees for display. Every rendered amount goes through `.num` — DECISIONS B6. */
 export const rupees = (paise: number) =>
@@ -56,12 +65,12 @@ export const rupees = (paise: number) =>
  * `orders.amount_paise` against the merchant app. See docs/05-payments.md §3.
  */
 export function upiIntentUrl(ref: string, paise: number) {
-  const vpa = process.env.NEXT_PUBLIC_UPI_VPA;
-  if (!vpa) throw new Error("NEXT_PUBLIC_UPI_VPA is not set");
+  const pa = vpa();
+  if (!pa) throw new Error("NEXT_PUBLIC_UPI_VPA is not set");
 
   const q = new URLSearchParams({
-    pa: vpa,
-    pn: process.env.NEXT_PUBLIC_UPI_PAYEE_NAME || "MaxPoll",
+    pa,
+    pn: clean("NEXT_PUBLIC_UPI_PAYEE_NAME", process.env.NEXT_PUBLIC_UPI_PAYEE_NAME) || "MaxPoll",
     am: (paise / 100).toFixed(2),
     cu: "INR",
     tr: ref,
@@ -76,7 +85,7 @@ export const isValidUtr = (utr: string) => /^\d{12}$/.test(utr.trim());
 /** Server-only. An empty allowlist means nobody, never everybody. */
 export function isAdmin(userId: string | undefined | null) {
   if (!userId) return false;
-  return (process.env.ADMIN_USER_IDS ?? "")
+  return clean("ADMIN_USER_IDS", process.env.ADMIN_USER_IDS)
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)

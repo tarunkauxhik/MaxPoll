@@ -66,3 +66,13 @@ test("upiIntentUrl encodes to the NPCI spec", () => {
   });
   withEnv({ NEXT_PUBLIC_UPI_VPA: "" }, () => assert.throws(() => upiIntentUrl("MP1", 900)));
 });
+
+test("a quoted env value does not silently disable payments", () => {
+  // The 2026-08-05 paste bug: quotes round a Vercel value. Here it would have
+  // failed closed in silence, which is indistinguishable from "not launched yet".
+  withEnv({ NEXT_PUBLIC_PAYMENTS_MODE: '"manual_upi"', NEXT_PUBLIC_UPI_VPA: "'maxpoll@ybl'" }, () => {
+    assert.equal(paymentMode(), "manual_upi");
+    assert.match(upiIntentUrl("MP123456", 900), /pa=maxpoll%40ybl/);
+  });
+  withEnv({ ADMIN_USER_IDS: '"a-uuid, b-uuid"' }, () => assert.equal(isAdmin("b-uuid"), true));
+});

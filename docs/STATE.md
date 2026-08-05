@@ -25,6 +25,28 @@ pnpm gates    # 30 probes against the REAL database, then tears its data down
 pnpm sql supabase/seed.sql   #  seed  ·  pnpm sql --wipe  to remove
 ```
 
+## 🔴 Production is down until you fix one Vercel variable
+
+`maxpoll.vercel.app` returns 500 on every route:
+`Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.`
+
+supabase-js emits that message **only** when the value is set but has no
+`http(s)://` — an unset variable says `supabaseUrl is required.` instead. So
+`NEXT_PUBLIC_SUPABASE_URL` exists in Vercel with a broken value: quotes round it,
+a `NAME=` prefix pasted along with it, or the scheme missing.
+
+1. Vercel → Settings → Environment Variables → **Production** →
+   `NEXT_PUBLIC_SUPABASE_URL` = `https://biwcdpefkzrkkdajfyaj.supabase.co`
+   — value only, no quotes, no `NAME=`.
+2. Check the rest against the table in [08-runbook.md](08-runbook.md).
+   `NEXT_PUBLIC_SITE_URL` must be `https://maxpoll.vercel.app`, **not** localhost.
+3. **Redeploy.** `NEXT_PUBLIC_*` is baked into the build, so editing the dashboard
+   alone changes nothing.
+
+The app now names the offending variable in the log instead of dying inside
+supabase-js, and quotes / `NAME=` prefixes are stripped rather than fatal —
+[LEARNINGS](LEARNINGS.md).
+
 ## What you need to do next
 
 **Nothing is blocking the code.** Three things, in order of value:

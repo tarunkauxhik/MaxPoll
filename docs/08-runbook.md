@@ -93,6 +93,35 @@ and **Active CPU**, not storage. These rules keep both flat.
 | **Don't create a second Supabase project** | Two active = the whole allowance and double the pause risk |
 | **Check usage monthly** | Vercel → Usage (**Active CPU** moves first) · Supabase → Usage (DB size, egress) |
 
+### Vercel environment variables
+
+Set every one of these for **Production** (Preview too, if you use previews).
+`SUPABASE_DB_URL` is the exception — it is for migrations and scripts, never the
+app, so it must not go into Vercel at all.
+
+| Variable | Production value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://<ref>.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…` |
+| `SUPABASE_SECRET_KEY` | `sb_secret_…` |
+| `NEXT_PUBLIC_SITE_URL` | `https://maxpoll.vercel.app` — **not** localhost |
+| `NEXT_PUBLIC_PAYMENTS_MODE` | `manual_upi` |
+| `NEXT_PUBLIC_UPI_VPA` | empty until PhonePe is approved |
+| `NEXT_PUBLIC_UPI_PAYEE_NAME` | `MaxPoll` |
+| `ADMIN_USER_IDS` | your profile UUID |
+| `CRON_SECRET` | any long random string |
+
+Two rules, both learned the hard way:
+
+1. **Paste the value only** — not `NAME=value`, and no surrounding quotes.
+   `@supabase/supabase-js` rejects the result with `Invalid supabaseUrl`, and it
+   names neither the variable nor what was in it.
+2. **Redeploy after any change.** `NEXT_PUBLIC_*` is substituted into the bundle
+   at build time. Editing the dashboard changes nothing until the next build.
+
+If a deploy 500s on every route, open the Vercel log and read the message: the app
+now names the offending variable itself. LEARNINGS has the full story.
+
 ### What only a deploy can prove
 
 Four things genuinely don't exist locally. Everything else, test locally.
@@ -110,8 +139,13 @@ pnpm supabase db dump -f backup.sql     # before anything destructive
 pnpm supabase db push                   # apply pending migrations
 ```
 
-Seed data is a migration, so a fresh database is one command away and test rows never
-silently pile up.
+Seed data is deliberately **not** a migration — `db push` would ship demo content to
+production. Apply and remove it on demand instead:
+
+```bash
+pnpm sql supabase/seed.sql   # seed
+pnpm sql --wipe              # remove every seeded row
+```
 
 ### Watching the meters
 

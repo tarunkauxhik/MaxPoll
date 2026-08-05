@@ -316,3 +316,45 @@ production. The CLI has no "run this SQL file" command either, so
 Seeding votes through `cast_vote()` rather than raw inserts is deliberate: a seed
 that writes `vote_count` by hand would hide exactly the bug Gate 4 hunts. The
 seeded database independently confirmed 54 vote rows === 54 summed counters.
+
+### `Invalid supabaseUrl` in production — the error that names nothing
+2026-08-05. Every route on `maxpoll.vercel.app` returned 500 with
+`Error running the exported Web Handler: Invalid supabaseUrl: Must be a valid HTTP
+or HTTPS URL.` No file, no variable name, no value.
+
+Reading `validateSupabaseUrl` in `@supabase/supabase-js` settled it in one step —
+there are **two** different messages, and which one you get is the diagnosis:
+
+| Value | Message |
+|---|---|
+| missing / empty | `supabaseUrl is required.` |
+| set, but no `http(s)://` | `Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.` |
+
+We got the second, so `NEXT_PUBLIC_SUPABASE_URL` **was** set in Vercel — with a
+broken value. Verified against the real library, all three of these produce it:
+
+```
+biwcdpefkzrkkdajfyaj.supabase.co                 (scheme missing)
+"https://biwcdpefkzrkkdajfyaj.supabase.co"       (quotes pasted in)
+NEXT_PUBLIC_SUPABASE_URL=https://…               (whole .env line pasted in)
+```
+
+Two fixes, because either alone leaves the trap open:
+
+- `lib/supabase/env.ts` is now the only reader of these variables. It strips a
+  `NAME=` prefix, surrounding quotes and whitespace, and otherwise throws a message
+  that names the variable **and** prints the value. All five clients — server,
+  browser, anon, admin, `proxy.ts` — go through it.
+- The value is only safe to print because it is a `NEXT_PUBLIC_` one that ships to
+  every browser anyway. `requireEnv` never echoes, so the secret key stays quiet.
+
+**The compounding trap: `NEXT_PUBLIC_*` is substituted into the bundle at build
+time.** Fixing the value in the Vercel dashboard changes nothing until a redeploy —
+so a correct-looking dashboard and a broken site coexist happily, which is exactly
+how this eats an evening.
+
+Same paste, one more casualty: a whole `.env.local` copied into Vercel carries
+`NEXT_PUBLIC_SITE_URL=http://localhost:3000`, which sends every production Google
+sign-in to the developer's laptop. `signInWithGoogle` now ignores a localhost value
+when `process.env.VERCEL` is set and uses the request host instead. It also used
+`??`, which does not fall back on `""` — an empty value made `new URL()` throw.
