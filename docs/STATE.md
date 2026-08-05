@@ -1,8 +1,8 @@
 # State
 
 _Last updated: 2026-08-05 · **Live at [viratkohli.tech](https://viratkohli.tech).**
-Google OAuth published, payments on, 63 gate probes green. Remaining: the browser
-checks only a human can do, and a business VPA._
+Google OAuth published, payments on, `CRON_SECRET` enforced, 63 gate probes green.
+Remaining: the browser checks only a human can do, and a business VPA._
 
 ## Where we are
 
@@ -21,12 +21,14 @@ checks only a human can do, and a business VPA._
 | 10 — Write + column guards | ✅ **Gates W and C** — the vote spoof, five tables locked |
 | 11 — Go live | ✅ Domain, OAuth published, payments on, `/privacy` + `/terms` |
 | 12 — Polls that end | ✅ **Gate X** — daily cron closes them, `CRON_SECRET` enforced |
+| 13 — The first hour | ✅ First run no longer dead-ends; `pnpm launch` for real content |
 
 ```bash
 pnpm dev      # http://localhost:3000
-pnpm check    # build + lint + typecheck + contrast + 50 unit tests
+pnpm check    # build + lint + typecheck + contrast + 56 unit tests
 pnpm gates    # 63 probes against the REAL database, then tears its data down
 pnpm sql supabase/seed.sql   #  seed  ·  pnpm sql --wipe  to remove
+pnpm launch supabase/launch.json   #  real opening content · --apply to write
 ```
 
 ## Production is live — 2026-08-05
@@ -62,6 +64,41 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 `https://maxpoll.vercel.app`. A localhost value there sends every production
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
+
+## Phase 13 — the first hour (2026-08-05)
+
+Wiping the seed data exposed something no amount of seeded content could: **the
+first run was a chain of dead ends.** A signed-in user with no Space — every
+visitor in week 1 — walked Feed → `/create` ("Join a Space first") → `/spaces`
+("No Spaces yet") → `/spaces/new` → back round to `/create`. Four screens and a
+loop, after copy promising thirty seconds.
+
+One mistake made three times: each empty state pointed at the **next screen in the
+hierarchy** instead of at the action that unblocks the user. Fixed at the only
+screen making a genuinely wrong call — `/create` now tells the two situations
+apart. No Spaces exist at all → "Make the first" → `/spaces/new?next=/create`, and
+`createSpace` puts you back on the poll form with the new Space already in the
+picker (`create_space` joins the creator in the same transaction). `?next=` reuses
+the validation from `app/onboarding/actions.ts`, `//evil.com` check included.
+
+**And you can now run your own launch plan.** 01-product Week 0 is "1 Space + 20–30
+polls"; `create_poll()` caps every account at 3 a week. That cap is anti-spam,
+enforced inside the transaction, and it **did not move and got no admin bypass** —
+admin identity lives in an env var, not the database. `pnpm launch` goes through the
+door `seed.sql` already uses instead: a JSON file → one Space, N polls, their
+options, in one transaction, as the table owner.
+
+Dry run by default, because it points at production. Proven end to end against the
+real database: 6 raw option strings became 4 (duplicate by `label_norm`, one under
+2 chars, one untrimmed), `member_count` and `option_count` came from the existing
+triggers, `is_verified` stayed false, a re-run refused on the duplicate name, and
+the probe Space cascaded cleanly away. **It writes no votes** — "8–10 real
+friend-votes" means real friends.
+
+`lib/slug.ts` came out of two near-identical inline copies and gained six tests.
+One of them found a real bug in the code it replaced: `Math.random().toString(36)`
+is not fixed-width, so `0.5` yielded a **one-character** slug suffix — rare, and
+the failure mode is a unique-violation on the insert that loses the draft.
 
 ## Phase 12 — polls that end (2026-08-05)
 
@@ -127,15 +164,20 @@ changes nothing else. Steps are in [07-setup.md](07-setup.md) §2.7.
 
 **Nothing is blocking the code.** In order of value:
 
-1. **Browser checks** — the list below. The things no script can see, and the
+1. **Your opening content.** `cp supabase/launch.example.json supabase/launch.json`,
+   fill in your Space and 20–30 polls, `pnpm launch supabase/launch.json` to preview,
+   `--apply` to write. Then 8–10 **real** friend-votes on each before you post
+   anywhere public — a poll at 2 votes looks dead.
+2. **Browser checks** — the list below. The things no script can see, and the
    vote-intent round trip is the one that matters most.
-2. **PhonePe for Business** ([07-setup.md](07-setup.md) §4). Payments already work on
+3. **PhonePe for Business** ([07-setup.md](07-setup.md) §4). Payments already work on
    a personal VPA ([DECISIONS D6](DECISIONS.md)), so this is no longer a blocker — it
    is what stops every payer seeing your legal name. Swapping is one env var and
    deleting one sentence from `/pay/[ref]`.
-3. **`CRON_SECRET` in Vercel.** Until it is set the daily job runs keep-alive only and
-   never closes polls; the response says `"guard": "CRON_SECRET not set"` so you can
-   check with one curl.
+
+> ✅ **`CRON_SECRET` is set and enforced** — `curl` to `/api/cron/ping` with no
+> `Authorization` header returns **401**, and the `"guard"` field is gone from the
+> authorised response. The daily job closes expired polls.
 
 > Google OAuth is **published**. The old warning here said Testing mode was forced
 > because `*.vercel.app` cannot be verified — that was wrong on its own terms
@@ -247,7 +289,13 @@ those users, and deletes everything afterwards.
 
 ## Gate 1 + browser checks — yours to run
 
-Seed data is already applied, so every screen has content.
+The database is empty, so most screens show their empty state. Put content in with
+`pnpm launch` (above), or `pnpm sql supabase/seed.sql` for throwaway demo data —
+**wipe that before anyone real sees it.**
+
+**First run (Phase 13):** signed in with no Space, `/create` → "Make the first" →
+`/spaces/new` → submit → you land **back on the poll form**, new Space already in
+the picker. Not on the Space page.
 
 **Shell (Gate 1)** — 360px and 1440px, no horizontal scroll · fonts from
 `/_next/static/media/…`, zero requests to `fonts.gstatic.com` · CLS 0 ·

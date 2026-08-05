@@ -10,14 +10,7 @@
  * The point of running against the real database rather than mocks: the Gate 2
  * version of this script found an actual RLS hole that reasoning had missed.
  */
-import { readFileSync } from "node:fs";
-
-const env = Object.fromEntries(
-  readFileSync(".env.local", "utf8")
-    .split("\n")
-    .filter((l) => l.includes("=") && !l.trimStart().startsWith("#"))
-    .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim()])
-);
+import { env } from "./env.mjs";
 
 const URL_ = env.NEXT_PUBLIC_SUPABASE_URL;
 const PUB = env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

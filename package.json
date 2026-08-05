@@ -12,7 +12,8 @@
     "check:contrast": "node scripts/check-contrast.mjs",
     "check": "next build && eslint && tsc --noEmit && node scripts/check-contrast.mjs && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"lib/**/*.test.mts\"",
     "gates": "node scripts/gates.mjs",
-    "sql": "node scripts/sql.mjs"
+    "sql": "node scripts/sql.mjs",
+    "launch": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/launch.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

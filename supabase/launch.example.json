@@ -1,0 +1,39 @@
+{
+  "_readme": [
+    "Copy to supabase/launch.json (gitignored), fill in, then:",
+    "  pnpm launch supabase/launch.json           # dry run, writes nothing",
+    "  pnpm launch supabase/launch.json --apply",
+    "",
+    "owner_handle must already exist — sign in through the site once first.",
+    "subject_type: 'person' or 'thing'. closes_in_hours is optional (omit = no timer).",
+    "2-10 options per poll; people add more once it is live.",
+    "No votes are written. Get real ones from real friends before posting publicly."
+  ],
+
+  "owner_handle": "your_handle",
+
+  "space": {
+    "name": "Your College · 1st year",
+    "description": "First-year students at Your College. One vote each, names on the record."
+  },
+
+  "polls": [
+    {
+      "title": "Best 1st year teacher",
+      "subject_type": "person",
+      "closes_in_hours": 168,
+      "options": ["Teacher one", "Teacher two", "Teacher three", "Teacher four"]
+    },
+    {
+      "title": "Worst canteen item",
+      "subject_type": "thing",
+      "closes_in_hours": 72,
+      "options": ["Item one", "Item two", "Item three"]
+    },
+    {
+      "title": "Most underrated club",
+      "subject_type": "thing",
+      "options": ["Club one", "Club two", "Club three"]
+    }
+  ]
+}

@@ -152,6 +152,24 @@ pnpm sql supabase/seed.sql   # seed
 pnpm sql --wipe              # remove every seeded row
 ```
 
+### Going live in a new place
+
+`create_poll()` caps every account at **3 polls a week**, and that cap does not move
+— it is anti-spam, enforced inside the transaction. So the Week-0 opening set from
+[01-product.md](01-product.md) (1 Space + 20–30 polls) goes in through the same door
+`seed.sql` uses: direct SQL as the table owner.
+
+```bash
+cp supabase/launch.example.json supabase/launch.json   # gitignored — real names
+pnpm launch supabase/launch.json            # dry run: prints the plan, writes nothing
+pnpm launch supabase/launch.json --apply
+```
+
+`owner_handle` must already exist, so sign in through the site once first. It writes
+**no votes** — "8–10 real friend-votes before posting publicly" means real friends.
+Re-running refuses on the duplicate Space name; to start over, delete the Space and
+let the cascade take its polls with it.
+
 ### Watching the meters
 
 **Vercel → Usage** — the order things bind:

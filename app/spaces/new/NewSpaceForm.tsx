@@ -3,11 +3,13 @@
 import { useActionState } from "react";
 import { createSpace, type SpaceState } from "./actions";
 
-export function NewSpaceForm() {
+export function NewSpaceForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<SpaceState, FormData>(createSpace, {});
 
   return (
     <form action={action}>
+      {next && <input type="hidden" name="next" value={next} />}
+
       <label className="lbl" htmlFor="name">
         Name
       </label>

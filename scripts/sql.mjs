@@ -12,13 +12,7 @@
  */
 import { readFileSync } from "node:fs";
 import pg from "pg";
-
-const env = Object.fromEntries(
-  readFileSync(".env.local", "utf8")
-    .split("\n")
-    .filter((l) => l.includes("=") && !l.trimStart().startsWith("#"))
-    .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim()])
-);
+import { need } from "./env.mjs";
 
 const WIPE = `
 delete from votes    where device_id = 'seed-device';
@@ -38,7 +32,7 @@ if (!arg) {
 const sql = arg === "--wipe" ? WIPE : readFileSync(arg, "utf8");
 
 const client = new pg.Client({
-  connectionString: env.SUPABASE_DB_URL,
+  connectionString: need("SUPABASE_DB_URL"),
   ssl: { rejectUnauthorized: false },
 });
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { slugify } from "@/lib/slug";
 import { redirect } from "next/navigation";
 
 export type SpaceState = { error?: string };
@@ -14,6 +15,7 @@ export async function createSpace(_prev: SpaceState, form: FormData): Promise<Sp
 
   const name = String(form.get("name") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
+  const next = String(form.get("next") ?? "");
 
   if (name.length < 3) return { error: "Give the Space a name people will recognise." };
 
@@ -23,11 +25,7 @@ export async function createSpace(_prev: SpaceState, form: FormData): Promise<Sp
     return { error: "Describe the Space in a sentence — it's how people tell real ones from fakes." };
   }
 
-  const slug = `${name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 30)}-${Math.random().toString(36).slice(2, 6)}`;
+  const slug = slugify(name, 30, 4);
 
   // Through the RPC, not a direct insert. A direct insert let the client choose
   // `is_verified` — the tick that 03-ux-flows I calls the mark of a real
@@ -47,7 +45,11 @@ export async function createSpace(_prev: SpaceState, form: FormData): Promise<Sp
     return { error: "Couldn't create the Space. Try again." };
   }
 
-  redirect(`/s/${slug}`);
+  // Somebody sent here from `/create` wanted a poll, not a Space — put them back
+  // on the form they abandoned, with the new Space now in the picker. Same
+  // same-origin check as app/onboarding/actions.ts: a bare leading `/` is not
+  // enough, since `//evil.com` is a protocol-relative URL to somewhere else.
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : `/s/${slug}`);
 }
 
 export async function toggleMembership(spaceId: string, slug: string, join: boolean) {

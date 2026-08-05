@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { slugify } from "@/lib/slug";
 import { redirect } from "next/navigation";
 
 export type CreateState = { error?: string };
@@ -12,17 +13,6 @@ const DURATIONS: Record<string, number | null> = {
   "7d": 7 * 24 * 3600e3,
   none: null,
 };
-
-function slugify(title: string) {
-  const base = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-  // Suffixed rather than checked-and-retried: slug is unique, and a collision
-  // would otherwise mean a lost draft at the worst possible moment.
-  return `${base || "poll"}-${Math.random().toString(36).slice(2, 7)}`;
-}
 
 export async function createPoll(_prev: CreateState, form: FormData): Promise<CreateState> {
   const supabase = await createClient();

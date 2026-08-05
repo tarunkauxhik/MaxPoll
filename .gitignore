@@ -8,6 +8,10 @@ next-env.d.ts
 
 .env*.local
 
+# Real launch content — names real people at a real place, and does so before
+# the polls are live. Only launch.example.json is committed.
+supabase/launch.json
+
 .vercel
 *.tsbuildinfo
 
