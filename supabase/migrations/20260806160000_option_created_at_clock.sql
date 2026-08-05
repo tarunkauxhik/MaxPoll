@@ -1,0 +1,19 @@
+-- `options.created_at` is the tiebreak for equal vote counts, in `rankOptions()`
+-- and in `search_options()`. It defaulted to `now()`.
+--
+-- `now()` is `transaction_timestamp()` — one value for every row written inside a
+-- single transaction. So every option a poll starts with shared one timestamp,
+-- whether written by `create_poll()`'s loop or by scripts/launch.mjs. With the
+-- tiebreak constant, tied options came back in whatever order the planner chose,
+-- which meant:
+--
+--   · the board reordered between requests with no votes cast
+--   · `rank_snapshot` diffed against a different order each time, so options
+--     sitting on zero votes rendered ▲1 / ▼2 movement badges
+--   · FLIP animated those meaningless reorderings, 340ms at a time
+--   · the typeahead's "#3 · 0 votes" could name a different row than the board
+--
+-- `clock_timestamp()` is the real wall clock and advances *within* a transaction,
+-- so rows keep their insertion order. One default; every writer fixed, including
+-- ones not written yet.
+alter table options alter column created_at set default clock_timestamp();

@@ -203,6 +203,8 @@ export function Board({
           entitled={entitled}
           mine={mine}
           slug={slug}
+          onSelect={onSelect}
+          disabled={closed || voted}
         />
       )}
 
@@ -247,6 +249,14 @@ export function Board({
  * the paywall — but **the labels here are real**. What the unpaid user cannot see
  * is voter *names*, and those never reach the client at all: RLS refuses them,
  * so there is nothing in the payload to un-blur.
+ *
+ * **These rows are votable.** They used to be hard-`disabled`, which read as a
+ * styling detail and was not: a new option starts at 0 votes, sorts to the
+ * bottom, lands here, and could then never be voted for by anyone — so it could
+ * never climb out. That killed the add-option loop entirely (01-product counts
+ * "options added per 100 votes" as growth-loop health). 04 §5.1 defines `small`
+ * as padding and font sizes; only the `locked` variant is non-interactive, and
+ * that one is about voter names.
  */
 function UnderList({
   options,
@@ -254,12 +264,16 @@ function UnderList({
   entitled,
   mine,
   slug,
+  onSelect,
+  disabled,
 }: {
   options: BoardOption[];
   showCounts: boolean;
   entitled: boolean;
   mine: string | null;
   slug: string;
+  onSelect: (optionId: string) => void;
+  disabled: boolean;
 }) {
   return (
     <>
@@ -274,7 +288,8 @@ function UnderList({
             pct={showCounts && entitled ? o.pct : undefined}
             mine={o.id === mine}
             variant="small"
-            disabled
+            onSelect={() => onSelect(o.id)}
+            disabled={disabled}
           />
         ))}
       </div>

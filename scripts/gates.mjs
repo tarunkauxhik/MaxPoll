@@ -531,6 +531,48 @@ try {
     `a user who never voted learns no names (${JSON.stringify(leak.body)})`
   );
 
+  // ══════════════════════════════════════════════════ GATE O — a stable board
+  //
+  // `options.created_at` breaks ties for equal vote counts, in rankOptions() and
+  // in search_options(). It defaulted to now() — transaction_timestamp() — so
+  // every option written by create_poll()'s loop shared ONE value, the tiebreak
+  // was a no-op, and tied options came back in planner order. The board reordered
+  // between requests with no votes cast, and rank_snapshot diffed against a
+  // different order each time: options sitting on zero votes rendered ▲1 / ▼2.
+  //
+  // This has to go through create_poll(), not REST inserts — separate requests
+  // are separate transactions and would pass while the real path was broken.
+  head("Gate O — the board does not reshuffle on its own");
+
+  const ordered = await api("/rest/v1/rpc/create_poll", PUB, {
+    method: "POST",
+    body: JSON.stringify({
+      p_slug: `gate-order-${Date.now()}`,
+      p_space: null,
+      p_title: "Ordering probe",
+      p_subject_type: "thing",
+      p_category: "things",
+      p_expires: null,
+      p_options: ["Alpha", "Bravo", "Charlie", "Delta"],
+    }),
+  }, bob.token);
+  const orderedId = ordered.body;
+  cleanup.polls.push(orderedId);
+
+  const oRows = (await api(
+    `/rest/v1/options?select=label,created_at&poll_id=eq.${orderedId}&order=created_at.asc`,
+    SEC
+  )).body ?? [];
+  const stamps = new Set(oRows.map((o) => o.created_at));
+  ok(
+    oRows.length === 4 && stamps.size === 4,
+    `create_poll gives every option its own created_at (${stamps.size}/${oRows.length} distinct)`
+  );
+  ok(
+    oRows.map((o) => o.label).join(",") === "Alpha,Bravo,Charlie,Delta",
+    `the tiebreak preserves the order they were written in (${oRows.map((o) => o.label).join(",")})`
+  );
+
   // ══════════════════════════════════════════════════ GATE X — polls that end
   //
   // `polls.status` never left 'live' on its own. isExpired() made the poll page

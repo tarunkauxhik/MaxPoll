@@ -5,6 +5,38 @@ rather than rediscovering.
 
 ---
 
+## `now()` is the transaction clock, and it silently killed the tiebreak
+
+`options.created_at` breaks ties for equal vote counts — in `rankOptions()` and in
+`search_options()`, which **must** agree. It defaulted to `now()`.
+
+`now()` is `transaction_timestamp()`: **one value for every row written inside a
+single transaction.** `create_poll()` writes all of a poll's opening options in one
+loop, in one transaction, so they all shared a timestamp. Verified on live data —
+7 options, **2 distinct timestamps**, the second one belonging to an option a real
+user added later.
+
+With the tiebreak constant, tied options come back in whatever order the planner
+picks, and that order is not stable between requests. So:
+
+- the board reordered with no votes cast
+- `rank_snapshot` diffed against a different order each poll, and options on **zero
+  votes** rendered `▲1` / `▼2`
+- FLIP animated the meaningless reshuffle, 340ms at a time
+- the typeahead could advertise "#3" for a row the board showed at #5
+
+Fixed with `alter table options alter column created_at set default
+clock_timestamp()` — the real wall clock, which advances *within* a transaction.
+One default; `create_poll()`, `add_option()` and `scripts/launch.mjs` are all fixed
+by it, including writers not written yet.
+
+**Gate O goes through `create_poll()` on purpose.** The existing gates build options
+with separate REST inserts — separate transactions, distinct timestamps — so they
+would have passed the whole time the real path was broken. A probe has to use the
+path the product uses.
+
+---
+
 ## A gate that hides the wrong thing deadlocks the loop it was meant to drive
 
 03 §C's state table says: **"Space < 20 members | Board hidden, `12/20 members to
