@@ -2,37 +2,35 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-/** Stable per-poll pseudonym: the same person is always `owl4713` on one poll,
- *  and a different handle on another. Consistency inside a thread is what makes
- *  anonymous chat readable; reusing it across polls would deanonymise them. */
-function anonHandle(userId: string, pollId: string) {
-  const animals = ["owl", "fox", "cat", "bee", "elk", "ram", "jay", "koi", "yak", "ant"];
-  let h = 0;
-  const seed = `${userId}:${pollId}`;
-  for (let i = 0; i < seed.length; i++) h = (h * 33 + seed.charCodeAt(i)) >>> 0;
-  return `${animals[h % animals.length]}${String(h % 10000).padStart(4, "0")}`;
-}
-
+/**
+ * The insert lives in `send_message()` now, not here.
+ *
+ * Everything below is UX — trimming before the round trip, turning an error code
+ * into a sentence. The rules themselves (300 chars, 10 a minute, poll must be
+ * live) are enforced in the database, because this action was never the only way
+ * to reach the table: any signed-in client could POST straight to
+ * `/rest/v1/messages` with the publishable key. Migration 20260805140000.
+ *
+ * The anonymous handle is derived inside the function too. Passed as a parameter
+ * it would let a caller post under someone else's pseudonym.
+ */
 export async function sendMessage(pollId: string, body: string, anon: boolean) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, message: "Sign in to chat." };
 
   const text = body.trim().slice(0, 300);
   if (!text) return { ok: false, message: "Type something first." };
 
-  const { error } = await supabase.from("messages").insert({
-    poll_id: pollId,
-    user_id: user.id,
-    body: text,
-    // The row still carries user_id even when anonymous — moderation and the
-    // 3-report auto-hide need it. Anonymity is from other *users*, not from us,
-    // and the API route never selects anon_handle alongside a name.
-    anon_handle: anon ? anonHandle(user.id, pollId) : null,
+  const { error } = await supabase.rpc("send_message", {
+    p_poll: pollId,
+    p_body: text,
+    p_anon: anon,
   });
 
-  if (error) return { ok: false, message: "Couldn't send. Try again." };
-  return { ok: true, message: "" };
+  if (!error) return { ok: true, message: "" };
+
+  const code = error.message ?? "";
+  if (code.includes("SIGNED_OUT")) return { ok: false, message: "Sign in to chat." };
+  if (code.includes("RATE_LIMITED")) return { ok: false, message: "Slow down a second." };
+  if (code.includes("CLOSED")) return { ok: false, message: "This poll is closed." };
+  return { ok: false, message: "Couldn't send. Try again." };
 }

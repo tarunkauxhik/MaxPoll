@@ -47,6 +47,13 @@ you which file answers which question.
   once — the unique index enforces it, not app code.
 - **RLS picks rows, not columns.** Any client-writable table with a status or price
   column also needs `revoke`/`grant` at column level — DECISIONS D2b.
+- **A guard in a Server Action is not a guard.** The publishable key ships to every
+  browser, so any table a client can `INSERT` into is reachable by curl. Writes to
+  `votes`, `messages` and `options` go through their RPCs; `INSERT` is revoked on all
+  three. Put the rule in the database — DECISIONS D2d.
+- **Never pass identity into a `security definer` function.** It runs past RLS, so
+  every argument is attacker-controlled. Use `auth.uid()`. `cast_vote` took a
+  `p_user` and let anyone vote as anyone — DECISIONS D2c.
 
 ## Working rules
 

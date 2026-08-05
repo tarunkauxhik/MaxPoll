@@ -75,13 +75,40 @@ sign in. That is fine for your own testing and **will block every real user** at
 launch. A `*.vercel.app` domain cannot be verified for Production, so publishing
 needs a real domain (LEARNINGS).
 
-## Gate probes — all passing (2026-08-05)
+## 🛠 Write guards — 2026-08-05
+
+Closing the "rate limits" box on the build plan turned up a **vote-spoofing hole**
+on the core path. `cast_vote` is `security definer`, so RLS never ran, and it took
+the voter's id as a **parameter** — so any signed-in account could post
+`p_user: <anyone's uuid>` and have the vote land under that person with the counters
+incremented. `profiles` is public-read, so the uuids were free. One account could
+set any leaderboard to any result.
+
+Proven against the live database, fixed, and proven again with the same probe —
+[DECISIONS D2c](DECISIONS.md), [LEARNINGS](LEARNINGS.md).
+
+Same class, two more tables: `messages` and `options` were directly insertable, so
+the 300-char cap and "options locked at 10 votes" were promises only the UI kept.
+
+| Now enforced in the database | Where |
+|---|---|
+| Identity comes from `auth.uid()`, never a parameter | `cast_vote()` |
+| Option must belong to the poll; poll must be live | `cast_vote()` |
+| 300 chars · 10 messages/minute · anon handle derived server-side | `send_message()` |
+| 2–80 chars · 10 adds/hour · 60 per poll · locked and closed refused | `add_option()` |
+| `INSERT` revoked on `votes`, `messages`, `options` | the RPCs are the only door |
+
+**Nothing about the UI changed.** The Server Actions now do input trimming and error
+copy, which is all they should ever have done.
+
+## Gate probes — all 41 passing (2026-08-05)
 
 `pnpm gates` creates two real users with real sessions, exercises the policies as
 those users, and deletes everything afterwards.
 
 | Area | What it proves |
 |---|---|
+| Write guards | `cast_vote` ignores `p_user` · direct INSERT into `votes`/`messages`/`options` → **403** · an option from another poll refused · 5000 chars stored at 300 · chat flood refused · locked and closed polls refuse options |
 | Auth | Public password signup refused · counter triggers fire |
 | Voting | Second vote → `ALREADY_VOTED` · **different account, same device → vote lands** (A4) · `polls.vote_count` and `sum(options.vote_count)` both equal the real row count |
 | Names | Anon reads `votes` → `[]` **while still reading `options`** · unentitled user sees only their own vote · entitled user sees all |

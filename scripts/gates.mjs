@@ -272,6 +272,122 @@ try {
   }, bob.token);
   ok(notOwner.status >= 400, `non-owner cannot merge (${notOwner.status})`);
 
+  // ══════════════════════════════════════════════════ GATE W — write guards
+  //
+  // Everything here asks the same question: is the rule in the DATABASE, or only
+  // in a Server Action a client can walk around? Each probe is the request our
+  // own code never makes.
+  //
+  // ⚠️ The 403s below must be 403, not 401. A 401 means the session was lost and
+  // the probe is testing nothing — the trap that made two checks pass for the
+  // wrong reason before.
+  head("Gate W — write guards");
+
+  const wPoll = await ins("polls", {
+    slug: `gate-write-${Date.now()}`,
+    created_by: alice.id,
+    title: "Write guard poll",
+    subject_type: "thing",
+    category: "things",
+  });
+  const wPollId = wPoll.body?.[0]?.id;
+  cleanup.polls.push(wPollId);
+  const wOpt = (await ins("options", { poll_id: wPollId, label: "Guard option", added_by: alice.id }))
+    .body?.[0]?.id;
+
+  // --- the vote path: identity came from a parameter, not the session ---------
+  const spoof = await api("/rest/v1/rpc/cast_vote", PUB, {
+    method: "POST",
+    body: JSON.stringify({
+      p_poll: wPollId, p_option: wOpt, p_device: "spoof-device", p_user: bob.id,
+    }),
+  }, alice.token);
+  const spoofRow = await api(`/rest/v1/votes?select=user_id&poll_id=eq.${wPollId}`, SEC);
+  ok(
+    spoof.status < 300 && spoofRow.body?.[0]?.user_id === alice.id,
+    `cast_vote ignores p_user and uses the session (stored ${spoofRow.body?.[0]?.user_id === alice.id ? "alice" : "BOB — SPOOF WORKS"})`
+  );
+
+  const rawVote = await api("/rest/v1/votes", PUB, {
+    method: "POST",
+    body: JSON.stringify({ poll_id: wPollId, option_id: wOpt, device_id: "raw", user_id: bob.id }),
+  }, bob.token);
+  ok(rawVote.status === 403, `direct INSERT into votes refused (${rawVote.status})`);
+
+  const badOpt = await api("/rest/v1/rpc/cast_vote", PUB, {
+    method: "POST",
+    body: JSON.stringify({ p_poll: wPollId, p_option: optA, p_device: "d", p_user: bob.id }),
+  }, bob.token);
+  ok(
+    badOpt.status >= 400 && JSON.stringify(badOpt.body).includes("BAD_OPTION"),
+    "an option from another poll is refused"
+  );
+
+  // --- chat -------------------------------------------------------------------
+  const rawMsg = await api("/rest/v1/messages", PUB, {
+    method: "POST",
+    body: JSON.stringify({ poll_id: wPollId, user_id: alice.id, body: "x".repeat(5000) }),
+  }, alice.token);
+  ok(rawMsg.status === 403, `direct INSERT into messages refused (${rawMsg.status})`);
+
+  await api("/rest/v1/rpc/send_message", PUB, {
+    method: "POST",
+    body: JSON.stringify({ p_poll: wPollId, p_body: "y".repeat(5000), p_anon: false }),
+  }, alice.token);
+  const stored = await api(`/rest/v1/messages?select=body&poll_id=eq.${wPollId}`, SEC);
+  ok(
+    stored.body?.[0]?.body?.length === 300,
+    `a 5000-char body is stored at 300 (${stored.body?.[0]?.body?.length})`
+  );
+
+  let limited = 0;
+  for (let i = 0; i < 12; i++) {
+    const r = await api("/rest/v1/rpc/send_message", PUB, {
+      method: "POST",
+      body: JSON.stringify({ p_poll: wPollId, p_body: `flood ${i}`, p_anon: true }),
+    }, bob.token);
+    if (r.status >= 400 && JSON.stringify(r.body).includes("RATE_LIMITED")) limited++;
+  }
+  ok(limited >= 2, `chat flood is rate limited (${limited} of 12 refused)`);
+
+  const anonHandles = await api(
+    `/rest/v1/messages?select=anon_handle,user_id&poll_id=eq.${wPollId}&anon_handle=not.is.null`, SEC);
+  const handles = new Set((anonHandles.body ?? []).map((m) => m.anon_handle));
+  ok(handles.size === 1, `one person gets one pseudonym per poll (${handles.size} distinct)`);
+
+  // --- add option -------------------------------------------------------------
+  const rawOpt = await api("/rest/v1/options", PUB, {
+    method: "POST",
+    body: JSON.stringify({ poll_id: wPollId, label: "Snuck in", added_by: bob.id }),
+  }, bob.token);
+  ok(rawOpt.status === 403, `direct INSERT into options refused (${rawOpt.status})`);
+
+  await api(`/rest/v1/polls?id=eq.${wPollId}`, SEC, {
+    method: "PATCH",
+    body: JSON.stringify({ options_locked: true }),
+  });
+  const lockedAdd = await api("/rest/v1/rpc/add_option", PUB, {
+    method: "POST",
+    body: JSON.stringify({ p_poll: wPollId, p_label: "Too late" }),
+  }, bob.token);
+  ok(
+    lockedAdd.status >= 400 && JSON.stringify(lockedAdd.body).includes("LOCKED"),
+    "a locked poll refuses new options"
+  );
+
+  await api(`/rest/v1/polls?id=eq.${wPollId}`, SEC, {
+    method: "PATCH",
+    body: JSON.stringify({ options_locked: false, status: "closed" }),
+  });
+  const closedAdd = await api("/rest/v1/rpc/add_option", PUB, {
+    method: "POST",
+    body: JSON.stringify({ p_poll: wPollId, p_label: "Also too late" }),
+  }, bob.token);
+  ok(
+    closedAdd.status >= 400 && JSON.stringify(closedAdd.body).includes("CLOSED"),
+    "a closed poll refuses new options"
+  );
+
   // ══════════════════════════════════════════════════ GATE P — payments
   head("Gate P — payment pipeline");
 

@@ -19,49 +19,57 @@ export async function searchOptions(pollId: string, query: string): Promise<Sugg
 
 export type AddResult =
   | { ok: true }
-  | { ok: false; code: "SIGNED_OUT" | "LOCKED" | "DUPLICATE" | "ERROR"; message: string };
+  | {
+      ok: false;
+      code: "SIGNED_OUT" | "LOCKED" | "DUPLICATE" | "RATE_LIMITED" | "CAPPED" | "ERROR";
+      message: string;
+    };
 
+const ADD_ERRORS: Record<string, AddResult & { ok: false }> = {
+  SIGNED_OUT: { ok: false, code: "SIGNED_OUT", message: "Sign in to add a name." },
+  TOO_SHORT: { ok: false, code: "ERROR", message: "That name is too short." },
+  CLOSED: { ok: false, code: "LOCKED", message: "This poll is closed." },
+  LOCKED: {
+    ok: false,
+    code: "LOCKED",
+    message: "Options are locked on this poll — it's past 10 votes.",
+  },
+  OPTION_CAP: { ok: false, code: "CAPPED", message: "This poll is full at 60 options." },
+  RATE_LIMITED: {
+    ok: false,
+    code: "RATE_LIMITED",
+    message: "You've added a lot of names just now. Try again in a bit.",
+  },
+};
+
+/**
+ * Every check that used to live here — signed in, length, poll live, not locked —
+ * is now inside `add_option()`. Two reasons, and the second is the one that
+ * matters:
+ *
+ *  1. The read-then-insert here was a race. Two submits could both see
+ *     `option_count = 59`. The function holds a row lock instead.
+ *  2. This action was never the only door. `options` was directly insertable by
+ *     any signed-in client, so "locked at 10 votes" was a promise the UI made
+ *     and the database did not keep. Migration 20260805140000.
+ */
 export async function addOption(
   pollId: string,
   slug: string,
   label: string
 ): Promise<AddResult> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, code: "SIGNED_OUT", message: "Sign in to add a name." };
 
-  const clean = label.trim().slice(0, 80);
-  if (clean.length < 2) {
-    return { ok: false, code: "ERROR", message: "That name is too short." };
-  }
-
-  // Options lock at 10 votes. Checked server-side: the client hides the field,
-  // but that is presentation.
-  const { data: poll } = await supabase
-    .from("polls")
-    .select("options_locked, status")
-    .eq("id", pollId)
-    .maybeSingle();
-
-  if (!poll || poll.status !== "live") {
-    return { ok: false, code: "LOCKED", message: "This poll is closed." };
-  }
-  if (poll.options_locked) {
-    return {
-      ok: false,
-      code: "LOCKED",
-      message: "Options are locked on this poll — it's past 10 votes.",
-    };
-  }
-
-  const { error } = await supabase
-    .from("options")
-    .insert({ poll_id: pollId, label: clean, added_by: user.id });
+  const { error } = await supabase.rpc("add_option", {
+    p_poll: pollId,
+    p_label: label.trim().slice(0, 80),
+  });
 
   if (error) {
-    return { ok: false, code: "ERROR", message: "Couldn't add that. Try again." };
+    const hit = Object.keys(ADD_ERRORS).find((code) => error.message?.includes(code));
+    return hit
+      ? ADD_ERRORS[hit]
+      : { ok: false, code: "ERROR", message: "Couldn't add that. Try again." };
   }
 
   revalidatePath(`/p/${slug}`);

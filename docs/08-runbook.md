@@ -135,9 +135,14 @@ Four things genuinely don't exist locally. Everything else, test locally.
 ### Seed and reset
 
 ```bash
-pnpm supabase db dump -f backup.sql     # before anything destructive
-pnpm supabase db push                   # apply pending migrations
+pnpm supabase db dump --db-url "$SUPABASE_DB_URL" -f backup.sql   # before anything destructive
+pnpm supabase db push --db-url "$SUPABASE_DB_URL"                 # apply pending migrations
 ```
+
+`--db-url` is not optional: we never ran `supabase link` (it wants a browser PAT), so
+without it the CLI answers `Cannot find project ref`. It also prints a wall of Docker
+errors and then succeeds — that is the local migrations-catalog cache, not your
+migration. Read the last line.
 
 Seed data is deliberately **not** a migration — `db push` would ship demo content to
 production. Apply and remove it on demand instead:

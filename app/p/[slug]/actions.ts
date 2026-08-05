@@ -56,12 +56,19 @@ export async function castVote(
     p_poll: pollId,
     p_option: optionId,
     p_device: deviceId,
+    // Ignored whenever there's a session — the function reads auth.uid() and only
+    // falls back to this for the seed and admin scripts, which have no session.
+    // It used to be authoritative, which let anyone vote as anyone.
     p_user: user.id,
   });
 
   if (error) {
     if (error.message?.includes("ALREADY_VOTED")) {
       return { ok: false, code: "ALREADY_VOTED", message: "You've already voted here." };
+    }
+    // The poll can expire between the check above and this call.
+    if (error.message?.includes("CLOSED")) {
+      return { ok: false, code: "CLOSED", message: "Voting has closed on this poll." };
     }
     return { ok: false, code: "ERROR", message: "Couldn't save your vote. Try again." };
   }

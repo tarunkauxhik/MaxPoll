@@ -358,3 +358,54 @@ Same paste, one more casualty: a whole `.env.local` copied into Vercel carries
 sign-in to the developer's laptop. `signInWithGoogle` now ignores a localhost value
 when `process.env.VERCEL` is set and uses the request host instead. It also used
 `??`, which does not fall back on `""` — an empty value made `new URL()` throw.
+
+### The vote spoof: a definer function that asked the caller who they were
+2026-08-05, found while revoking direct `INSERT` on `messages` and `options`.
+
+`cast_vote(p_poll, p_option, p_device, p_user)` wrote `user_id = p_user`. It is
+`security definer`, so RLS never ran and `votes_insert` — the policy that reads
+`auth.uid() = user_id` — was decoration. `profiles` is public-read, so the uuids
+were free.
+
+Proven against the live database before touching anything, with two real users:
+
+```
+cast_vote { p_poll, p_option, p_device:"attacker-device", p_user: <victim> }
+  -> 204
+votes  -> [{"user_id":"<victim>","device_id":"attacker-device"}]
+option -> vote_count 1
+```
+
+The counters incremented, so the fabricated vote was indistinguishable from a real
+one on the board. One signed-in account could set any leaderboard to any result.
+
+Fix: `v_user := coalesce(auth.uid(), p_user)`. A session always wins; the parameter
+survives only for `seed.sql` and the admin scripts, which connect as the owner and
+have no session. The same probe now stores the *caller's* id.
+
+**The generalisation, which is the part worth keeping:** a `security definer`
+function is the security boundary itself. Every argument crossing it is
+attacker-controlled — so identity must come from `auth.uid()`, never from a
+parameter. Grep for definer functions taking a user id before adding another.
+
+### Three tables were writable straight past the Server Actions
+`chat/actions.ts` capped bodies at 300 chars, `option-actions.ts` refused locked and
+closed polls. Both real; neither was the only door. The policies behind them asked
+only *are you you?*, and the publishable key is in every browser by design:
+
+```
+POST /rest/v1/messages   { body: "<10MB>" }        # any rate, any length
+POST /rest/v1/options    { poll_id: <locked poll> } # "locked at 10 votes" wasn't
+POST /rest/v1/votes      { ... }                    # counters never move
+```
+
+Now `send_message()` / `add_option()` / `cast_vote()` hold the rules, `INSERT` is
+revoked on all three tables, and the actions do input trimming and error copy.
+`addOption`'s check-then-insert was also a race — two submits could both read
+`option_count = 59`; the function takes a row lock.
+
+**`information_schema.role_table_grants` is not schema-scoped by default.** Checking
+the revokes, it showed `messages` still holding `INSERT` — that was
+`realtime.messages`, a different table Supabase ships. Filter on
+`table_schema = 'public'`, or read `pg_class.relacl` and look for the `a` privilege.
+Nearly sent me fixing a bug that did not exist.

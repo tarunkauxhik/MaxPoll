@@ -239,7 +239,13 @@ blocked · two accounts one browser both land · UTR reuse rejected · add-optio
 - [ ] Column grants on `orders` — a payer cannot rewrite `kind` (DECISIONS D2b)
 - [ ] `verify_order` execute revoked from `anon` and `authenticated`
 - [ ] RLS on every table ✅ (Gate 2, 2026-08-04)
-- [ ] Rate limits: votes, poll creation, option adds, messages
+- [x] Rate limits ✅ — votes: one per poll (`votes_poll_user_uniq`) · polls: 3/week in
+      `create_poll()` · options: 10/hour and 60 per poll in `add_option()` · messages:
+      10/minute in `send_message()`. All inside the transaction, none in app code
+- [x] **Client-writable tables** ✅ — `INSERT` revoked on `votes`, `messages`,
+      `options`; their RPCs are the only door (DECISIONS D2d)
+- [x] **`cast_vote` takes identity from `auth.uid()`**, not a parameter ✅ — it used
+      to accept `p_user`, which let any signed-in user vote as anyone (DECISIONS D2c)
 - [ ] `.env.local` never committed
 
 **Performance budget:**

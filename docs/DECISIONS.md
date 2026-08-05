@@ -392,3 +392,46 @@ the same path production does. A seed that wrote `vote_count` by hand would mask
 exactly the bug Gate 4 exists to catch.
 
 `pg` is a devDependency for this and nothing else; no application code imports it.
+
+### D2c · A `security definer` function must not take the caller's identity as an argument
+
+`cast_vote(p_poll, p_option, p_device, p_user)` inserted `user_id = p_user`, straight
+from a parameter. The function is `security definer`, so RLS never ran — the
+`votes_insert` policy (`auth.uid() = user_id`) looked like the guard and was dead
+code. `profiles` is public-read by design, so any signed-in account could harvest
+uuids and post:
+
+```
+rpc/cast_vote { p_poll, p_option, p_device, p_user: <anyone's uuid> }
+```
+
+The vote landed under that person's id **with the counters incremented**. One account
+could drive any leaderboard to any result, bounded only by the number of registered
+users — the unique index stops a second vote per victim, not the first. On a public
+voting product that is the whole product.
+
+Verified against the live database before the fix, and again after: the same request
+now stores the *caller's* id. The function reads `coalesce(auth.uid(), p_user)`, so a
+session always wins and the parameter survives only for the paths that legitimately
+have none — `seed.sql` and the admin scripts, which connect as the owner.
+
+**The rule:** a definer function is the security boundary. Anything it accepts as an
+argument is attacker-controlled. Identity comes from `auth.uid()`, always.
+
+### D2d · If the rule matters, it lives in the database
+
+`chat/actions.ts` trimmed bodies to 300 chars; `option-actions.ts` refused closed and
+locked polls. Both real, both bypassable — the policies behind them only asked
+*are you you?*, and the publishable key ships to every browser by design. So
+`POST /rest/v1/messages` with a 10MB body, at any rate, was one curl away, as was
+adding options to a poll the UI had locked.
+
+`send_message()` and `add_option()` now hold those rules, `INSERT` is revoked on
+`messages`, `options` and `votes`, and the Server Actions are what they should always
+have been: input trimming and error copy. The check-then-insert in `addOption` was
+also a race — two submits could both read `option_count = 59`. The function takes a
+row lock instead.
+
+This is D2b generalised. That entry said *every client-writable table with a status
+column* has the shape; the truth is broader — **every client-writable table does**.
+A Server Action is one door, never the only one.
