@@ -197,10 +197,15 @@ export function buildFeedPolls(
 export async function getFeed(userId: string | undefined) {
   const supabase = await createClient();
 
+  // Expired-but-not-yet-closed polls would otherwise eat the 40-row budget and
+  // appear in both rails — "Top performing today" is not a place for a poll that
+  // ended yesterday. `status` catches manually closed ones; `expires_at` catches
+  // the ones the daily cron has not reached yet.
   const { data: polls } = await supabase
     .from("polls")
     .select(POLL_SELECT)
     .eq("status", "live")
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .eq("is_private", false)
     .order("created_at", { ascending: false })
     .limit(40);

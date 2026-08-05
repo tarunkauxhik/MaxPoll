@@ -539,3 +539,38 @@ renders the note as `MaxPoll+MP4F2A1B`.
 both kinds of parser. Only `tn` (the note the payer reads) carried a space, so nothing
 was functionally broken — but the payment screen is the one place a stray character
 costs trust.
+
+### A correct read path hid a wrong database for weeks
+2026-08-05. `isExpired(poll, now)` computes closure from `status` *or* `expires_at`,
+so every screen showed expired polls correctly. `polls.status` meanwhile never left
+`'live'` — nothing ever wrote the transition. All six production polls were `'live'`
+with one two hours past its timer.
+
+Three consequences, none visible on the screen that was right:
+
+- the landing page counted `status='live'` for its headline number, so it counted
+  dead polls, on the one page whose claim is *real aggregates only*
+- `getFeed()` spent its 40-row budget on polls that had ended
+- `poll_closed` could never fire, because no moment existed at which a poll ended
+
+**Computing a state at read time is not the same as recording it.** Read-time
+derivation is right for display — it can never drift — but anything that needs the
+*event* (a notification, an aggregate, a filter in someone else's query) needs the
+write. When you reach for a derived getter, ask what else in the system wants to know.
+
+The fix uses the one daily cron already allowed on Hobby, because closure is not
+time-critical: the read path was always correct, so the cron only has to catch up the
+data. `realStats()` and `getFeed()` additionally filter on `expires_at` so they are
+right immediately rather than up to 24 hours later.
+
+### A probe that fails because the code is right
+The first version of the Gate X probe created a poll already past its expiry, voted on
+it, and asserted the voters got notified. Nothing was written, and it looked like the
+notification was broken.
+
+It wasn't: `cast_vote()` refuses an expired poll — a guard added in the same session —
+so there were no votes to notify. The probe had to vote while the poll was live and
+then backdate `expires_at`, which is also the only sequence that happens in reality.
+
+**A failing probe is a claim about the code, and it is worth one minute of doubt
+before it becomes a bug report.**

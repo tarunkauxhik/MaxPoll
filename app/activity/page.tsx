@@ -172,7 +172,11 @@ function ActivityRow({
 
   const copy: Record<string, string> = {
     option_climbed: `${String(p.label ?? "An option")} climbed to #${String(p.rank ?? "?")}`,
-    poll_closed: `${String(p.poll_title ?? "A poll")} closed`,
+    // 03 §H wants the *result*, not just the fact it ended — the payload carries
+    // the winner, resolved with the same ordering the board ranks by.
+    poll_closed: p.winner
+      ? `${String(p.poll_title ?? "A poll")} closed · ${String(p.winner)} won`
+      : `${String(p.poll_title ?? "A poll")} closed`,
     // The trigger puts the follower's handle in the payload, so this no longer
     // has to say "someone".
     new_follower: p.display_name

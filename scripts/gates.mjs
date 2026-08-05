@@ -538,6 +538,80 @@ try {
     `a user who never voted learns no names (${JSON.stringify(leak.body)})`
   );
 
+  // ══════════════════════════════════════════════════ GATE X — polls that end
+  //
+  // `polls.status` never left 'live' on its own. isExpired() made the poll page
+  // look right, which is exactly why this went unnoticed: the read path was
+  // correct and the data was not.
+  head("Gate X — closing expired polls");
+
+  const mkPoll = async (slug, expiresAt) =>
+    (await ins("polls", {
+      slug: `gate-${slug}-${Date.now()}`,
+      created_by: alice.id,
+      title: `Closing probe ${slug}`,
+      subject_type: "thing",
+      category: "things",
+      expires_at: expiresAt,
+    })).body?.[0];
+
+  // `past` starts with time on the clock and is backdated below. cast_vote
+  // refuses an already-expired poll — correctly — so voting has to happen while
+  // it is live, which is also how it happens in life.
+  const past = await mkPoll("past", new Date(Date.now() + 3600_000).toISOString());
+  const future = await mkPoll("future", new Date(Date.now() + 3600_000).toISOString());
+  const endless = await mkPoll("endless", null);
+  for (const p of [past, future, endless]) cleanup.polls.push(p.id);
+
+  // Two options so there is a real winner, and the loser is created first —
+  // so a wrong sort order (created_at before vote_count) names the wrong one.
+  const loser = (await ins("options", { poll_id: past.id, label: "Runner up", added_by: alice.id })).body?.[0];
+  const winner = (await ins("options", { poll_id: past.id, label: "The winner", added_by: alice.id })).body?.[0];
+  for (const [u, opt] of [[alice, winner], [bob, winner]]) {
+    await api("/rest/v1/rpc/cast_vote", PUB, {
+      method: "POST",
+      body: JSON.stringify({ p_poll: past.id, p_option: opt.id, p_device: "gate-x", p_user: u.id }),
+    }, u.token);
+  }
+  // The loser needs a vote too, or "highest count" and "first created" agree.
+  await api(`/rest/v1/options?id=eq.${loser.id}`, SEC, {
+    method: "PATCH", body: JSON.stringify({ vote_count: 1 }),
+  });
+
+  // Now let the clock run out, the one part of "wait an hour" a probe may skip.
+  await api(`/rest/v1/polls?id=eq.${past.id}`, SEC, {
+    method: "PATCH",
+    body: JSON.stringify({ expires_at: new Date(Date.now() - 3600_000).toISOString() }),
+  });
+
+  const closedCount = await api("/rest/v1/rpc/close_expired_polls", PUB, { method: "POST" });
+  const states = await api(
+    `/rest/v1/polls?select=id,status&id=in.(${[past.id, future.id, endless.id].join(",")})`, SEC);
+  const statusOf = (id) => (states.body ?? []).find((p) => p.id === id)?.status;
+
+  ok(statusOf(past.id) === "closed", `an expired poll closes (${statusOf(past.id)})`);
+  ok(statusOf(future.id) === "live", `a poll with time left is untouched (${statusOf(future.id)})`);
+  ok(statusOf(endless.id) === "live", `a poll with no expiry is never closed (${statusOf(endless.id)})`);
+  ok(Number(closedCount.body) >= 1, `the RPC reports what it closed (${closedCount.body})`);
+
+  const notes = await api(
+    `/rest/v1/activity?select=user_id,payload&type=eq.poll_closed&payload->>poll_id=eq.${past.id}`, SEC);
+  const voters = new Set((notes.body ?? []).map((r) => r.user_id));
+  ok(
+    voters.size === 2 && voters.has(alice.id) && voters.has(bob.id),
+    `everyone who voted is notified, once each (${voters.size})`
+  );
+  ok(
+    notes.body?.[0]?.payload?.winner === "The winner",
+    `the notification names the board's rank-1 option (${notes.body?.[0]?.payload?.winner})`
+  );
+
+  // Idempotent: the cron runs daily and must not re-notify.
+  await api("/rest/v1/rpc/close_expired_polls", PUB, { method: "POST" });
+  const again = await api(
+    `/rest/v1/activity?select=id&type=eq.poll_closed&payload->>poll_id=eq.${past.id}`, SEC);
+  ok(again.body?.length === 2, `a second run writes nothing new (${again.body?.length})`);
+
   // ══════════════════════════════════════════════════ GATE P — payments
   head("Gate P — payment pipeline");
 

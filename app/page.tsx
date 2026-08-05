@@ -31,8 +31,17 @@ export default async function Page() {
 async function realStats() {
   const supabase = createAnonClient();
 
+  // `status` only becomes 'closed' when the daily cron runs, so a poll that
+  // expired at 15:00 would otherwise be counted as live until 06:00 UTC. The
+  // headline number on this page is the one place that claim has to hold.
+  const unexpired = `expires_at.is.null,expires_at.gt.${new Date().toISOString()}`;
+
   const [polls, spaces, voteAgg] = await Promise.all([
-    supabase.from("polls").select("id", { count: "exact", head: true }).eq("status", "live"),
+    supabase
+      .from("polls")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "live")
+      .or(unexpired),
     supabase.from("spaces").select("id", { count: "exact", head: true }),
     // Sums the denormalised counters. NEVER count(*) on votes — CLAUDE.md.
     supabase.from("polls").select("vote_count"),

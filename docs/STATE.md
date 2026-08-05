@@ -1,7 +1,8 @@
 # State
 
-_Last updated: 2026-08-05 · **Phases 3–8 built.** All 30 automated gate checks pass
-against the live database. Remaining: your browser checks, and the VPA._
+_Last updated: 2026-08-05 · **Live at [viratkohli.tech](https://viratkohli.tech).**
+Google OAuth published, payments on, 63 gate probes green. Remaining: the browser
+checks only a human can do, and a business VPA._
 
 ## Where we are
 
@@ -11,17 +12,20 @@ against the live database. Remaining: your browser checks, and the VPA._
 | 1 — Scaffold + shell | ✅ Built. Gate 1 pending your browser check |
 | 2 — Database schema + RLS | ✅ Applied. **Gate 2 passed** |
 | 3 — Auth | ✅ Built. Sign-in round trip needs a browser |
-| 4 — Poll core | ✅ Built. **Gate 4 passed** (automated part) |
+| 4 — Poll core | ✅ Built. **Gate 4 passed** |
 | 5 — Live board | ✅ **Gate 5 passed live** — `MISS → HIT`, no `Set-Cookie` |
 | 6 — Options, typeahead, moderation | ✅ Built. **Gate 6 passed** |
 | 7 — Screens + payments UI + `/admin` | ✅ Built. **Gate P passed** |
-| 8 — Ship | 🟡 Seed applied, cron wired. Awaiting your checks |
+| 8 — Ship | ✅ Deployed, seeded, cron wired |
 | 9 — Razorpay | ⬜ Not scheduled. Trigger is operational — DECISIONS D1 |
+| 10 — Write + column guards | ✅ **Gates W and C** — the vote spoof, five tables locked |
+| 11 — Go live | ✅ Domain, OAuth published, payments on, `/privacy` + `/terms` |
+| 12 — Polls that end | ✅ **Gate X** — daily cron closes them, `CRON_SECRET` enforced |
 
 ```bash
 pnpm dev      # http://localhost:3000
-pnpm check    # build + lint + typecheck + contrast + 45 unit tests
-pnpm gates    # 30 probes against the REAL database, then tears its data down
+pnpm check    # build + lint + typecheck + contrast + 50 unit tests
+pnpm gates    # 63 probes against the REAL database, then tears its data down
 pnpm sql supabase/seed.sql   #  seed  ·  pnpm sql --wipe  to remove
 ```
 
@@ -58,6 +62,30 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 `https://maxpoll.vercel.app`. A localhost value there sends every production
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
+
+## Phase 12 — polls that end (2026-08-05)
+
+**Live on `viratkohli.tech`**, apex and `www`, valid certs. OAuth published, Supabase
+redirect allowlist accepts the new origin, `og:image` resolves on the new host.
+
+**Polls never actually closed.** `isExpired()` computed it at read time so every
+screen looked right, but `polls.status` stayed `'live'` forever — all six production
+polls, one two hours past its timer. The landing page counted dead polls in its
+headline number, the feed spent its 40-row budget on them, and `poll_closed` could
+never fire. Fixed by `close_expired_polls()`, called from the one daily cron.
+
+**The cron is no longer open.** It gained a `CRON_SECRET` guard, split so neither
+failure mode is silent: unset → keep-alive only and the response says so; set and
+matching → also closes polls; set and wrong → 401. Failing closed on everything would
+have stopped the keep-alive, and a paused Supabase project is worse than an
+unauthenticated count query.
+
+`realStats()` and `getFeed()` also filter on `expires_at` directly, so the numbers are
+right immediately rather than within 24 hours.
+
+**Seed data wiped** — the site now shows only real content. The landing hero drops to
+its no-stats variant below 50 votes; that is the fail-closed path, not a regression.
+Re-seed while testing with `pnpm sql supabase/seed.sql`.
 
 ## 🚀 Phase 11 — go live (2026-08-05)
 
@@ -97,19 +125,21 @@ changes nothing else. Steps are in [07-setup.md](07-setup.md) §2.7.
 
 ## What you need to do next
 
-**Nothing is blocking the code.** Three things, in order of value:
+**Nothing is blocking the code.** In order of value:
 
-1. **Browser checks** — the list below. These are the things no script can see.
-2. **PhonePe for Business** ([07-setup.md](07-setup.md) §4) — the only step with a
-   human approval delay. Send back the VPA and display name; setting
-   `NEXT_PUBLIC_UPI_VPA` is the single switch that turns payments on.
-3. **Rotate the database password** ([08-runbook.md](08-runbook.md)) — it was pasted
-   into a chat transcript.
+1. **Browser checks** — the list below. The things no script can see, and the
+   vote-intent round trip is the one that matters most.
+2. **PhonePe for Business** ([07-setup.md](07-setup.md) §4). Payments already work on
+   a personal VPA ([DECISIONS D6](DECISIONS.md)), so this is no longer a blocker — it
+   is what stops every payer seeing your legal name. Swapping is one env var and
+   deleting one sentence from `/pay/[ref]`.
+3. **`CRON_SECRET` in Vercel.** Until it is set the daily job runs keep-alive only and
+   never closes polls; the response says `"guard": "CRON_SECRET not set"` so you can
+   check with one curl.
 
-⚠️ **Google OAuth is in Testing mode**, so only accounts added as test users can
-sign in. That is fine for your own testing and **will block every real user** at
-launch. A `*.vercel.app` domain cannot be verified for Production, so publishing
-needs a real domain (LEARNINGS).
+> Google OAuth is **published**. The old warning here said Testing mode was forced
+> because `*.vercel.app` cannot be verified — that was wrong on its own terms
+> (non-sensitive scopes never needed verification) and is moot now. See LEARNINGS.
 
 ## 🛠 Write guards — 2026-08-05
 
@@ -187,7 +217,7 @@ to the Auth server, not a cookie read — ran twice on every screen and three ti
 Production TTFB median **336ms → 267ms**. See LEARNINGS for why the original
 number was misleading.
 
-## Gate probes — all 56 passing (2026-08-05)
+## Gate probes — all 63 passing (2026-08-05)
 
 `pnpm gates` creates two real users with real sessions, exercises the policies as
 those users, and deletes everything afterwards.
@@ -197,6 +227,7 @@ those users, and deletes everything afterwards.
 | Write guards | `cast_vote` ignores `p_user` · direct INSERT into `votes`/`messages`/`options` → **403** · an option from another poll refused · 5000 chars stored at 300 · chat flood refused · locked and closed polls refuse options |
 | Column guards | creator cannot fabricate `vote_count` or un-hide a moderated option · nobody awards themselves the verified tick · the 3-poll/week limit cannot be walked around · no writing into someone else's feed, but you can still mark your own read |
 | Activity | both voters get a `same_as_you` row · `same_as_you_names` caps at 2 · **a user who never voted learns no names** |
+| Closing | an expired poll closes; one with time left, or no expiry, does not · every voter is notified once, naming the board's rank-1 option · a second cron run writes nothing new |
 
 > ⚠️ **A refusal is proven by reading the value back, never by the status code.**
 > PostgREST answers 403 to an insert sent with `Prefer: return=representation` when
