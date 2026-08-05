@@ -6,8 +6,16 @@
  * payment. The number was copy-pasted into four screens before this existed.
  */
 
-/** A Space shows results only once it has this many members. */
-export const SPACE_UNLOCK_MEMBERS = 20;
+/**
+ * A Space shows results only once it has this many members.
+ *
+ * 03 §C specifies 20. Lowered to 5 at launch: 20 is tuned for a Space that
+ * already has a campus behind it, and a brand-new one cannot clear it — the
+ * first 8–10 people would vote into a blank board, which is exactly when they
+ * decide whether to pass the link on. Raise it once a Space routinely clears it;
+ * the mechanic and the progress bar are unchanged, only the bar height.
+ */
+export const SPACE_UNLOCK_MEMBERS = 5;
 
 /**
  * Are this poll's results still behind the Space gate?
