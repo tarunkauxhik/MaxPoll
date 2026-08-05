@@ -15,12 +15,9 @@ export async function toggleFollow(targetId: string, follow: boolean) {
       .insert({ follower_id: user.id, following_id: targetId });
     if (error) return { ok: false };
 
-    // Activity is written by the path that causes it — no cron (CLAUDE.md).
-    await supabase.from("activity").insert({
-      user_id: targetId,
-      type: "new_follower",
-      payload: { follower_id: user.id },
-    });
+    // The `new_follower` row is written by a trigger on `follows`, not here.
+    // Writing it from the client meant the client could write *any* activity row
+    // to *any* feed — including invented notifications in someone else's bell.
   } else {
     await supabase
       .from("follows")

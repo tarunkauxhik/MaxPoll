@@ -29,18 +29,25 @@ export async function createSpace(_prev: SpaceState, form: FormData): Promise<Sp
     .replace(/^-+|-+$/g, "")
     .slice(0, 30)}-${Math.random().toString(36).slice(2, 6)}`;
 
-  const { data, error } = await supabase
-    .from("spaces")
-    .insert({ slug, name, description, created_by: user.id })
-    .select("id, slug")
-    .single();
+  // Through the RPC, not a direct insert. A direct insert let the client choose
+  // `is_verified` — the tick that 03-ux-flows I calls the mark of a real
+  // institution — and had no limit on how many Spaces one account could create.
+  // The function forces is_verified false, caps it at 3 a week, and joins the
+  // creator as first member in the same transaction.
+  const { error } = await supabase.rpc("create_space", {
+    p_slug: slug,
+    p_name: name,
+    p_description: description,
+  });
 
-  if (error || !data) return { error: "Couldn't create the Space. Try again." };
+  if (error) {
+    if (error.message?.includes("WEEKLY_LIMIT")) {
+      return { error: "You've created 3 Spaces this week. The limit resets 7 days after the first." };
+    }
+    return { error: "Couldn't create the Space. Try again." };
+  }
 
-  // The creator is its first member; the trigger keeps member_count honest.
-  await supabase.from("space_members").insert({ space_id: data.id, user_id: user.id });
-
-  redirect(`/s/${data.slug}`);
+  redirect(`/s/${slug}`);
 }
 
 export async function toggleMembership(spaceId: string, slug: string, join: boolean) {
