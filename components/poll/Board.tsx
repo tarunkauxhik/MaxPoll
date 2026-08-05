@@ -24,6 +24,7 @@ export function Board({
   spaceMembers,
   signedIn,
   closed,
+  resultsLocked = false,
 }: {
   pollId: string;
   slug: string;
@@ -36,6 +37,8 @@ export function Board({
   spaceMembers: number;
   signedIn: boolean;
   closed: boolean;
+  /** Space under 20 members — 03 §C. Hides the numbers, never the ballot. */
+  resultsLocked?: boolean;
 }) {
   const [board, setBoard] = useState(initial);
   const [mine, setMine] = useState(myOptionId);
@@ -46,6 +49,12 @@ export function Board({
   const positions = useRef(new Map<string, number>());
 
   const voted = mine !== null;
+  /**
+   * Voting and *seeing* are two different unlocks. `voted` still governs whether
+   * you can tap; this governs whether numbers appear. Under the 20-member gate
+   * you vote normally and the board stays blank — which is the point of the gate.
+   */
+  const showCounts = voted && !resultsLocked;
 
   // ── Polling ────────────────────────────────────────────────────────────────
   // 4s active, 10s hidden, and nothing at all on a closed poll — a closed board
@@ -147,7 +156,9 @@ export function Board({
 
   const top = board.slice(0, TOP_N);
   const under = board.slice(TOP_N);
-  const gap = gapAbove(board, mine);
+  // The gap line spells out a vote count ("17 votes behind"), so it is a result
+  // like any other and cannot leak past the gate.
+  const gap = resultsLocked ? null : gapAbove(board, mine);
 
   return (
     <>
@@ -158,9 +169,9 @@ export function Board({
             <OptionRow
               rank={o.rank}
               label={o.label}
-              votes={voted ? o.votes : undefined}
-              pct={voted ? o.pct : undefined}
-              movement={voted ? o.movement : undefined}
+              votes={showCounts ? o.votes : undefined}
+              pct={showCounts ? o.pct : undefined}
+              movement={showCounts ? o.movement : undefined}
               mine={o.id === mine}
               onSelect={() => onSelect(o.id)}
               disabled={closed || voted}
@@ -186,7 +197,13 @@ export function Board({
       )}
 
       {under.length > 0 && (
-        <UnderList options={under} voted={voted} entitled={entitled} mine={mine} slug={slug} />
+        <UnderList
+          options={under}
+          showCounts={showCounts}
+          entitled={entitled}
+          mine={mine}
+          slug={slug}
+        />
       )}
 
       <Sheet
@@ -233,13 +250,13 @@ export function Board({
  */
 function UnderList({
   options,
-  voted,
+  showCounts,
   entitled,
   mine,
   slug,
 }: {
   options: BoardOption[];
-  voted: boolean;
+  showCounts: boolean;
   entitled: boolean;
   mine: string | null;
   slug: string;
@@ -253,15 +270,18 @@ function UnderList({
             key={o.id}
             rank={o.rank}
             label={o.label}
-            votes={voted && entitled ? o.votes : undefined}
-            pct={voted && entitled ? o.pct : undefined}
+            votes={showCounts && entitled ? o.votes : undefined}
+            pct={showCounts && entitled ? o.pct : undefined}
             mine={o.id === mine}
             variant="small"
             disabled
           />
         ))}
       </div>
-      {voted && !entitled && (
+      {/* `showCounts`, not `voted`: under the 20-member gate there are no results
+          to reveal, so ₹9 would buy a board that stays blank. Never offer a
+          purchase that cannot deliver. */}
+      {showCounts && !entitled && (
         <a className="btn vio unlockcta" href={`/p/${slug}/unlock`}>
           See the exact names of voters · ₹9
         </a>

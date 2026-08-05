@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { getPollBySlug, hasEntitlement } from "@/lib/poll-queries";
 import { getUser } from "@/lib/supabase/server";
+import { resultsLocked } from "@/lib/space";
 import { paymentMode, PRICES, rupees } from "@/lib/payments";
 import { startOrder } from "@/app/pay/actions";
 
@@ -24,6 +25,11 @@ export default async function UnlockPage({
   const user = await getUser();
   if (!user) redirect(`/p/${slug}`);
   if (await hasEntitlement(poll.id, user.id)) redirect(`/p/${slug}`);
+
+  // The 20-member gate hides results from everyone, entitlement or not, so ₹9
+  // here would buy a board that stays blank. The board hides the CTA already;
+  // this is the guard, because a URL is typeable and links go stale.
+  if (resultsLocked(poll)) redirect(`/p/${slug}`);
 
   const live = paymentMode() === "manual_upi";
 

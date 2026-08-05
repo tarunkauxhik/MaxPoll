@@ -5,6 +5,45 @@ rather than rediscovering.
 
 ---
 
+## A gate that hides the wrong thing deadlocks the loop it was meant to drive
+
+03 §C's state table says: **"Space < 20 members | Board hidden, `12/20 members to
+unlock results`"**. The poll page implemented that literally and replaced the whole
+`<Board>` with the progress meter.
+
+But "Board" in that cell means the **results**. Two other lines in the same document
+say so:
+
+- §B, the critical path: *"Poll page → **tap an option** → logged in, not in Space →
+  JOIN SPACE SHEET → vote lands"*
+- §I: *"Join: one tap, or **implicit on first vote**"*
+
+A Space is joined **by voting**. So hiding the ballot until 20 members means
+`member_count` can never reach 20 — nobody can vote, so nobody can join. The one
+link that travels is a poll link, and it landed on a wall.
+
+It survived every automated check. The gates test the database, and the database was
+behaving correctly; `pnpm check` compiles a page that renders. Nothing was broken
+except the product. **The first real stranger to open a poll found it in a minute.**
+
+Two things fell out of the fix:
+
+- **₹9 for nothing.** The under-list still offered "See the exact names of voters"
+  once you had voted, and `/p/[slug]/unlock` had no gate check at all. Under the
+  gate an entitlement reveals nothing, so the purchase could not deliver. Both now
+  route through `resultsLocked()`.
+- **The constant existed four times.** `const UNLOCK = 20` was copy-pasted into
+  `/p/[slug]`, `/spaces`, `/s/[slug]` and nowhere near the paywall that needed it.
+  Now `lib/space.ts`, with tests — it is a money boundary, so it does not live in
+  the `server-only` module it would otherwise belong in.
+
+**The lesson is about reading a spec, not about React.** When one line of a document
+says "hide X" and another describes a flow that requires X, the flow wins — a state
+table describes a screen, a flow describes the product. Check what the gated thing
+*feeds* before gating it.
+
+---
+
 ## Phase 1 — scaffold
 
 ### `create-next-app` rejects capitalised directory names

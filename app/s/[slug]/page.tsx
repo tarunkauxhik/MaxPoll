@@ -6,8 +6,7 @@ import { JoinButton } from "./JoinButton";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { monogram, n } from "@/lib/format";
-
-const UNLOCK = 20;
+import { SPACE_UNLOCK_MEMBERS as UNLOCK } from "@/lib/space";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

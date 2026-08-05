@@ -14,11 +14,9 @@ import {
   isExpired,
 } from "@/lib/poll-queries";
 import { getUser } from "@/lib/supabase/server";
+import { resultsLocked, SPACE_UNLOCK_MEMBERS } from "@/lib/space";
 import { n, shortLeft } from "@/lib/format";
 import type { Metadata } from "next";
-
-// The Space results gate — 03-ux-flows C.
-const SPACE_UNLOCK_MEMBERS = 20;
 
 export async function generateMetadata({
   params,
@@ -81,8 +79,7 @@ export default async function PollPage({
     Promise.resolve(isExpired(poll)),
   ]);
 
-  const spaceLocked =
-    poll.space !== null && poll.space.member_count < SPACE_UNLOCK_MEMBERS;
+  const spaceLocked = resultsLocked(poll);
 
   return (
     <AppShell>
@@ -113,9 +110,7 @@ export default async function PollPage({
         <Timer expiresAt={poll.expires_at} startedAt={poll.created_at} />
       )}
 
-      {spaceLocked ? (
-        <SpaceGate space={poll.space!} />
-      ) : board.length === 0 ? (
+      {board.length === 0 ? (
         <EmptyState icon="🗳️" message="Nobody's been added yet. Add the first name." />
       ) : (
         <Board
@@ -130,14 +125,26 @@ export default async function PollPage({
           spaceMembers={poll.space?.member_count ?? 0}
           signedIn={!!user}
           closed={expired}
+          /**
+           * The 20-member gate hides **results**, never the ballot. It used to
+           * replace the board outright, which deadlocked the product: a Space is
+           * joined by voting (03 §I, "implicit on first vote"), so with no
+           * options to tap, member_count could never reach 20 — and a poll link
+           * is the only link that travels.
+           */
+          resultsLocked={spaceLocked}
         />
       )}
+
+      {/* Below the board, not above it: it answers "where are the numbers?"
+          after the tap, instead of pushing the ballot off a phone screen. */}
+      {spaceLocked && <SpaceGate space={poll.space!} />}
 
       {poll.vote_count > 0 && poll.vote_count < 10 && !spaceLocked && (
         <p className="hint lcenter">Results firm up at 10 votes.</p>
       )}
 
-      {!expired && !poll.options_locked && !spaceLocked && (
+      {!expired && !poll.options_locked && (
         <AddOption pollId={poll.id} slug={poll.slug} signedIn={!!user} />
       )}
 
@@ -160,7 +167,13 @@ export default async function PollPage({
   );
 }
 
-/** Under 20 members the Space can't show results yet — 03-ux-flows C. */
+/**
+ * Under 20 members the Space can't show results yet — 03-ux-flows C.
+ *
+ * Voting still works; this only explains the missing numbers. The copy says so,
+ * because a lock icon next to a board with no counts otherwise reads as "you
+ * can't take part", which is the opposite of what the gate is for.
+ */
 function SpaceGate({ space }: { space: { name: string; member_count: number } }) {
   const pct = Math.min(100, (space.member_count / SPACE_UNLOCK_MEMBERS) * 100);
   return (
@@ -169,8 +182,9 @@ function SpaceGate({ space }: { space: { name: string; member_count: number } })
         🔒
       </div>
       <p>
-        <span className="num">{space.member_count}</span>/
-        <span className="num">{SPACE_UNLOCK_MEMBERS}</span> members to unlock results
+        Your vote counts. Results show at{" "}
+        <span className="num">{SPACE_UNLOCK_MEMBERS}</span> members —{" "}
+        <span className="num">{space.member_count}</span> so far.
       </p>
       <div className="progress" role="img" aria-label={`${space.member_count} of ${SPACE_UNLOCK_MEMBERS} members`}>
         <i style={{ width: `${pct}%` }} />

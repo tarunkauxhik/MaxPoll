@@ -2,10 +2,9 @@ import AppShell from "@/components/shell/AppShell";
 import { SpaceCard } from "@/components/SpaceCard";
 import { EmptyState } from "@/components/ui/States";
 import { createClient, getUser } from "@/lib/supabase/server";
+import { SPACE_UNLOCK_MEMBERS as UNLOCK } from "@/lib/space";
 
 export const metadata = { title: "Spaces · MaxPoll" };
-
-const UNLOCK = 20;
 
 export default async function SpacesPage() {
   const user = await getUser();
