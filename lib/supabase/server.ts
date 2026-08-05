@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { supabaseKey, supabaseUrl } from "@/lib/env";
 
 /**
@@ -36,12 +37,11 @@ export async function createClient() {
 }
 
 /** The signed-in user's profile, or null. `null` also means "not onboarded". */
-export async function getProfile() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export const getProfile = cache(async () => {
+  const user = await getUser();
   if (!user) return null;
+
+  const supabase = await createClient();
 
   // dob is deliberately never selected — it gates 18+ at write time and is
   // never displayed. Selecting it here would leak it into every page payload.
@@ -52,13 +52,20 @@ export async function getProfile() {
     .maybeSingle();
 
   return data;
-}
+});
 
-/** The auth user only — cheaper than getProfile when you just need an id. */
-export async function getUser() {
+/**
+ * The signed-in user, memoised for the life of one request.
+ *
+ * `auth.getUser()` is not a local cookie read — it calls the Auth server to
+ * validate the JWT, which is a real round trip. Every screen made at least two:
+ * one in the page and one in `ActivityBell` inside the shell. `cache()` collapses
+ * them into one without any call site having to thread the user downwards.
+ */
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});

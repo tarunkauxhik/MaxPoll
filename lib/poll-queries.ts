@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { rankOptions, type BoardOption, type RankInput } from "@/lib/rank";
@@ -54,8 +55,14 @@ export function isExpired(
   return poll.expires_at !== null && new Date(poll.expires_at).getTime() <= now;
 }
 
-/** Board options for a poll. Anonymous client — never touches cookies (A2). */
-export async function getBoard(pollId: string, totalVotes: number) {
+/**
+ * Board options for a poll. Anonymous client — never touches cookies (A2).
+ *
+ * Memoised per request: `generateMetadata` needs the leader for the share
+ * preview and the page needs the whole board, so this ran twice on every poll
+ * view — twice the query *and* twice the `snapshot_ranks` call behind it.
+ */
+export const getBoard = cache(async (pollId: string, totalVotes: number) => {
   const supabase = createAnonClient();
   const { data } = await supabase
     .from("options")
@@ -65,9 +72,10 @@ export async function getBoard(pollId: string, totalVotes: number) {
     .is("merged_into", null);
 
   return rankOptions(data ?? [], totalVotes);
-}
+});
 
-export async function getPollBySlug(slug: string) {
+/** Memoised for the same reason as getBoard: metadata and page both need it. */
+export const getPollBySlug = cache(async (slug: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("polls")
@@ -75,7 +83,7 @@ export async function getPollBySlug(slug: string) {
     .eq("slug", slug)
     .maybeSingle();
   return data ? normalise(data as unknown as RawPoll) : null;
-}
+});
 
 /** The signed-in user's vote on this poll, if any. */
 export async function getMyVote(pollId: string, userId: string | undefined) {
