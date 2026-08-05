@@ -388,6 +388,156 @@ try {
     "a closed poll refuses new options"
   );
 
+  // ══════════════════════════════════════════════════ GATE C — column guards
+  //
+  // RLS picks rows; these check the columns. Every one of these succeeded against
+  // the live database before the 20260806110000 migration.
+  //
+  // ⚠️ Each refusal is confirmed by READING THE VALUE BACK with the secret key,
+  // never by trusting the status. PostgREST answers 403 to an insert sent with
+  // `Prefer: return=representation` when only the *read-back* was denied — the
+  // row still lands. A probe that believes the status reports "safe" while the
+  // write sits in the table. That is how the activity hole nearly got missed.
+  head("Gate C — column guards");
+
+  const cPoll = await ins("polls", {
+    slug: `gate-col-${Date.now()}`,
+    space_id: spaceId,
+    created_by: alice.id,
+    title: "Column guard poll",
+    subject_type: "thing",
+    category: "things",
+  });
+  const cPollId = cPoll.body?.[0]?.id;
+  cleanup.polls.push(cPollId);
+  const cOpt = (await ins("options", { poll_id: cPollId, label: "Honest count", added_by: alice.id }))
+    .body?.[0]?.id;
+  const cHidden = (await ins("options", { poll_id: cPollId, label: "Moderated away", added_by: alice.id, hidden: true }))
+    .body?.[0]?.id;
+
+  const patch = (path, body, token) =>
+    api(path, PUB, { method: "PATCH", body: JSON.stringify(body) }, token);
+
+  const p1 = await patch(`/rest/v1/polls?id=eq.${cPollId}`, { vote_count: 99999 }, alice.token);
+  const p1Row = await api(`/rest/v1/polls?id=eq.${cPollId}&select=vote_count`, SEC);
+  ok(
+    p1.status === 403 && p1Row.body?.[0]?.vote_count === 0,
+    `creator cannot fabricate polls.vote_count (${p1.status}, still ${p1Row.body?.[0]?.vote_count})`
+  );
+
+  const p2 = await patch(`/rest/v1/options?id=eq.${cOpt}`, { vote_count: 4242 }, alice.token);
+  const p2Row = await api(`/rest/v1/options?id=eq.${cOpt}&select=vote_count`, SEC);
+  ok(
+    p2.status === 403 && p2Row.body?.[0]?.vote_count === 0,
+    `creator cannot fabricate options.vote_count (${p2.status}, still ${p2Row.body?.[0]?.vote_count})`
+  );
+
+  const p3 = await patch(`/rest/v1/options?id=eq.${cHidden}`, { hidden: false }, alice.token);
+  const p3Row = await api(`/rest/v1/options?id=eq.${cHidden}&select=hidden`, SEC);
+  ok(
+    p3.status === 403 && p3Row.body?.[0]?.hidden === true,
+    `creator cannot un-hide a moderated option (${p3.status}, still hidden=${p3Row.body?.[0]?.hidden})`
+  );
+
+  const directPoll = await api("/rest/v1/polls", PUB, {
+    method: "POST",
+    body: JSON.stringify({
+      slug: `gate-direct-${Date.now()}`, created_by: alice.id,
+      title: "Past create_poll", subject_type: "thing", category: "things",
+    }),
+  }, alice.token);
+  const directRow = await api("/rest/v1/polls?select=id&slug=like.gate-direct-*", SEC);
+  ok(
+    directPoll.status === 403 && directRow.body?.length === 0,
+    `the 3-per-week limit cannot be walked around by inserting a poll (${directPoll.status})`
+  );
+
+  const fakeTick = await api("/rest/v1/spaces", PUB, {
+    method: "POST",
+    body: JSON.stringify({
+      slug: `gate-tick-${Date.now()}`, name: "Totally Real University",
+      description: "Self-awarded tick.", created_by: alice.id, is_verified: true,
+    }),
+  }, alice.token);
+  const tickRow = await api("/rest/v1/spaces?select=id&slug=like.gate-tick-*", SEC);
+  ok(
+    fakeTick.status === 403 && tickRow.body?.length === 0,
+    `nobody can award themselves the verified tick (${fakeTick.status})`
+  );
+
+  const madeSpace = await api("/rest/v1/rpc/create_space", PUB, {
+    method: "POST",
+    body: JSON.stringify({
+      p_slug: `gate-space-rpc-${Date.now()}`, p_name: "Gate RPC Space",
+      p_description: "A description long enough to clear the check.",
+    }),
+  }, alice.token);
+  const madeRow = await api(`/rest/v1/spaces?id=eq.${madeSpace.body}&select=is_verified,member_count`, SEC);
+  if (madeSpace.body) cleanup.spaces.push(madeSpace.body);
+  ok(
+    madeRow.body?.[0]?.is_verified === false && madeRow.body?.[0]?.member_count === 1,
+    `create_space() forces is_verified false and joins the creator (${JSON.stringify(madeRow.body?.[0])})`
+  );
+
+  const ownProfile = await patch(`/rest/v1/profiles?id=eq.${alice.id}`, { display_name: "Renamed" }, alice.token);
+  const profRow = await api(`/rest/v1/profiles?id=eq.${alice.id}&select=display_name`, SEC);
+  ok(
+    ownProfile.status === 403 && profRow.body?.[0]?.display_name !== "Renamed",
+    `profiles is insert-once — no edit path exists yet (${ownProfile.status})`
+  );
+
+  // No `Prefer: return=representation`: with it, a denied read-back masquerades as
+  // a denied write, and this exact check would pass while the row landed.
+  const poison = await api("/rest/v1/activity", PUB, {
+    method: "POST",
+    body: JSON.stringify({ user_id: bob.id, type: "same_as_you", payload: { poll_title: "Tap to claim ₹500" } }),
+  }, alice.token);
+  const bobFeed = await api(`/rest/v1/activity?select=payload&user_id=eq.${bob.id}&type=eq.same_as_you`, SEC);
+  const poisoned = JSON.stringify(bobFeed.body ?? []).includes("claim");
+  ok(
+    poison.status === 403 && !poisoned,
+    `nobody can write a notification into someone else's feed (${poison.status}, poisoned=${poisoned})`
+  );
+
+  const markRead = await patch(`/rest/v1/activity?user_id=eq.${alice.id}`, { read: true }, alice.token);
+  ok(markRead.status < 300, `…but you can still mark your own notifications read (${markRead.status})`);
+
+  const bumpOther = await patch(`/rest/v1/activity?user_id=eq.${alice.id}`, { type: "badge_earned" }, alice.token);
+  ok(bumpOther.status === 403, `and only the read column (${bumpOther.status})`);
+
+  // The feed's whole reason to exist.
+  const cOptId = cOpt;
+  await api("/rest/v1/rpc/cast_vote", PUB, {
+    method: "POST",
+    body: JSON.stringify({ p_poll: cPollId, p_option: cOptId, p_device: "gate-c", p_user: alice.id }),
+  }, alice.token);
+  await api("/rest/v1/rpc/cast_vote", PUB, {
+    method: "POST",
+    body: JSON.stringify({ p_poll: cPollId, p_option: cOptId, p_device: "gate-c", p_user: bob.id }),
+  }, bob.token);
+  const sameRows = await api(
+    `/rest/v1/activity?select=user_id&type=eq.same_as_you&payload->>poll_id=eq.${cPollId}`, SEC);
+  ok(sameRows.body?.length === 2, `both voters get a same_as_you row (${sameRows.body?.length})`);
+
+  const names = await api("/rest/v1/rpc/same_as_you_names", PUB, {
+    method: "POST", body: JSON.stringify({ p_polls: [cPollId] }),
+  }, alice.token);
+  ok(
+    names.body?.[0]?.total === 1 && (names.body?.[0]?.names ?? []).length <= 2,
+    `same_as_you_names caps at 2 and counts the rest (${JSON.stringify(names.body?.[0])})`
+  );
+
+  // The one that would turn the paywall into a public name directory.
+  const stranger = await makeUser("s");
+  cleanup.users.push(stranger.id);
+  const leak = await api("/rest/v1/rpc/same_as_you_names", PUB, {
+    method: "POST", body: JSON.stringify({ p_polls: [cPollId] }),
+  }, stranger.token);
+  ok(
+    Array.isArray(leak.body) && leak.body.length === 0,
+    `a user who never voted learns no names (${JSON.stringify(leak.body)})`
+  );
+
   // ══════════════════════════════════════════════════ GATE P — payments
   head("Gate P — payment pipeline");
 

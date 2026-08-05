@@ -435,3 +435,55 @@ row lock instead.
 This is D2b generalised. That entry said *every client-writable table with a status
 column* has the shape; the truth is broader — **every client-writable table does**.
 A Server Action is one door, never the only one.
+
+### D2e · Column grants on every client-writable table, not just `orders`
+
+D2b applied column grants to `orders` and called *"every client-writable table with a
+status column"* a class of bug. The class was wider. `polls_update` and
+`options_update` were scoped by row (`auth.uid() = created_by`) and said nothing about
+columns, so a poll's own creator could:
+
+```
+PATCH /rest/v1/polls?id=eq.<own>    {vote_count: 99999}         -> 204, persisted
+PATCH /rest/v1/options?id=eq.<own>  {vote_count: 4242}          -> 204, persisted
+PATCH /rest/v1/options?id=eq.<own>  {hidden: false}             -> un-hides a
+                                       row three reporters had auto-hidden
+POST  /rest/v1/spaces               {is_verified: true}         -> 201, tick granted
+POST  /rest/v1/polls                {...}                       -> 201, past
+                                       create_poll and its 3-per-week limit
+```
+
+The board reads exactly those denormalised counters, so the first two mean a creator
+could fabricate the entire result of their own poll — on a product whose whole promise
+is that the leaderboard is real. All five were verified live before being fixed.
+
+**No application code writes any of those columns.** There is no poll-edit screen and
+no profile-edit screen; `create_poll`, `create_space`, `cast_vote`, `merge_options`
+and `snapshot_ranks` are `security definer`, as are both `bump_*` triggers. So the fix
+is a revoke rather than a narrower grant, and the tables become insert-once from the
+client's side.
+
+**When a dead policy stays and when it goes.** Keep it where a legitimate client path
+exists but is routed through an RPC — `messages_insert`, `options_insert`,
+`votes_insert` — because it documents intent and a careless future `grant` still fails
+closed. Drop it where the operation should never come from a client at all. Leaving
+`polls_update` in place would have said creators may edit polls, and the next person
+to add a grant would have believed it.
+
+### D2f · The activity feed is written by the database, so it can be trusted
+
+`activity_insert` was `WITH CHECK (true)` — any signed-in user could write any
+notification into anyone's feed, with arbitrary `payload` jsonb that the feed renders.
+Verified live with `{poll_title: "Tap to claim ₹500"}` landing in a victim's feed.
+
+It was permissive because the feature needs it: a `new_follower` row belongs to the
+person being *followed*, so a client writing its own activity can never be restricted
+to `auth.uid() = user_id`. The answer is not a cleverer policy but a different writer.
+`same_as_you` now comes from `cast_vote()`, `option_climbed` from `snapshot_ranks()`,
+`new_follower` from a trigger on `follows` — and INSERT is revoked. The only column a
+client may still write is `read`, on its own rows.
+
+**`same_as_you` stores no count.** Storing one means writing to every co-voter's row on
+every vote — N writes on the hottest path in the product. `same_as_you_names()`
+computes the count and the two visible names together at read time, in the query
+`/activity` already runs, so the number is also never stale.

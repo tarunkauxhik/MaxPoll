@@ -409,3 +409,60 @@ the revokes, it showed `messages` still holding `INSERT` — that was
 `realtime.messages`, a different table Supabase ships. Filter on
 `table_schema = 'public'`, or read `pg_class.relacl` and look for the `a` privilege.
 Nearly sent me fixing a bug that did not exist.
+
+### A PostgREST 403 on an insert can mean the READ-BACK was denied
+2026-08-05. The most useful thing learned this session, and it nearly cost a real
+vulnerability.
+
+Probing whether a user could write into someone else's activity feed:
+
+```
+POST /rest/v1/activity  { user_id: <victim>, ... }
+  Prefer: return=representation   -> 403 "new row violates row-level security policy"
+  (no Prefer header)              -> 201, and the row is in the victim's feed
+```
+
+`activity_insert` was `WITH CHECK (true)`, so the write was always allowed. With
+`return=representation` PostgREST reads the row back, that read is governed by
+`activity_read USING (auth.uid() = user_id)`, and the denial surfaces as a **403 on
+the insert**. The write had already landed.
+
+The first probe reported 403 and looked like proof of safety. It was proof of nothing.
+
+**So a security probe must never conclude "refused" from a status code.** Every
+refusal check in `scripts/gates.mjs` now reads the value back with the secret key and
+asserts it did not change:
+
+```js
+const r    = await patch(`/rest/v1/polls?id=eq.${id}`, { vote_count: 99999 }, token);
+const back = await api(`/rest/v1/polls?id=eq.${id}&select=vote_count`, SEC);
+ok(r.status === 403 && back.body?.[0]?.vote_count === 0, "…");
+```
+
+Note the two 403s are distinguishable if you read the body: an RLS refusal says
+`new row violates row-level security policy`, a missing grant says
+`permission denied for table activity` and helpfully suggests the GRANT. The second is
+the one that means the write never happened.
+
+### Denormalised counters are only as honest as the column grants
+`polls.vote_count` and `options.vote_count` exist so no screen ever runs `count(*)`.
+That makes them the board — and they were writable by the poll's creator, because
+`polls_update` was scoped by row and said nothing about columns. `PATCH {vote_count:
+99999}` returned 204 and persisted.
+
+Gate 4 has always asserted `sum(options.vote_count) = actual rows`, which would have
+caught drift from a *bug*. It cannot catch a creator who sets both consistently. The
+guard has to be the grant.
+
+### A trigger that writes past a revoke must be `security definer`
+Moving the `new_follower` insert into a trigger on `follows` only works because the
+trigger function is `security definer`. A trigger function otherwise runs as the
+invoking role, so a plain one would have started failing the moment
+`revoke insert on activity` landed — and silently, since the follow itself succeeds
+either way.
+
+The same property is what made the column revokes safe: `cast_vote`, `create_poll`,
+`create_space`, `merge_options`, `snapshot_ranks` and both `bump_*` count triggers are
+all definer functions, so revoking the client's UPDATE on `polls`/`options`/`spaces`
+left every internal writer working. That was checked before the first revoke was
+written, not after.

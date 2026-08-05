@@ -246,6 +246,12 @@ blocked · two accounts one browser both land · UTR reuse rejected · add-optio
       `options`; their RPCs are the only door (DECISIONS D2d)
 - [x] **`cast_vote` takes identity from `auth.uid()`**, not a parameter ✅ — it used
       to accept `p_user`, which let any signed-in user vote as anyone (DECISIONS D2c)
+- [x] **Column grants on every client-writable table** ✅ — `polls`, `options`,
+      `spaces`, `profiles` and `activity`, not just `orders`. A creator could set
+      their own poll's `vote_count`; anyone could award themselves the verified
+      tick (DECISIONS D2e)
+- [x] **Activity is written by the database** ✅ — `cast_vote()`, `snapshot_ranks()`
+      and a trigger on `follows`; client INSERT revoked, `read` re-granted (D2f)
 - [ ] `.env.local` never committed
 
 **Performance budget:**

@@ -101,7 +101,38 @@ the 300-char cap and "options locked at 10 votes" were promises only the UI kept
 **Nothing about the UI changed.** The Server Actions now do input trimming and error
 copy, which is all they should ever have done.
 
-## Gate probes — all 41 passing (2026-08-05)
+## 🛠 Column guards + the activity engine — 2026-08-05 (Phase 10)
+
+Auditing every policy and grant after the vote spoof found the same defect one level
+down: policies picked **rows**, and said nothing about **columns**. All verified live
+before being fixed, as the poll's own creator with a real session:
+
+| Request | Was | Now |
+|---|---|---|
+| `PATCH polls {vote_count: 99999}` | 204, persisted | **403**, unchanged |
+| `PATCH options {vote_count: 4242}` | 204, persisted | **403**, unchanged |
+| `PATCH options {hidden: false}` on a 3-report auto-hide | 204 | **403** |
+| `POST spaces {is_verified: true}` | 201, tick granted | **403** |
+| `POST polls {…}` — past `create_poll`'s 3/week | 201 | **403** |
+| `POST activity {user_id: <someone else>}` | 201, feed poisoned | **403** |
+
+The board reads exactly those denormalised counters, so the first two meant a creator
+could fabricate their own poll's result — [DECISIONS D2e](DECISIONS.md).
+
+**And the activity feed now has writers.** It had a spec, CSS and a finished
+component, and nothing but `new_follower` ever wrote to it — so the retention surface
+picked over email was empty, and its empty state promised something that could not
+happen. `same_as_you` comes from `cast_vote()`, `option_climbed` from
+`snapshot_ranks()`, `new_follower` from a trigger. That is what let the client's
+INSERT be revoked at all — D2f.
+
+The `same_as_you` row used to render hardcoded `Aarav S.` / `Priya M.` chips — seed
+names shown to real users as real voters, in front of a paywall. It now shows **two
+real names** from `same_as_you_names()` and neutral placeholders behind the blur, per
+03 §H. The function caps at two inside SQL with no limit or offset parameter, and
+returns nothing at all to a caller who never voted in that poll.
+
+## Gate probes — all 56 passing (2026-08-05)
 
 `pnpm gates` creates two real users with real sessions, exercises the policies as
 those users, and deletes everything afterwards.
@@ -109,6 +140,13 @@ those users, and deletes everything afterwards.
 | Area | What it proves |
 |---|---|
 | Write guards | `cast_vote` ignores `p_user` · direct INSERT into `votes`/`messages`/`options` → **403** · an option from another poll refused · 5000 chars stored at 300 · chat flood refused · locked and closed polls refuse options |
+| Column guards | creator cannot fabricate `vote_count` or un-hide a moderated option · nobody awards themselves the verified tick · the 3-poll/week limit cannot be walked around · no writing into someone else's feed, but you can still mark your own read |
+| Activity | both voters get a `same_as_you` row · `same_as_you_names` caps at 2 · **a user who never voted learns no names** |
+
+> ⚠️ **A refusal is proven by reading the value back, never by the status code.**
+> PostgREST answers 403 to an insert sent with `Prefer: return=representation` when
+> only the *read-back* was denied — and the row still lands. That is how the activity
+> hole nearly got signed off as safe (LEARNINGS).
 | Auth | Public password signup refused · counter triggers fire |
 | Voting | Second vote → `ALREADY_VOTED` · **different account, same device → vote lands** (A4) · `polls.vote_count` and `sum(options.vote_count)` both equal the real row count |
 | Names | Anon reads `votes` → `[]` **while still reading `options`** · unentitled user sees only their own vote · entitled user sees all |
