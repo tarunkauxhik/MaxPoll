@@ -81,6 +81,9 @@ const polls = (Array.isArray(plan.polls) ? plan.polls : []).map((p, i) => {
     problems.push(`${where}.subject_type must be "person" or "thing"`);
   }
   if (options.length < 2) problems.push(`${where} needs at least 2 usable options`);
+  // create_poll() raises TOO_MANY_OPTIONS past 10. A launch poll should not be
+  // something the product would have refused — and people add the rest anyway.
+  if (options.length > 10) problems.push(`${where} has ${options.length} options; 10 maximum`);
 
   const hours = Number(p.closes_in_hours ?? 0);
   if (p.closes_in_hours != null && !(hours > 0)) {
