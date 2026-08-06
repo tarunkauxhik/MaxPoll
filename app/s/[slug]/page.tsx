@@ -3,6 +3,7 @@ import AppShell from "@/components/shell/AppShell";
 import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
 import { JoinButton } from "./JoinButton";
+import { ShareButton } from "@/components/poll/ShareButton";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, getSpaceByKey, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { monogram, n, unit } from "@/lib/format";
@@ -132,9 +133,12 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
           </div>
         )}
 
-        {user && (
-          <JoinButton spaceId={space.id} slug={space.slug} joined={!!membership} />
-        )}
+        <div className="btnrow">
+          <ShareButton path={`/s/${space.slug}`} text="your pov matters" />
+          {user && (
+            <JoinButton spaceId={space.id} slug={space.slug} joined={!!membership} />
+          )}
+        </div>
       </div>
 
       {feed.length === 0 ? (

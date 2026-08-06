@@ -19,7 +19,6 @@ import {
 } from "@/lib/poll-queries";
 import { getUser } from "@/lib/supabase/server";
 import { resultsLocked, SPACE_UNLOCK_MEMBERS } from "@/lib/space";
-import { raceGap } from "@/lib/rank";
 import { n, shortLeft, endingSoon, unit, plural } from "@/lib/format";
 import type { Metadata } from "next";
 
@@ -204,14 +203,7 @@ export default async function PollPage({
       )}
 
       <div className="pollfoot">
-        <ShareButton
-          code={poll.code}
-          title={poll.title}
-          leader={board[0]?.label ?? null}
-          /* The gap is a result, so it stays behind the Space gate like every
-             other number on this page. */
-          gap={spaceLocked ? null : (raceGap(board)?.lead ?? null)}
-        />
+        <ShareButton path={`/p/${poll.code}`} text="your pov matters" />
         {/* Rendered only for the owner, but that is presentation — update_poll()
             and delete_poll() take identity from auth.uid(), so hiding the button
             is not what stops anyone else. */}
