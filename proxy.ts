@@ -49,6 +49,10 @@ export async function proxy(request: NextRequest) {
  * Excluded because they are edge-cached:
  *   api/poll/*​/board · api/poll/*​/messages · og/* · opengraph-image
  *
+ * Excluded because they are crawler files with no user in them: robots.txt ·
+ * sitemap.xml · manifest.webmanifest. A `Set-Cookie` on the sitemap would make
+ * its `revalidate = 3600` decorative, and every crawler hit a function call.
+ *
  * Excluded because it is a beacon, not a page: `_vercel`. Vercel Web Analytics
  * adds routes under `/_vercel/insights/*`, and running this proxy on them would
  * cost an `auth.getUser()` round trip to Supabase **per pageview** — the same
@@ -61,6 +65,6 @@ export async function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|_vercel|favicon.ico|opengraph-image|api/poll/.*/board|api/poll/.*/messages|og/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
+    "/((?!_next/static|_next/image|_vercel|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|opengraph-image|api/poll/.*/board|api/poll/.*/messages|og/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
   ],
 };

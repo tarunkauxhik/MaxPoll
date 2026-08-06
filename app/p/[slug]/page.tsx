@@ -28,7 +28,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const poll = await getPollBySlug(slug);
-  if (!poll) return { title: "Poll not found · MaxPoll" };
+
+  /**
+   * ⚠️ **Do not add a `loading.tsx` to this segment.** It was tried and reverted.
+   *
+   * A `loading.tsx` wraps the whole segment in Suspense, so the page renders
+   * inside a stream — and once streaming starts the `200` is on the wire and
+   * cannot be changed (Next 16 streaming guide, "The HTTP contract"). Every
+   * mangled poll link, which is the most likely bad link in this product, then
+   * answers **200** instead of 404. Measured, both ways.
+   *
+   * Moving `notFound()` up here does **not** rescue it — also measured. The only
+   * fixes are no segment-level boundary, or a `<Suspense>` around the board
+   * alone, and at ~267ms TTFB the skeleton is not worth that refactor.
+   *
+   * `getPollBySlug` is React-`cache()`d, so the page's own call costs nothing.
+   */
+  if (!poll) notFound();
 
   const board = await getBoard(poll.id, poll.vote_count);
   const leader = board[0];
