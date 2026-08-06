@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SignInButton } from "./SignInButton";
+import { IncognitoIcon } from "@/components/ui/IncognitoIcon";
 import { n, shortLeft, plural } from "@/lib/format";
 
 export type LivePoll = {
@@ -132,6 +133,21 @@ export function Landing({
           </div>
         </section>
       )}
+
+      <section className="lchat">
+        <div className="lchatcard">
+          <span className="ic" aria-hidden="true">
+            <IncognitoIcon size={26} />
+          </span>
+          <div>
+            <h2 className="ttl">Every poll has a chat room. Nobody sees your name.</h2>
+            <p className="sub">
+              Say what you actually think — everyone gets a random handle, never
+              their real name.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {stats && (
         <section className="lstats">

@@ -1580,6 +1580,48 @@ textarea.field {
   font-weight: 700;
 }
 
+.lchat {
+  margin: var(--s-6) 0;
+}
+
+.lchatcard {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  box-shadow: var(--ring), var(--shadow-1);
+}
+
+.lchatcard .ic {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--violet-soft);
+  color: var(--violet-text);
+  display: grid;
+  place-items: center;
+}
+
+.lchatcard .ttl {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+  margin: 0 0 4px;
+}
+
+.lchatcard .sub {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--body);
+  margin: 0;
+}
+
 /* Three equal cells split by a hairline — doc 04 §6. */
 .lstats {
   display: flex;
@@ -1619,6 +1661,10 @@ textarea.field {
   margin-top: var(--s-6);
 }
 
+.lhow .t-card {
+  font-size: 20px;
+}
+
 .lhow ol {
   list-style: none;
   display: grid;
@@ -1631,22 +1677,23 @@ textarea.field {
   display: flex;
   gap: var(--s-3);
   align-items: flex-start;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5;
   color: var(--body);
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  padding: var(--s-3) var(--s-4);
+  padding: var(--s-4);
 }
 
 .lhow .s {
-  flex: 0 0 26px;
-  height: 26px;
+  flex: 0 0 32px;
+  height: 32px;
   border-radius: 9px;
-  background: var(--ink);
+  background: var(--violet);
+  box-shadow: var(--shadow-1);
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   display: grid;
   place-items: center;
