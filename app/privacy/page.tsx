@@ -108,7 +108,7 @@ export default function PrivacyPage() {
             we do not ask you to email anyone.
           </p>
           <p>
-            That removes your profile, memberships, follows, notifications, unlocks and
+            That removes your profile, memberships, notifications, unlocks and
             your login. <strong>Your votes and chat messages are kept, with the link to
             you permanently removed</strong> — every poll&apos;s totals are built from
             those rows, so deleting them would silently corrupt results other people

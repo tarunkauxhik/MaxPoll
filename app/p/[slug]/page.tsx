@@ -4,6 +4,8 @@ import { Board } from "@/components/poll/Board";
 import { Timer } from "@/components/poll/Timer";
 import { ShareButton } from "@/components/poll/ShareButton";
 import { AddOption } from "@/components/poll/AddOption";
+import { ManagePoll } from "@/components/poll/ManagePoll";
+import { ReportButton } from "@/components/poll/ReportButton";
 import { EmptyState } from "@/components/ui/States";
 import {
   getPollBySlug,
@@ -158,12 +160,36 @@ export default async function PollPage({
           title={poll.title}
           leader={board[0]?.label ?? null}
         />
+        {/* Rendered only for the owner, but that is presentation — update_poll()
+            and delete_poll() take identity from auth.uid(), so hiding the button
+            is not what stops anyone else. */}
+        {user && poll.created_by === user.id && (
+          <ManagePoll
+            pollId={poll.id}
+            slug={poll.slug}
+            title={poll.title}
+            closed={expired}
+            optionsLocked={poll.options_locked}
+            hasVotes={poll.vote_count > 0}
+            hasExpiry={poll.expires_at !== null}
+          />
+        )}
       </div>
 
       <p className="discl">
         <span aria-hidden="true">🔓</span>
         <span>Votes on MaxPoll are public. Your name is visible on this poll.</span>
       </p>
+
+      <div className="pollmeta">
+        <ReportButton
+          targetType="poll"
+          targetId={poll.id}
+          label={poll.title}
+          signedIn={!!user}
+          returnTo={`/p/${poll.slug}`}
+        />
+      </div>
     </AppShell>
   );
 }

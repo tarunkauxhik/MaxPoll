@@ -44,8 +44,8 @@ export async function deleteAccount(_prev: DeleteState, form: FormData): Promise
   await admin.from("messages").update({ user_id: null }).eq("user_id", user.id);
 
   // profiles.id references auth.users on delete cascade, so removing the auth
-  // user takes the profile, memberships, follows, activity and entitlements with
-  // it — the votes above have already been detached.
+  // user takes the profile, memberships, activity and entitlements with it —
+  // the votes above have already been detached.
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) return { error: "Couldn't delete the account. Try again." };
 

@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
-import { FollowButton } from "./FollowButton";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { n } from "@/lib/format";
@@ -36,35 +35,22 @@ export default async function ProfilePage({
 
   if (!profile) notFound();
 
-  const [{ data: polls }, { count: followers }, { count: following }, { data: badges }, { data: rel }] =
-    await Promise.all([
-      supabase
-        .from("polls")
-        .select(
-          "id, slug, title, status, vote_count, option_count, options_locked, expires_at, created_at, created_by, is_private, og_version, space:spaces(id, slug, name, member_count)"
-        )
-        .eq("created_by", profile.id)
-        .neq("status", "removed")
-        .order("created_at", { ascending: false })
-        .limit(20),
-      supabase
-        .from("follows")
-        .select("follower_id", { count: "exact", head: true })
-        .eq("following_id", profile.id),
-      supabase
-        .from("follows")
-        .select("following_id", { count: "exact", head: true })
-        .eq("follower_id", profile.id),
-      supabase.from("badges").select("type, period").eq("user_id", profile.id).limit(6),
-      me
-        ? supabase
-            .from("follows")
-            .select("follower_id")
-            .eq("follower_id", me.id)
-            .eq("following_id", profile.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+  // Follows are gone — the table, the button and the counts. A follower count
+  // that mostly reads 0 is a status symbol nobody earned, and the graph fed
+  // exactly one notification type. Votes received is the number that actually
+  // says something about a creator here.
+  const [{ data: polls }, { data: badges }] = await Promise.all([
+    supabase
+      .from("polls")
+      .select(
+        "id, slug, title, status, vote_count, option_count, options_locked, expires_at, created_at, created_by, is_private, og_version, space:spaces(id, slug, name, member_count)"
+      )
+      .eq("created_by", profile.id)
+      .neq("status", "removed")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase.from("badges").select("type, period").eq("user_id", profile.id).limit(6),
+  ]);
 
   const rows = polls ?? [];
   const ids = rows.map((p: { id: string }) => p.id);
@@ -122,22 +108,18 @@ export default async function ProfilePage({
 
         <div className="statrow">
           <div>
-            <span className="v num">{n(followers ?? 0)}</span>
-            <span className="k">Followers</span>
-          </div>
-          <div>
-            <span className="v num">{n(following ?? 0)}</span>
-            <span className="k">Following</span>
-          </div>
-          <div>
             <span className="v num">{n(rows.length)}</span>
             <span className="k">Polls</span>
           </div>
+          <div>
+            {/* Sums the denormalised counters — never count(*) on votes. */}
+            <span className="v num">
+              {n(rows.reduce((s: number, p: { vote_count: number | null }) => s + (p.vote_count ?? 0), 0))}
+            </span>
+            <span className="k">Votes cast</span>
+          </div>
         </div>
 
-        {me && me.id !== profile.id && (
-          <FollowButton targetId={profile.id} following={!!rel} />
-        )}
         {me && me.id === profile.id && (
           <a className="btn sec fullw" href="/settings">
             Edit profile

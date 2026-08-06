@@ -4,7 +4,7 @@ import { getUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdmin, rupees, paymentMode } from "@/lib/payments";
 import { ago } from "@/lib/format";
-import { GrantForm, OrderRow, GrantedList } from "./AdminForms";
+import { GrantForm, OrderRow, GrantedList, ModerationQueue } from "./AdminForms";
 
 export const metadata = { title: "Admin · MaxPoll" };
 export const dynamic = "force-dynamic";
@@ -35,6 +35,83 @@ type QueueOrder = {
  */
 async function clock() {
   return Date.now();
+}
+
+/**
+ * The moderation queue.
+ *
+ * `reports` has RLS on and only an insert policy — no select policy exists at
+ * all, so the service role is the only reader by design. Grouped by target here
+ * rather than in SQL: PostgREST cannot aggregate, and at this volume grouping a
+ * few hundred rows in memory beats adding a view.
+ */
+async function loadReports(supabase: ReturnType<typeof createAdminClient>) {
+  const { data } = await supabase
+    .from("reports")
+    .select("target_type, target_id, reason, created_at")
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  const groups = new Map<
+    string,
+    { type: string; id: string; count: number; reasons: string[]; last: string }
+  >();
+
+  for (const r of (data ?? []) as {
+    target_type: string; target_id: string; reason: string | null; created_at: string;
+  }[]) {
+    const key = `${r.target_type}:${r.target_id}`;
+    const g = groups.get(key) ?? {
+      type: r.target_type, id: r.target_id, count: 0, reasons: [], last: r.created_at,
+    };
+    g.count += 1;
+    if (r.reason) g.reasons.push(r.reason);
+    groups.set(key, g);
+  }
+  if (groups.size === 0) return [];
+
+  // Resolve what each report actually points at, so the queue reads as content
+  // and not as a list of uuids.
+  const byType = (t: string) => [...groups.values()].filter((g) => g.type === t).map((g) => g.id);
+  const [opts, polls, msgs] = await Promise.all([
+    byType("option").length
+      ? supabase.from("options").select("id, label, hidden, poll_id").in("id", byType("option"))
+      : Promise.resolve({ data: [] }),
+    byType("poll").length
+      ? supabase.from("polls").select("id, title, slug, status").in("id", byType("poll"))
+      : Promise.resolve({ data: [] }),
+    byType("message").length
+      ? supabase.from("messages").select("id, body, hidden").in("id", byType("message"))
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const label = new Map<string, { text: string; hidden: boolean; href: string | null }>();
+  for (const o of (opts.data ?? []) as { id: string; label: string; hidden: boolean }[]) {
+    label.set(`option:${o.id}`, { text: o.label, hidden: o.hidden, href: null });
+  }
+  for (const p of (polls.data ?? []) as { id: string; title: string; slug: string; status: string }[]) {
+    label.set(`poll:${p.id}`, { text: p.title, hidden: p.status === "removed", href: `/p/${p.slug}` });
+  }
+  for (const m of (msgs.data ?? []) as { id: string; body: string; hidden: boolean }[]) {
+    label.set(`message:${m.id}`, { text: m.body, hidden: m.hidden, href: null });
+  }
+
+  return [...groups.values()]
+    .map((g) => {
+      const meta = label.get(`${g.type}:${g.id}`);
+      return {
+        type: g.type,
+        id: g.id,
+        count: g.count,
+        reasons: g.reasons.slice(0, 4),
+        // A report whose target was deleted outright still has rows; say so
+        // rather than rendering a blank row with working buttons.
+        text: meta?.text ?? "(deleted)",
+        hidden: meta?.hidden ?? true,
+        href: meta?.href ?? null,
+      };
+    })
+    .sort((a, b) => b.count - a.count);
 }
 
 /**
@@ -92,7 +169,7 @@ export default async function AdminPage() {
   // There is deliberately no admin RLS policy on `orders`, so this is the only
   // path that can read them (DECISIONS D3).
   const supabase = createAdminClient();
-  const [{ data }, granted, now] = await Promise.all([
+  const [{ data }, granted, reports, now] = await Promise.all([
     supabase
       .from("orders")
       .select(
@@ -103,6 +180,7 @@ export default async function AdminPage() {
       .eq("status", "submitted")
       .order("submitted_at", { ascending: true }),
     loadGranted(supabase),
+    loadReports(supabase),
     clock(),
   ]);
 
@@ -129,17 +207,29 @@ export default async function AdminPage() {
           </p>
         )}
 
+        {/* Ordered by how time-sensitive it is. Reported content about a named
+            real person is the only thing here that gets worse while it waits. */}
         <section>
-          <h2 className="t-card">Grant access</h2>
-          <p className="t-sec">No payment. Recorded as a comp in the ledger.</p>
-          <GrantForm />
+          <h2 className="t-card">
+            Reported{" "}
+            {reports.length > 0 && <span className="num">({reports.length})</span>}
+          </h2>
+          <p className="t-sec">
+            Content hides itself once <span className="num">3</span> different people
+            report it. Anything below that is waiting on you.
+          </p>
+          <ModerationQueue rows={reports} />
         </section>
 
         <section>
           <h2 className="t-card">
-            Pending payments{" "}
+            Payments to verify{" "}
             {orders.length > 0 && <span className="num">({orders.length})</span>}
           </h2>
+          <p className="t-sec">
+            Open one, check the UTR against your UPI app, then verify. Verifying grants
+            access in the same transaction.
+          </p>
 
           {orders.length === 0 ? (
             <p className="t-sec">Nothing waiting.</p>
@@ -176,8 +266,17 @@ export default async function AdminPage() {
         </section>
 
         <section>
+          <h2 className="t-card">Grant access by hand</h2>
+          <p className="t-sec">
+            No payment taken. Recorded as a <b>comp</b> in the ledger, so the books never
+            show money that did not move.
+          </p>
+          <GrantForm />
+        </section>
+
+        <section>
           <h2 className="t-card">
-            Access granted{" "}
+            Who has access{" "}
             {granted.length > 0 && <span className="num">({granted.length})</span>}
           </h2>
           <p className="t-sec">Everyone who can see voter names, and how they got in.</p>

@@ -177,11 +177,9 @@ function ActivityRow({
     poll_closed: p.winner
       ? `${String(p.poll_title ?? "A poll")} closed · ${String(p.winner)} won`
       : `${String(p.poll_title ?? "A poll")} closed`,
-    // The trigger puts the follower's handle in the payload, so this no longer
-    // has to say "someone".
-    new_follower: p.display_name
-      ? `${String(p.display_name)} started following you`
-      : `Someone started following you`,
+    // `new_follower` is gone with the follows table. Old rows may still exist in
+    // someone's feed until the drop migration removes them, so the fallback
+    // below renders them harmlessly rather than as "Something happened".
     badge_earned: `You earned a badge`,
     chat_hot: `People are chatting on a poll you voted in`,
   };
@@ -189,7 +187,6 @@ function ActivityRow({
   const icons: Record<string, string> = {
     option_climbed: "📈",
     poll_closed: "🏁",
-    new_follower: "➕",
     badge_earned: "🏆",
     chat_hot: "💬",
   };

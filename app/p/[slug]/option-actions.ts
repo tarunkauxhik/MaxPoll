@@ -76,13 +76,34 @@ export async function addOption(
   return { ok: true };
 }
 
-/** Report → auto-hide at 3 distinct reporters, enforced in the RPC. */
-export async function report(targetType: "option" | "message" | "poll", targetId: string) {
+/**
+ * Report → auto-hide at 3 distinct reporters, enforced in the RPC.
+ *
+ * `reports_once_uniq` makes a second report from the same person a no-op, so
+ * three reports really means three people — one account cannot hide anything on
+ * its own.
+ *
+ * This had no caller for its entire life while `/terms` told users "anyone can
+ * report a poll, an option or a message". doc 01 rates person-poll defamation a
+ * High risk and names this as the mitigation.
+ */
+export async function report(
+  targetType: "option" | "message" | "poll",
+  targetId: string,
+  reason?: string
+) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("report_target", {
     p_type: targetType,
     p_id: targetId,
-    p_reason: null,
+    p_reason: reason?.trim() || null,
   });
-  return { ok: !error };
+
+  if (error) {
+    if (error.message?.includes("SIGNED_OUT")) {
+      return { ok: false, message: "Sign in to report." };
+    }
+    return { ok: false, message: "Couldn't send that report. Try again." };
+  }
+  return { ok: true };
 }

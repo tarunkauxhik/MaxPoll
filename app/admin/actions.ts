@@ -72,6 +72,59 @@ export async function rejectOrder(_prev: AdminState, form: FormData): Promise<Ad
 }
 
 /**
+ * Act on reported content.
+ *
+ * `report_target()` auto-hides at 3 distinct reporters, which is the floor, not
+ * the whole policy — one credible report about a real named person should not
+ * wait for two more people to agree. doc 01 rates person-poll defamation High.
+ *
+ * `dismiss` deletes the reports rather than marking them: the table has no
+ * status column, and a dismissed item that stays in the queue is a queue nobody
+ * reads. The content is untouched.
+ */
+export async function moderate(_prev: AdminState, form: FormData): Promise<AdminState> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "Not authorised." };
+  }
+
+  const type = String(form.get("target_type") ?? "");
+  const id = String(form.get("target_id") ?? "");
+  const act = String(form.get("act") ?? "");
+  if (!["option", "message", "poll"].includes(type)) return { error: "Unknown target." };
+
+  const supabase = createAdminClient();
+
+  if (act === "dismiss") {
+    const { error } = await supabase
+      .from("reports")
+      .delete()
+      .eq("target_type", type)
+      .eq("target_id", id);
+    if (error) return { error: "Couldn't dismiss. Try again." };
+    revalidatePath("/admin");
+    return { ok: "Dismissed — content left as it is." };
+  }
+
+  const hide = act === "hide";
+  const { error } =
+    type === "poll"
+      ? await supabase
+          .from("polls")
+          .update({ status: hide ? "removed" : "live" })
+          .eq("id", id)
+      : await supabase.from(type === "option" ? "options" : "messages")
+          .update({ hidden: hide })
+          .eq("id", id);
+
+  if (error) return { error: "Couldn't apply that. Try again." };
+
+  revalidatePath("/admin");
+  return { ok: hide ? "Hidden." : "Restored." };
+}
+
+/**
  * Undo a grant.
  *
  * `grantAccess` had no inverse, and every grant here is typed by hand — a

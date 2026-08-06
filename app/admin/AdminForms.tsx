@@ -7,6 +7,7 @@ import {
   verifyOrder,
   rejectOrder,
   revokeAccess,
+  moderate,
   type AdminState,
 } from "./actions";
 
@@ -212,6 +213,96 @@ export function OrderRow(p: OrderRowProps) {
         )}
       </Sheet>
     </>
+  );
+}
+
+export type ReportRow = {
+  type: string;
+  id: string;
+  count: number;
+  reasons: string[];
+  text: string;
+  hidden: boolean;
+  href: string | null;
+};
+
+const TARGET_LABEL: Record<string, string> = {
+  option: "Option",
+  poll: "Poll",
+  message: "Chat message",
+};
+
+/**
+ * Reported content, most-reported first.
+ *
+ * The 3-reporter auto-hide is a floor, not the policy — one credible report
+ * about a named real person should not wait for two strangers to agree.
+ */
+export function ModerationQueue({ rows }: { rows: ReportRow[] }) {
+  if (rows.length === 0) return <p className="t-sec">Nothing reported.</p>;
+  return (
+    <ul className="queue">
+      {rows.map((r) => (
+        <li key={`${r.type}:${r.id}`}>
+          <ReportedRow row={r} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ReportedRow({ row }: { row: ReportRow }) {
+  const [state, action, pending] = useActionState<AdminState, FormData>(moderate, {});
+
+  return (
+    <div className="grow">
+      <div className="gmeta">
+        <span className="gtag report">
+          {TARGET_LABEL[row.type] ?? row.type} · <span className="num">{row.count}</span>
+        </span>
+        {row.hidden && <span className="gtag lapsed">Hidden</span>}
+      </div>
+
+      <p className="repbody">
+        {row.href ? <a href={row.href}>{row.text}</a> : row.text}
+      </p>
+
+      {row.reasons.length > 0 && (
+        <ul className="repreasons">
+          {row.reasons.map((why, i) => (
+            <li key={i}>“{why}”</li>
+          ))}
+        </ul>
+      )}
+
+      {state.error && (
+        <p className="fielderr" role="alert">
+          {state.error}
+        </p>
+      )}
+      {state.ok && (
+        <p className="okmsg" role="status">
+          {state.ok}
+        </p>
+      )}
+
+      <form action={action} className="qactions">
+        <input type="hidden" name="target_type" value={row.type} />
+        <input type="hidden" name="target_id" value={row.id} />
+        {row.hidden ? (
+          <button type="submit" name="act" value="show" className="btn sm sec" disabled={pending}>
+            Restore
+          </button>
+        ) : (
+          <button type="submit" name="act" value="hide" className="btn sm danger" disabled={pending}>
+            {row.type === "poll" ? "Remove poll" : "Hide it"}
+          </button>
+        )}
+        <button type="submit" name="act" value="dismiss" className="btn sm sec dim" disabled={pending}>
+          Dismiss
+        </button>
+      </form>
+    </div>
   );
 }
 
