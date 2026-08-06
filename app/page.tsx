@@ -1,5 +1,6 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { createAnonClient } from "@/lib/supabase/anon";
+import { redirect } from "next/navigation";
 import { Landing } from "./Landing";
 import { Feed } from "./Feed";
 
@@ -16,9 +17,15 @@ export default async function Page() {
   if (!user) return <Landing stats={await realStats()} />;
 
   const profile = await getProfile();
-  // Signed in but never finished onboarding — the callback normally catches this;
-  // this covers someone who abandoned the form and came back later.
-  if (!profile) return <Landing stats={await realStats()} />;
+  /**
+   * Signed in but never finished onboarding — the callback catches this on the
+   * way in; this catches someone who abandoned the form and came back later.
+   *
+   * It used to render the landing, which left them looking at a "Continue with
+   * Google" button while already signed in — no way forward except signing in
+   * again. There is a real account in this state on production.
+   */
+  if (!profile) redirect("/onboarding");
 
   return <Feed />;
 }

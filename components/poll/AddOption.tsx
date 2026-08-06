@@ -7,6 +7,7 @@ import { castVote } from "@/app/p/[slug]/actions";
 import { getDeviceId } from "@/lib/device";
 import { n } from "@/lib/format";
 import { similarity } from "@/lib/similarity";
+import { BOARD_CHANGED } from "./Board";
 
 /**
  * doc 04 §5.10 / 03-ux-flows E.
@@ -49,6 +50,11 @@ export function AddOption({
 
   const near = hits.find((h) => similarity(h.label, value) > 0.8);
 
+  // The board is a sibling component. Without this it only learned about the new
+  // option when its own 4s timer next fired — and that tick could be answered
+  // from the CDN, so "add a name" felt like it had done nothing.
+  const boardChanged = () => window.dispatchEvent(new Event(BOARD_CHANGED));
+
   function submitNew() {
     if (!signedIn) return signInWithGoogle(`/p/${slug}`);
     start(async () => {
@@ -58,6 +64,7 @@ export function AddOption({
         setHits([]);
         setOpen(false);
         setError(null);
+        boardChanged();
       } else {
         setError(res.message);
       }
@@ -71,6 +78,7 @@ export function AddOption({
       setValue("");
       setHits([]);
       setOpen(false);
+      boardChanged();
     });
   }
 

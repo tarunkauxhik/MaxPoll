@@ -125,6 +125,7 @@ export default async function PollPage({
           spaceMembers={poll.space?.member_count ?? 0}
           signedIn={!!user}
           closed={expired}
+          voteCount={poll.vote_count}
           /**
            * The 20-member gate hides **results**, never the ballot. It used to
            * replace the board outright, which deadlocked the product: a Space is

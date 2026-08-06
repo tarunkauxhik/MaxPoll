@@ -20,6 +20,12 @@ export function ShareButton({
 
   async function share() {
     const url = `${window.location.origin}/p/${slug}`;
+    // WhatsApp auto-links a bare host, and `viratkohli.tech/p/x` reads better in
+    // a group than the same thing with `https://` bolted on the front.
+    //
+    // Only the *text* loses the scheme. `navigator.share({ url })` requires an
+    // absolute URL and rejects one without a protocol, so that field keeps it.
+    const pretty = url.replace(/^https?:\/\//, "");
     const text = leader
       ? `${leader} is leading "${title}" 👇`
       : `bhai isme vote kardo 👇`;
@@ -36,11 +42,11 @@ export function ShareButton({
     }
 
     try {
-      await navigator.clipboard.writeText(`${text} ${url}`);
+      await navigator.clipboard.writeText(`${text} ${pretty}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      window.prompt("Copy this link", url);
+      window.prompt("Copy this link", pretty);
     }
   }
 

@@ -7,10 +7,18 @@ import { castVote, joinSpace } from "@/app/p/[slug]/actions";
 import { signInWithGoogle } from "@/lib/auth-actions";
 import { saveIntent, takeIntent } from "@/lib/vote-intent";
 import { getDeviceId } from "@/lib/device";
-import { gapAbove, type BoardOption } from "@/lib/rank";
+import { gapAbove, rankOptions, type BoardOption } from "@/lib/rank";
 import { n } from "@/lib/format";
 
 const TOP_N = 5;
+
+/**
+ * `AddOption` is a sibling of this component, not a child, so it has no way to
+ * say "I changed the board". One window event is the whole channel — the
+ * alternative is lifting AddOption's state up here, which is a far larger diff
+ * for the same visible result.
+ */
+export const BOARD_CHANGED = "maxpoll:board-changed";
 
 export function Board({
   pollId,
@@ -25,6 +33,7 @@ export function Board({
   signedIn,
   closed,
   resultsLocked = false,
+  voteCount,
 }: {
   pollId: string;
   slug: string;
@@ -39,8 +48,11 @@ export function Board({
   closed: boolean;
   /** Space under 20 members — 03 §C. Hides the numbers, never the ballot. */
   resultsLocked?: boolean;
+  /** Poll total, so a vote can be applied locally without waiting for the CDN. */
+  voteCount: number;
 }) {
   const [board, setBoard] = useState(initial);
+  const [total, setTotal] = useState(voteCount);
   const [mine, setMine] = useState(myOptionId);
   const [pendingOption, setPendingOption] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,16 +71,27 @@ export function Board({
   // ── Polling ────────────────────────────────────────────────────────────────
   // 4s active, 10s hidden, and nothing at all on a closed poll — a closed board
   // cannot change, so polling it is pure spend against the free tier.
-  const refresh = useCallback(async () => {
-    try {
-      const r = await fetch(`/api/poll/${pollId}/board`, { cache: "no-store" });
-      if (!r.ok) return;
-      const data = (await r.json()) as { options: BoardOption[] };
-      setBoard(data.options);
-    } catch {
-      // A dropped poll is not an error state — the next tick retries.
-    }
-  }, [pollId]);
+  /**
+   * `bust` forces past the CDN. The polling path must NOT use it — the response
+   * is cached at s-maxage=4 and that cache is the entire free-tier model
+   * (DECISIONS A2). A unique query string is a new cache key, so it always
+   * reaches the origin: fine once per *mutation*, ruinous once per view.
+   */
+  const refresh = useCallback(
+    async (bust = false) => {
+      try {
+        const url = `/api/poll/${pollId}/board${bust ? `?t=${Date.now()}` : ""}`;
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) return;
+        const data = (await r.json()) as { options: BoardOption[]; voteCount: number };
+        setBoard(data.options);
+        setTotal(data.voteCount);
+      } catch {
+        // A dropped poll is not an error state — the next tick retries.
+      }
+    },
+    [pollId]
+  );
 
   const submit = useCallback(
     (optionId: string) => {
@@ -77,7 +100,31 @@ export function Board({
         if (res.ok) {
           setMine(optionId);
           setError(null);
-          refresh();
+          /**
+           * Applied locally rather than re-fetched. The board route is cached at
+           * s-maxage=4, so an immediate fetch is routinely served a response
+           * from *before* this vote — which is the 1–2s wait before the rank
+           * moved. This is not a guess at the result: +1 on the option and +1 on
+           * the total is exactly what the database did, re-ranked by the same
+           * rankOptions() the server uses. The 4s poll reconciles anyway.
+           */
+          setTotal((t) => t + 1);
+          setBoard((b) =>
+            rankOptions(
+              b.map((o, i) => ({
+                ...o,
+                vote_count: o.votes + (o.id === optionId ? 1 : 0),
+                // movement = rank_snapshot − rank, so the snapshot is rank +
+                // movement. Carried rather than dropped, or every badge would
+                // flicker to NEW for one frame.
+                rank_snapshot: o.movement === "new" ? null : o.rank + (o.movement ?? 0),
+                // `b` is already in server order, so index *is* the tiebreak.
+                // Zero-padded because rankOptions compares these as strings.
+                created_at: String(i).padStart(6, "0"),
+              })),
+              total + 1
+            )
+          );
         } else if (res.code === "ALREADY_VOTED") {
           // Not an error the user should see: the vote they wanted exists.
           setMine((cur) => cur ?? optionId);
@@ -87,7 +134,7 @@ export function Board({
         }
       });
     },
-    [pollId, slug, refresh]
+    [pollId, slug, total]
   );
 
   // ── Vote-intent replay (build plan 4.4) ────────────────────────────────────
@@ -103,9 +150,13 @@ export function Board({
   useEffect(() => {
     if (closed) return;
     let id: ReturnType<typeof setInterval>;
+    // `() => refresh()`, never a bare `refresh`, anywhere a listener could be
+    // attached: a DOM event handler is called with an Event, which is truthy and
+    // would land in `bust` — cache-busting every poll and silently ending edge
+    // caching with no error anywhere (A2).
     const start = () => {
       clearInterval(id);
-      id = setInterval(refresh, document.hidden ? 10_000 : 4_000);
+      id = setInterval(() => refresh(), document.hidden ? 10_000 : 4_000);
     };
     start();
     document.addEventListener("visibilitychange", start);
@@ -114,6 +165,14 @@ export function Board({
       document.removeEventListener("visibilitychange", start);
     };
   }, [closed, refresh]);
+
+  // A sibling changed the board (an option was added, or voted for from the
+  // typeahead). Bust the CDN once — the option must appear now, not in 4s.
+  useEffect(() => {
+    const onChanged = () => refresh(true);
+    window.addEventListener(BOARD_CHANGED, onChanged);
+    return () => window.removeEventListener(BOARD_CHANGED, onChanged);
+  }, [refresh]);
 
   // ── FLIP (doc 04 §7 — the one signature motion) ────────────────────────────
   // Measure before paint, then animate the delta. Only transform is animated;

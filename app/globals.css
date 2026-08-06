@@ -1610,7 +1610,101 @@ textarea.field {
 
 .queue { list-style: none; display: grid; gap: var(--s-3); margin-top: var(--s-3); }
 
+/* The queued-payment row is a real <button>: the whole row opens the detail,
+   so it has to be one focusable control, not a div with a handler. */
 .qrow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px var(--s-2);
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-3);
+  min-height: var(--tap);
+  box-shadow: var(--shadow-1);
+  transition: background .16s var(--ease);
+}
+
+.qrow:active { background: var(--press); }
+
+.qmeta {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+/* Truncates instead of wrapping, so a long poll title cannot push the chevron
+   off a 360px screen. */
+.qwhat {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qsub {
+  grid-column: 1;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.qchev {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-size: 20px;
+  color: var(--muted);
+  padding-left: var(--s-2);
+}
+
+.qutr { font-size: 14px; font-weight: 600; }
+.qactions { display: flex; gap: var(--s-2); margin-top: var(--s-3); }
+.qactions > form { flex: 1; }
+.qactions > .btn, .qactions > form > .btn { width: 100%; }
+.rejform { margin-top: var(--s-2); }
+
+/* ---- order detail, inside the sheet ---- */
+.detail {
+  display: grid;
+  gap: var(--s-1);
+  margin: var(--s-3) 0;
+}
+
+.dfield {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dfield:last-child { border-bottom: none; }
+
+.dlabel {
+  font-size: 12px;
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.dvalue {
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: right;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.dvalue a { color: var(--violet-text); }
+
+/* ---- access granted ---- */
+.grow {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
@@ -1618,17 +1712,35 @@ textarea.field {
   box-shadow: var(--shadow-1);
 }
 
-.qmeta {
+.gmeta {
   display: flex;
   align-items: center;
   gap: var(--s-2);
   flex-wrap: wrap;
-  margin-bottom: var(--s-2);
+  margin-bottom: var(--s-1);
 }
 
-.qutr { font-size: 14px; font-weight: 600; }
-.qactions { display: flex; gap: var(--s-2); margin-top: var(--s-3); }
-.rejform { margin-top: var(--s-2); }
+.ghandle {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.gtag {
+  font-family: var(--font-num), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+/* Comped and paid have to be distinguishable at a glance — they are the
+   difference between revenue and a favour. */
+.gtag.paid { background: var(--up-soft); color: var(--up-text); }
+.gtag.comp { background: var(--violet-soft); color: var(--violet-text); }
+.gtag.lapsed { background: var(--heat-soft); color: var(--heat-text); }
 
 /* ============================ CREATE ============================ */
 

@@ -72,6 +72,35 @@ export async function rejectOrder(_prev: AdminState, form: FormData): Promise<Ad
 }
 
 /**
+ * Undo a grant.
+ *
+ * `grantAccess` had no inverse, and every grant here is typed by hand — a
+ * mis-typed handle or the wrong poll had to be fixed in the SQL editor.
+ *
+ * Deliberately *not* restricted to `source='comp'`: a verified payment can also
+ * need reversing (a refund, a duplicate). The order row in the ledger stays
+ * exactly as it was, which is the point of the orders/entitlements split — the
+ * payment happened, the access no longer applies.
+ */
+export async function revokeAccess(_prev: AdminState, form: FormData): Promise<AdminState> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "Not authorised." };
+  }
+
+  const id = String(form.get("id") ?? "");
+  if (!id) return { error: "No entitlement id." };
+
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("entitlements").delete().eq("id", id);
+  if (error) return { error: "Couldn't revoke. Try again." };
+
+  revalidatePath("/admin");
+  return { ok: "Access revoked." };
+}
+
+/**
  * Grant access directly, with no payment.
  *
  * This is the only working path to paid access until a VPA exists: with no VPA
