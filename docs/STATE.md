@@ -1,6 +1,6 @@
 # State
 
-_Last updated: 2026-08-08 · **Live at [viratkohli.tech](https://viratkohli.tech).**
+_Last updated: 2026-08-07 · **Live at [viratkohli.tech](https://viratkohli.tech).**
 Google OAuth published, payments on, `CRON_SECRET` enforced, **68 gate probes and
 75 unit tests green**. Remaining: the browser checks only a human can do, a
 business VPA, and **enabling Web Analytics in the Vercel dashboard**._
@@ -27,6 +27,7 @@ business VPA, and **enabling Web Analytics in the Vercel dashboard**._
 | 15 — Share surface + front door | ✅ Short codes, three OG previews, landing rebuilt, analytics |
 | 16 — The screens people actually use | ✅ Timer, chat, deadline picker, quota + paywall, free-text person polls |
 | 17 — Polish, trust signals, two missing screens | ✅ Teal rebrand, dark chrome, bundled emoji, always-anonymous chat, profile edit, subscription page |
+| — Dark theme, full site + share/mobile fixes | ✅ Whole-site dark-blue redesign (D14, reverses D12), .sheet/.setlist mobile bugs fixed, plain share text, Space share button |
 
 ```bash
 pnpm dev      # http://localhost:3000
@@ -69,6 +70,38 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 `https://maxpoll.vercel.app`. A localhost value there sends every production
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
+
+## Dark theme, whole site (2026-08-07)
+
+Phase 17's dark chrome (top bar + bottom nav only) undersold the ask — the
+owner's words: "you just made upper and lower navbar to a very dark green
+tone," wanting instead "a little dark bluish gradient with shaders," across
+the *whole* site. [DECISIONS D14](DECISIONS.md) is the full record: every
+base token flipped (light-on-dark → dark-on-light... reversed), a systemic
+bug where 7 places did `background: var(--ink); color: #fff` as a "solid
+dark tag" idiom (broke once `--ink` became the light text colour — 4 of
+those were real, 3 turned out fine), 9 places using raw `--teal` as text
+color switched to `--teal-text`, and two hardcoded (non-token) colours
+caught only by grepping raw hex, not by trusting the token rename alone.
+The shader is `--grad-page`, three layered radial gradients on a fixed
+`body::before` pseudo-element (not `background-attachment: fixed` — iOS
+Safari's repaint bugs there are long-documented).
+
+**Two real mobile bugs, found by a dedicated investigation pass, not
+guessed:** `.sheet` (the bottom sheet component — admin's order-detail view,
+Manage poll) had no `max-height`/`overflow-y`, so content taller than the
+viewport grew past the top of the screen and became unreachable; fixed with
+`max-height: min(88dvh, 720px); overflow-y: auto; overscroll-behavior:
+contain`. `.setlist dd` (Settings — a real Google email, 25-40+ chars, no
+spaces to wrap on) was missing the `min-width: 0; word-break: break-word`
+safety `.dvalue` (the analogous admin field) already had.
+
+**Share text is plain now, on every poll and Space both:** `ShareButton`
+takes `path` + `text` instead of poll-specific props — the shared content is
+exactly `${text} : ${prettyUrl}`, nothing else (no title, no gap/leader
+framing, and no separate `url` field passed to `navigator.share()`, since
+that field still carries the `https://` scheme even when the text string
+doesn't). Spaces get the same button now, paired with Join in a `.btnrow`.
 
 ## Phase 17 — polish, trust signals, two missing screens (2026-08-08)
 

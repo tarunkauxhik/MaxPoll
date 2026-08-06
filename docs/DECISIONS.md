@@ -616,3 +616,92 @@ someone's typed text through a curated 28-glyph map would silently drop any
 emoji outside that set. `app/og/**` also stays on the system stack — Satori
 can't render `<Emoji>`'s `<img>` the same way OG images already avoid custom
 fonts by design (see `app/og/shared.tsx`).
+
+### D14 · Dark is the base theme now, reversing D12; brand hue retuned blue-first — 2026-08-07
+
+D12 (Phase 17) kept light as the base and made structural chrome dark. That
+undersold what "redesign to a dark theme" meant — the owner's words: "you
+just made upper and lower navbar to a very dark green tone," asking instead
+for "a little dark bluish gradient with shaders" across the *whole* site.
+Asked directly rather than guessing twice: rich layered CSS gradients (no
+WebGL — cheap on battery, no new rendering dependency, fits a Vercel-Hobby
+budget) and full-site scope, both the owner's explicit picks. This entry is
+that doc update, written first, per instruction, before the CSS changed.
+
+**Every base token flipped.** `--paper`/`--card`/`--line`/`--line-strong`
+went from light to a deep navy scale; `--ink`/`--body`/`--muted` went from
+dark to light. This is a full theme inversion, not a retint — every place
+that assumed "text is dark, fills are light" needed re-checking, not just
+the tokens themselves:
+
+| Token | Was (D12/light) | Now (dark base) |
+|---|---|---|
+| `--paper` | `#F5F2EA` | `#0A0E1C` |
+| `--card` | `#FFFFFF` | `#131B30` |
+| `--line` / `--line-strong` | `#E6E1D2` / `#86857B` | `#232C48` / `#5B6892` |
+| `--ink` / `--body` / `--muted` | `#111114` / `#55555F` / `#6B6B75` | `#F1F4FC` / `#B7C0DE` / `#8B94B6` |
+| `--teal` (brand, fills) | `#0B6169` | `#0F7A82` |
+| `--teal-text` (brand, as text) | `#084F55` | `#4FD8CC` — now the bright one, not the dark one |
+
+Real contrast run against the new base, all 24 pairs: `--ink` on `--paper`
+17.47:1, `--muted` on `--paper` 6.42:1 (was the tightest margin under D12 at
+4.71 — the dark base has more headroom, not less, a well-known WCAG
+asymmetry), `--teal-text` on `--paper` 11.01:1, `--line-strong` on `--card`
+3.13:1 (UI-component floor, unchanged margin from before).
+
+**A systemic bug the flip itself created, caught by grepping rather than
+trusting the token rename alone:** seven places did `background:
+var(--ink); color: #fff;` as a "solid dark tag" idiom — `.tagme`
+("Your pick"), `.paysteps .s`, `.av` (profile monogram), `.bub.me` (own chat
+bubble). Once `--ink` became the *light* text colour, white text on it went
+invisible. Fixed by pointing these at `--dark` (still genuinely dark, kept
+as the deep-panel token) instead of `--ink`. Three more `background:
+var(--ink)` uses — the mini-board bar fill, the under-list bar fill, the
+quota usage bar — turned out fine as-is: a light fill on a now-dark `--line`
+track still reads correctly as "filled vs unfilled," no change needed.
+
+**`--teal` used as literal text colour, not just as a fill, in ~9 places**
+(`.wordmark i`, `.pcard .space`, `.verified`, `.phandle`, `.spacelink`, the
+landing hero's accent word, `.lhero .t-hero i`) — all switched to
+`--teal-text`. The base `--teal` stayed a mid-tone (`#0F7A82`) so it still
+works as a button fill with white text (5.09:1) and clears 3:1 as a focus
+outline against every surface in the new palette; only the *text* role
+needed the brighter variant, same D2b-style split the token pair always had,
+just with the light/dark roles reversed from the old light theme.
+
+**Two hardcoded (non-token) colours were caught only by grepping raw hex,
+not by following the token rename:** `.lnav`'s header (the landing page's
+own top bar, separate from `.top`) hardcoded `rgba(250,250,247,.88)` — the
+old paper colour as a raw value, invisible to a `--paper` search. Fixed to
+match `.top`'s treatment. `.act.same`'s background was a hardcoded light
+gradient (`#F2FAF9`→`#fff`); its border was already a raw teal rgba that had
+gone stale once before (through D11's violet→teal rename) and had gone
+stale *again* here, since D14 retuned `--teal` itself. Both replaced with
+token references (`var(--teal-soft)`, `var(--card)`) specifically so this
+can't recur a third time. A leftover hardcoded `#C9BEFF` on the chat "me"
+bubble's anon-handle colour — a residual purple D11's token-only sweep
+missed because it was never a `--violet` reference — was folded into
+`--teal-text` at the same time.
+
+**The shader itself** is `--grad-page`: three layered radial gradients (a
+blue wash top-left, a small teal one top-right — the brand accent, kept
+minor so blue stays dominant, not green — and a deep indigo one from the
+bottom), painted on a `body::before` fixed pseudo-element rather than
+`background-attachment: fixed` — iOS Safari's long history of repaint bugs
+with fixed backgrounds on scroll made the pseudo-element the safer choice.
+Negative `z-index` with no positioned ancestor paints behind every
+normal-flow element, so every card/form/board keeps its own opaque
+background and sits on top untouched.
+
+**Also brought current while touching this:** `app/og/shared.tsx`'s `C.ink`
+(`#111114` → `#05070E`) and its raw teal rgba, `public/icon.svg`'s
+background rect (now the same `#05070E` OG uses, kept in sync per
+CLAUDE.md), `layout.tsx`'s `themeColor` (the mobile browser-chrome tint),
+and `global-error.tsx`'s hardcoded fallback palette — that file deliberately
+never reads `globals.css` tokens (it must render even if the CSS build
+itself is broken), so its colours needed updating by hand, separately, to
+stay visually consistent with the rest of the site.
+
+`docs/04-design.md` was already stale before this (D11's violet, old font
+names) and stays out of scope here too — `app/globals.css` remains the
+enforced source of truth per CLAUDE.md.
