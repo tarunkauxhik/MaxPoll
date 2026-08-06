@@ -69,6 +69,53 @@ export function countdown(
   return { text, urgent, expired, elapsed };
 }
 
+export type Segment = { value: string; unit: string };
+
+/**
+ * The countdown as separate blocks. A single mono string reads as a status bar;
+ * discrete numbered blocks with unit labels read as a deadline.
+ *
+ * Drops leading zero units so a 40-minute poll shows MIN and SEC, not
+ * "00d 00h 40m". Always returns at least two blocks — one number alone has no
+ * sense of scale.
+ */
+export function segments(expiresAt: number | null, now: number = Date.now()): Segment[] {
+  if (expiresAt === null) return [];
+
+  const remaining = Math.max(0, expiresAt - now);
+  if (remaining === 0) {
+    return [
+      { value: "00", unit: "MIN" },
+      { value: "00", unit: "SEC" },
+    ];
+  }
+
+  const totalSec = Math.floor(remaining / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+
+  if (days >= 1) {
+    return [
+      { value: p2(days), unit: "DAYS" },
+      { value: p2(hours), unit: "HRS" },
+      { value: p2(mins), unit: "MIN" },
+    ];
+  }
+  if (hours >= 1) {
+    return [
+      { value: p2(hours), unit: "HRS" },
+      { value: p2(mins), unit: "MIN" },
+      { value: p2(secs), unit: "SEC" },
+    ];
+  }
+  return [
+    { value: p2(mins), unit: "MIN" },
+    { value: p2(secs), unit: "SEC" },
+  ];
+}
+
 /**
  * Is this poll close enough to the end that saying so is *information* rather
  * than decoration?

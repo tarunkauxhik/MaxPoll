@@ -136,7 +136,7 @@ export default async function PollPage({
         </div>
       </div>
 
-      {poll.expires_at && !expired && (
+      {poll.expires_at && (
         <Timer expiresAt={poll.expires_at} startedAt={poll.created_at} />
       )}
 

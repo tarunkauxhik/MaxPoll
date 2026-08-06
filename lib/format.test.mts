@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pctOf, countdown, shortLeft, endingSoon, ago, monogram, plural, n } from "./format.ts";
+import { pctOf, countdown, shortLeft, endingSoon, ago, monogram, plural, n, segments } from "./format.ts";
 
 const T = Date.UTC(2026, 7, 4, 12, 0, 0);
 
@@ -98,6 +98,48 @@ test("plural", () => {
 test("n uses Indian grouping", () => {
   assert.equal(n(100000), "1,00,000");
   assert.equal(n(340), "340");
+});
+
+test("segments has no deadline", () => {
+  assert.deepEqual(segments(null, T), []);
+});
+
+test("segments is over at zero", () => {
+  assert.deepEqual(segments(T - 1, T), [
+    { value: "00", unit: "MIN" },
+    { value: "00", unit: "SEC" },
+  ]);
+});
+
+test("segments shows days, hours, minutes past a day", () => {
+  assert.deepEqual(segments(T + 6 * 86400e3 + 2 * 3600e3 + 38 * 60e3, T), [
+    { value: "06", unit: "DAYS" },
+    { value: "02", unit: "HRS" },
+    { value: "38", unit: "MIN" },
+  ]);
+});
+
+test("segments shows hours, minutes, seconds under a day", () => {
+  assert.deepEqual(segments(T + 4 * 3600e3 + 12 * 60e3 + 7e3, T), [
+    { value: "04", unit: "HRS" },
+    { value: "12", unit: "MIN" },
+    { value: "07", unit: "SEC" },
+  ]);
+});
+
+test("segments drops hours under an hour", () => {
+  assert.deepEqual(segments(T + 40 * 60e3 + 5e3, T), [
+    { value: "40", unit: "MIN" },
+    { value: "05", unit: "SEC" },
+  ]);
+});
+
+test("segments at exactly 24h is a days block, not 24 hours", () => {
+  assert.deepEqual(segments(T + 24 * 3600e3, T), [
+    { value: "01", unit: "DAYS" },
+    { value: "00", unit: "HRS" },
+    { value: "00", unit: "MIN" },
+  ]);
 });
 
 test("endingSoon is the 6h window, not 'is live'", () => {

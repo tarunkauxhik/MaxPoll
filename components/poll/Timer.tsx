@@ -1,6 +1,6 @@
 "use client";
 
-import { countdown } from "@/lib/format";
+import { countdown, segments } from "@/lib/format";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/cn";
 
@@ -26,51 +26,38 @@ export function Timer({
   // then ticks once mounted.
   const now = useNow(start);
 
-  const { text, urgent, expired, elapsed } = countdown(end, now, start);
-
-  // 2πr with r=14 ≈ 88, matching the stroke-dasharray in the design.
-  const DASH = 88;
+  const { urgent, expired, elapsed } = countdown(end, now, start);
+  const segs = segments(end, now);
+  const pctLeft = Math.max(0, Math.min(100, Math.round((1 - elapsed) * 100)));
 
   return (
-    <div className={cn("timerbar", urgent && "urgent")}>
-      <span className="ring" aria-hidden="true">
-        <svg viewBox="0 0 34 34" width="34" height="34">
-          <circle cx="17" cy="17" r="14" fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="3" />
-          <circle
-            cx="17"
-            cy="17"
-            r="14"
-            fill="none"
-            stroke="var(--gold)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={DASH}
-            strokeDashoffset={DASH * elapsed}
-          />
-        </svg>
-        <span className="t num">{Math.max(0, Math.round((1 - elapsed) * 100))}</span>
-      </span>
-
-      <span className="lab">
-        <span className="k">{expired ? "VOTING CLOSED" : "VOTING CLOSES IN"}</span>
-        {/* aria-live off: a screen reader announcing every second is unusable.
-            The closed state is announced by the board's own live region. */}
-        <span className="v num" aria-hidden={!expired}>
-          {colourColons(text)}
+    <div
+      className={cn("timerbar", urgent && "urgent", expired && "over")}
+      aria-label={
+        expired
+          ? "Voting closed"
+          : `${segs.map((s) => `${s.value} ${s.unit}`).join(" ")} left to vote, ${pctLeft}% of the window remaining`
+      }
+    >
+      <div className="tmeta">
+        <span className="k">
+          {expired ? "VOTING CLOSED" : urgent ? "ENDING SOON" : "VOTING CLOSES IN"}
         </span>
-      </span>
+        {!expired && <span className="pctleft num">{pctLeft}% left</span>}
+      </div>
 
-      <span className="em" aria-hidden="true">
-        ⏳
-      </span>
-      <span className="prog" style={{ width: `${Math.max(0, (1 - elapsed) * 100)}%` }} />
+      <div className="tsegs" aria-hidden="true">
+        {segs.map((s, i) => (
+          <div key={s.unit} className={cn("tseg", urgent && i === segs.length - 1 && "pulse")}>
+            <span className="v num">{s.value}</span>
+            <span className="u">{s.unit}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="ttrack" aria-hidden="true">
+        <i style={{ width: `${expired ? 0 : Math.max(0, (1 - elapsed) * 100)}%` }} />
+      </div>
     </div>
-  );
-}
-
-/** Colons in gold — doc 04 §5.3. Splitting keeps the digits in tabular figures. */
-function colourColons(text: string) {
-  return text.split(":").flatMap((part, i) =>
-    i === 0 ? [part] : [<em key={i}>:</em>, part]
   );
 }

@@ -723,84 +723,117 @@ a {
 /* ============================ TIMER ============================ */
 /* doc 05 §4.3 — the only dark block on a paper page. */
 
+/**
+ * The countdown as a deadline, not a status bar — doc 04 §5.3. Segmented digit
+ * blocks (like a boarding-pass gate timer) read as urgency in a way a single
+ * mono string never did; a draining track underneath makes the window's shape
+ * visible at a glance, not just its number.
+ */
 .timerbar {
   display: flex;
-  align-items: center;
-  gap: 11px;
+  flex-direction: column;
+  gap: var(--s-3);
   background: var(--grad-glow), var(--grad-ink);
-  color: #fff;
-  border-radius: var(--r-md);
-  padding: 11px 14px;
+  color: var(--on-dark);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
   margin: 0 12px 12px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-lift);
 }
 
-.timerbar .ring {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  position: relative;
-}
-
-.timerbar .ring svg {
-  transform: rotate(-90deg);
-}
-
-.timerbar .ring .t {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-num), monospace;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-/**
- * `.k` and `.v` are spans, so with no display set they ran **inline** — the bar
- * rendered "VOTING CLOSES IN 06d 02:38" on one line instead of the stacked label
- * doc 04 §5.3 draws. It only became obvious once a poll ran long enough for the
- * value to be wide.
- */
-.timerbar .lab {
-  flex: 1;
-  min-width: 0;
+.timerbar .tmeta {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
 }
 
-.timerbar .lab .k {
+.timerbar .tmeta .k {
   font-size: 12px;
   letter-spacing: .1em;
   text-transform: uppercase;
+  font-weight: 700;
+}
+
+.timerbar .pctleft {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--on-dark-dim);
+}
+
+.tsegs {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.tseg {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: var(--r-md);
+  padding: 8px 4px;
+}
+
+.tseg .v {
+  font-size: 32px;
   font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1;
+  color: var(--on-dark);
 }
 
-.timerbar .lab .v {
-  font-family: var(--font-num), monospace;
+.tseg .u {
+  font-size: 11px;
   font-weight: 700;
-  font-size: 19px;
-  letter-spacing: -.03em;
-  margin-top: 1px;
+  letter-spacing: .08em;
+  color: var(--on-dark-dim);
 }
 
-.timerbar .lab .v em {
-  font-style: normal;
-  color: var(--gold);
+.ttrack {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .12);
+  overflow: hidden;
 }
 
-.timerbar .prog {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 3px;
-  background: var(--heat);
+.ttrack i {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  transition: width 1s linear;
 }
 
 .timerbar.urgent {
-  background: linear-gradient(100deg, #2A0F0A, #7A1E10);
+  background: var(--grad-heat);
+}
+
+.timerbar.urgent .ttrack i {
+  background: var(--heat);
+}
+
+/* Opacity only — never a transform, which would nudge layout bounds on a
+   budget Android. prefers-reduced-motion below already kills it, and the red
+   gradient still carries the urgency without it. */
+@keyframes tpulse {
+  50% { opacity: .55; }
+}
+
+.tseg.pulse {
+  animation: tpulse 1.6s ease-in-out infinite;
+}
+
+.timerbar.over {
+  background: var(--dark);
+}
+
+.timerbar.over .ttrack i {
+  width: 0 !important;
 }
 
 /* ============================ CHIPS ============================ */
