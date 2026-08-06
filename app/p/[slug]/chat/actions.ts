@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/server";
  * The anonymous handle is derived inside the function too. Passed as a parameter
  * it would let a caller post under someone else's pseudonym.
  */
-export async function sendMessage(pollId: string, body: string, anon: boolean) {
+export async function sendMessage(pollId: string, body: string) {
   const supabase = await createClient();
 
   const text = body.trim().slice(0, 300);
@@ -23,7 +23,6 @@ export async function sendMessage(pollId: string, body: string, anon: boolean) {
   const { error } = await supabase.rpc("send_message", {
     p_poll: pollId,
     p_body: text,
-    p_anon: anon,
   });
 
   if (!error) return { ok: true, message: "" };

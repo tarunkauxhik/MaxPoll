@@ -7,6 +7,7 @@ import { AddOption } from "@/components/poll/AddOption";
 import { ManagePoll } from "@/components/poll/ManagePoll";
 import { ReportButton } from "@/components/poll/ReportButton";
 import { EmptyState } from "@/components/ui/States";
+import { IncognitoIcon } from "@/components/ui/IncognitoIcon";
 import {
   getPollBySlug,
   getBoard,
@@ -143,10 +144,12 @@ export default async function PollPage({
 
       <a className="chatentry" href={`/p/${poll.slug}/chat`}>
         <span className="ic" aria-hidden="true">
-          💬
+          <IncognitoIcon />
         </span>
         <span className="body">
-          <span className="ttl">Poll chat</span>
+          <span className="ttl">
+            Poll chat <span className="anonbadge">Anonymous</span>
+          </span>
           <span className="sub">
             {poll.message_count > 0
               ? `${plural(poll.message_count, "message")} · join in`

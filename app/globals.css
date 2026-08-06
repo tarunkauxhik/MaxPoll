@@ -868,9 +868,18 @@ a {
   gap: 1px;
 }
 
-.chatentry .ttl { font-weight: 700; font-size: 15px; }
+.chatentry .ttl { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; }
 .chatentry .sub { font-size: 13px; color: var(--muted); }
 .chatentry .chev { color: var(--muted); font-size: 20px; flex: 0 0 auto; }
+
+.anonbadge {
+  background: var(--violet-soft);
+  color: var(--violet-text);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
 
 /* ============================ CHIPS ============================ */
 
@@ -2689,20 +2698,9 @@ textarea.field {
 
 .composer .field { flex: 1; }
 
-.anontog {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--violet-text);
-  background: var(--violet-soft);
-  border: 1px solid transparent;
-  padding: 8px 10px;
-  border-radius: var(--r-sm);
-  white-space: nowrap;
-  cursor: pointer;
-  min-height: var(--tap-sm);
+.chatanon {
+  padding: 6px 12px 0;
 }
-
-.anontog.on { border-color: var(--violet); box-shadow: 0 0 0 2px var(--violet-soft); }
 
 /* ============================ SETTINGS ============================ */
 

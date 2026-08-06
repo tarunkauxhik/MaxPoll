@@ -31,7 +31,6 @@ export function Chat({
 }) {
   const [messages, setMessages] = useState(initial);
   const [body, setBody] = useState("");
-  const [anon, setAnon] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const endRef = useRef<HTMLDivElement>(null);
@@ -79,7 +78,7 @@ export function Chat({
     if (!text) return;
 
     start(async () => {
-      const res = await sendMessage(pollId, text, anon);
+      const res = await sendMessage(pollId, text);
       if (res.ok) {
         setBody("");
         setError(null);
@@ -101,7 +100,7 @@ export function Chat({
           return (
             <div key={m.id} className={cn("bub", mine ? "me" : "them")}>
               <span className={cn("who", m.anon_handle && "anon")}>
-                {m.anon_handle ? `anon · ${m.anon_handle}` : mine ? "You" : "Someone"}
+                {mine ? "You" : m.anon_handle ? `anon · ${m.anon_handle}` : "Someone"}
               </span>
               {m.body}
             </div>
@@ -119,27 +118,24 @@ export function Chat({
       {readOnly ? (
         <p className="hint lcenter composer">This poll is closed. Chat is read-only.</p>
       ) : (
-        <form className="composer" onSubmit={send}>
-          <input
-            className="field"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Say something"
-            maxLength={300}
-            aria-label="Message"
-          />
-          <button
-            type="button"
-            className={cn("anontog", anon && "on")}
-            onClick={() => setAnon((a) => !a)}
-            aria-pressed={anon}
-          >
-            ◐ Anon
-          </button>
-          <button type="submit" className="btn sm pri" disabled={pending || !body.trim()}>
-            Send
-          </button>
-        </form>
+        <>
+          <p className="hint chatanon">
+            You&apos;re anonymous here — everyone sees your poll handle, never your name.
+          </p>
+          <form className="composer" onSubmit={send}>
+            <input
+              className="field"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Say something"
+              maxLength={300}
+              aria-label="Message"
+            />
+            <button type="submit" className="btn sm pri" disabled={pending || !body.trim()}>
+              Send
+            </button>
+          </form>
+        </>
       )}
     </div>
   );

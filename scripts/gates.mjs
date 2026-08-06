@@ -325,7 +325,7 @@ try {
 
   await api("/rest/v1/rpc/send_message", PUB, {
     method: "POST",
-    body: JSON.stringify({ p_poll: wPollId, p_body: "y".repeat(5000), p_anon: false }),
+    body: JSON.stringify({ p_poll: wPollId, p_body: "y".repeat(5000) }),
   }, alice.token);
   const stored = await api(`/rest/v1/messages?select=body&poll_id=eq.${wPollId}`, SEC);
   ok(
@@ -337,14 +337,14 @@ try {
   for (let i = 0; i < 12; i++) {
     const r = await api("/rest/v1/rpc/send_message", PUB, {
       method: "POST",
-      body: JSON.stringify({ p_poll: wPollId, p_body: `flood ${i}`, p_anon: true }),
+      body: JSON.stringify({ p_poll: wPollId, p_body: `flood ${i}` }),
     }, bob.token);
     if (r.status >= 400 && JSON.stringify(r.body).includes("RATE_LIMITED")) limited++;
   }
   ok(limited >= 2, `chat flood is rate limited (${limited} of 12 refused)`);
 
   const anonHandles = await api(
-    `/rest/v1/messages?select=anon_handle,user_id&poll_id=eq.${wPollId}&anon_handle=not.is.null`, SEC);
+    `/rest/v1/messages?select=anon_handle,user_id&poll_id=eq.${wPollId}&user_id=eq.${bob.id}`, SEC);
   const handles = new Set((anonHandles.body ?? []).map((m) => m.anon_handle));
   ok(handles.size === 1, `one person gets one pseudonym per poll (${handles.size} distinct)`);
 
