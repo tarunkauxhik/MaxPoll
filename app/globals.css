@@ -228,7 +228,7 @@ a {
 
 .t-hero {
   font-family: var(--font-display), sans-serif;
-  font-weight: 900;
+  font-weight: 700;
   font-size: 41px;
   line-height: .96;
   letter-spacing: -.045em;
@@ -237,7 +237,7 @@ a {
 
 .t-title {
   font-family: var(--font-display), sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 25px;
   line-height: 1.08;
   letter-spacing: -.035em;
@@ -246,7 +246,7 @@ a {
 
 .t-card {
   font-family: var(--font-display), sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 17px;
   line-height: 1.15;
   letter-spacing: -.025em;
@@ -272,8 +272,11 @@ a {
   color: var(--heat-text);
 }
 
+/* Pinned off --font-display on purpose: Lora tops out at 700, and a
+   synthetically-bolded serif logotype is worse than not following the
+   headline font here at all. */
 .wordmark {
-  font-family: var(--font-display), sans-serif;
+  font-family: var(--font-ui), system-ui, sans-serif;
   font-weight: 900;
   font-size: 22px;
   letter-spacing: -.05em;
@@ -1086,7 +1089,7 @@ a {
 .sheet h2,
 .sheet h3 {
   font-family: var(--font-display), sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 21px;
   margin: 0 0 6px;
   letter-spacing: -.03em;
@@ -1561,7 +1564,7 @@ textarea.field {
 
 .lpoll .ttl {
   font-family: var(--font-display), sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 16px;
   line-height: 1.2;
   letter-spacing: -.02em;
@@ -1608,7 +1611,7 @@ textarea.field {
 
 .lchatcard .ttl {
   font-family: var(--font-display), sans-serif;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 17px;
   line-height: 1.25;
   letter-spacing: -.02em;
@@ -2528,7 +2531,7 @@ textarea.field {
   display: grid;
   place-items: center;
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 15px;
   letter-spacing: -.03em;
   color: #fff;

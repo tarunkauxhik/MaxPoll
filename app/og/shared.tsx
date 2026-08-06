@@ -10,7 +10,7 @@
  * bubbles; a dark card is the only thing in it that stops a thumb.
  *
  * No custom fonts. `next/font` writes its files into the build output, not the
- * repo, so loading Archivo here would mean fetching a font over the network on
+ * repo, so loading Lora here would mean fetching a font over the network on
  * every cold preview render — for a 1200×630 image that is cached for 60s at the
  * edge anyway. System sans, and the weight does the work.
  */

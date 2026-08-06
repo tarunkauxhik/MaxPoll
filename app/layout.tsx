@@ -1,19 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, Space_Grotesk, Space_Mono } from "next/font/google";
+import { Inter, Lora, Space_Mono } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
-// Archivo and Space Grotesk are variable fonts — one file each covers every
-// weight. Space Mono is static-only, so 400/700 ship as two files.
-const archivo = Archivo({
-  variable: "--font-display",
+// Inter and Lora are variable fonts — one file each covers every weight.
+// Space Mono is static-only, so 400/700 ship as two files.
+const inter = Inter({
+  variable: "--font-ui",
   subsets: ["latin"],
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-ui",
+const lora = Lora({
+  variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
 });
@@ -59,7 +59,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}
+      className={`${inter.variable} ${lora.variable} ${spaceMono.variable}`}
     >
       <body>
         {children}
