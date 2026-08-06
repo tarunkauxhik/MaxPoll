@@ -14,7 +14,9 @@ export async function createPoll(_prev: CreateState, form: FormData): Promise<Cr
   if (!user) return { error: "Sign in to create a poll." };
 
   const subjectType = String(form.get("subject_type") ?? "thing");
-  const adjective = String(form.get("adjective") ?? "");
+  // Free-text now (DECISIONS D7) — a <select> used to trim and cap this for
+  // free, so an <input> needs to do it explicitly.
+  const adjective = String(form.get("adjective") ?? "").trim().slice(0, 40);
   const scope = String(form.get("scope") ?? "").trim();
   const freeTitle = String(form.get("title") ?? "").trim();
   const spaceId = String(form.get("space_id") ?? "").trim();

@@ -1,8 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { Sheet } from "./Sheet";
-import { updatePoll, deletePoll, type ManageState } from "@/app/p/[slug]/manage-actions";
+import {
+  updatePoll,
+  deletePoll,
+  extendPoll,
+  type ManageState,
+} from "@/app/p/[slug]/manage-actions";
+import { DeadlinePicker } from "./DeadlinePicker";
 
 /**
  * The creator's controls — doc 06 shipped none, so a poll was permanently
@@ -19,7 +25,7 @@ export function ManagePoll({
   closed,
   optionsLocked,
   hasVotes,
-  hasExpiry,
+  expiresAt,
 }: {
   pollId: string;
   slug: string;
@@ -27,12 +33,20 @@ export function ManagePoll({
   closed: boolean;
   optionsLocked: boolean;
   hasVotes: boolean;
-  hasExpiry: boolean;
+  expiresAt: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [state, action, pending] = useActionState<ManageState, FormData>(updatePoll, {});
   const [delState, delAction, delPending] = useActionState<ManageState, FormData>(deletePoll, {});
+  const [extendMsg, setExtendMsg] = useState<ManageState>({});
+  const [extendPending, startExtend] = useTransition();
+
+  function extend(hours: number) {
+    startExtend(async () => {
+      setExtendMsg(await extendPoll(pollId, slug, hours));
+    });
+  }
 
   return (
     <>
@@ -57,20 +71,36 @@ export function ManagePoll({
             required
           />
 
-          <label className="lbl" htmlFor="m-duration">
-            Deadline
-          </label>
-          <select id="m-duration" name="duration" className="field" defaultValue="keep">
-            {/* "keep" and "none" must stay distinct: one leaves the timer alone,
-                the other removes it. Collapsing them would silently clear
-                someone's deadline every time they fixed a typo. */}
-            <option value="keep">Leave as it is{hasExpiry ? "" : " (no timer)"}</option>
-            <option value="6h">6 hours from now</option>
-            <option value="24h">24 hours from now</option>
-            <option value="3d">3 days from now</option>
-            <option value="7d">7 days from now</option>
-            <option value="none">Remove the deadline</option>
-          </select>
+          <p className="lbl">Quick extend</p>
+          <div className="btnrow extendrow">
+            {[1, 6, 24].map((h) => (
+              <button
+                key={h}
+                type="button"
+                className="btn sm sec"
+                disabled={extendPending}
+                onClick={() => extend(h)}
+              >
+                +{h}h
+              </button>
+            ))}
+          </div>
+          {expiresAt === null && (
+            <p className="hint">No deadline set; this adds from now.</p>
+          )}
+          {extendMsg.error && (
+            <p className="fielderr" role="alert">
+              {extendMsg.error}
+            </p>
+          )}
+          {extendMsg.ok && (
+            <p className="okmsg" role="status">
+              {extendMsg.ok}
+            </p>
+          )}
+
+          <p className="lbl">Deadline</p>
+          <DeadlinePicker allowKeep current={expiresAt} />
 
           <label className="check">
             <input

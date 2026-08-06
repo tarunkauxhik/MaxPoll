@@ -17,14 +17,6 @@ export type ManageState = { error?: string; ok?: string };
  * endpoint; a guard here would only be a nicer error message.
  */
 
-const DURATIONS: Record<string, number | null> = {
-  "6h": 6 * 3600e3,
-  "24h": 24 * 3600e3,
-  "3d": 3 * 24 * 3600e3,
-  "7d": 7 * 24 * 3600e3,
-  none: null,
-};
-
 const MESSAGES: Record<string, string> = {
   NOT_OWNER: "That isn't your poll.",
   SIGNED_OUT: "You're signed out. Sign in again.",
@@ -47,20 +39,20 @@ export async function updatePoll(_prev: ManageState, form: FormData): Promise<Ma
   const pollId = String(form.get("poll_id") ?? "");
   const slug = String(form.get("slug") ?? "");
   const title = String(form.get("title") ?? "").trim();
-  const duration = String(form.get("duration") ?? "");
+  const expiresRaw = String(form.get("expires_at") ?? "").trim();
   const close = form.get("close") === "1";
   const lock = form.get("lock_options");
 
   // "keep" means the field was left alone. Distinct from "none", which clears
   // the deadline — `update_poll` needs those to be two different signals or an
   // untouched form would silently remove someone's timer.
-  const ms = duration === "keep" ? undefined : DURATIONS[duration];
+  const expires = expiresRaw && expiresRaw !== "keep" && expiresRaw !== "none" ? expiresRaw : null;
 
   const { error } = await supabase.rpc("update_poll", {
     p_poll: pollId,
     p_title: title || null,
-    p_expires: ms ? new Date(Date.now() + ms).toISOString() : null,
-    p_clear_expiry: duration === "none",
+    p_expires: expires,
+    p_clear_expiry: expiresRaw === "none",
     p_close: close,
     p_lock_options: lock === null ? null : lock === "1",
   });
@@ -69,6 +61,36 @@ export async function updatePoll(_prev: ManageState, form: FormData): Promise<Ma
 
   revalidatePath(`/p/${slug}`);
   return { ok: close ? "Poll closed." : "Saved." };
+}
+
+/**
+ * The +1h/+6h/+24h buttons on Manage poll. Reads the poll's current deadline
+ * from the database rather than trusting a client-computed timestamp — the
+ * base for "+Nh" has to be the real current deadline (or now, if there is
+ * none), and the database is the only place both are known for certain.
+ */
+export async function extendPoll(
+  pollId: string,
+  slug: string,
+  hours: number
+): Promise<ManageState> {
+  const supabase = await createClient();
+
+  const { data: poll } = await supabase
+    .from("polls")
+    .select("expires_at")
+    .eq("id", pollId)
+    .maybeSingle();
+  if (!poll) return { error: "That poll no longer exists." };
+
+  const base = poll.expires_at ? new Date(poll.expires_at).getTime() : Date.now();
+  const next = new Date(base + hours * 3600e3).toISOString();
+
+  const { error } = await supabase.rpc("update_poll", { p_poll: pollId, p_expires: next });
+  if (error) return { error: explain(error.message) };
+
+  revalidatePath(`/p/${slug}`);
+  return { ok: `Extended by ${hours}h.` };
 }
 
 export async function deletePoll(_prev: ManageState, form: FormData): Promise<ManageState> {

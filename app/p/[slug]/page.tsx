@@ -216,7 +216,7 @@ export default async function PollPage({
             closed={expired}
             optionsLocked={poll.options_locked}
             hasVotes={poll.vote_count > 0}
-            hasExpiry={poll.expires_at !== null}
+            expiresAt={poll.expires_at}
           />
         )}
       </div>
@@ -233,6 +233,7 @@ export default async function PollPage({
           label={poll.title}
           signedIn={!!user}
           returnTo={`/p/${poll.slug}`}
+          emphasis={poll.subject_type === "person" ? "visible" : "quiet"}
         />
       </div>
     </AppShell>

@@ -44,7 +44,7 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
     supabase
       .from("polls")
       .select(
-        "id, slug, code, title, status, vote_count, option_count, message_count, options_locked, expires_at, created_at, created_by, is_private, og_version"
+        "id, slug, code, title, status, subject_type, vote_count, option_count, message_count, options_locked, expires_at, created_at, created_by, is_private, og_version"
       )
       .eq("space_id", space.id)
       .neq("status", "removed")

@@ -22,6 +22,7 @@ export function CreateForm({
 }) {
   const [state, action, pending] = useActionState<CreateState, FormData>(createPoll, {});
   const [subject, setSubject] = useState<"person" | "thing">("person");
+  const [adjective, setAdjective] = useState("");
   const [options, setOptions] = useState(["", ""]);
 
   const setOpt = (i: number, v: string) =>
@@ -98,15 +99,30 @@ export function CreateForm({
           <label className="lbl" htmlFor="adjective">
             Question
           </label>
-          {/* Preset positive adjectives only — 03-ux-flows D. A free-text
-              adjective on a person poll is how this becomes a bullying tool. */}
-          <select id="adjective" name="adjective" className="field">
+          {/* Free-text now — DECISIONS D7. Presets are one-tap suggestions
+              underneath rather than the only option. */}
+          <input
+            id="adjective"
+            name="adjective"
+            className="field"
+            placeholder="Write your own…"
+            value={adjective}
+            onChange={(e) => setAdjective(e.target.value)}
+            maxLength={40}
+          />
+          <div className="suggchips">
             {ADJECTIVES.map((a) => (
-              <option key={a} value={a}>
+              <button
+                key={a}
+                type="button"
+                className={cn("suggchip", adjective === a && "on")}
+                aria-pressed={adjective === a}
+                onClick={() => setAdjective(a)}
+              >
                 {a}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
           <input
             name="scope"
             className="field spaced"

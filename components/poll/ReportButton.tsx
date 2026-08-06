@@ -22,6 +22,7 @@ export function ReportButton({
   label,
   signedIn,
   returnTo,
+  emphasis = "quiet",
 }: {
   targetType: "option" | "message" | "poll";
   targetId: string;
@@ -29,6 +30,12 @@ export function ReportButton({
   label: string;
   signedIn: boolean;
   returnTo: string;
+  /**
+   * "visible" reads as an available action rather than fine print — used on
+   * person polls, where the report path matters more than on a poll about a
+   * thing. Still a real button either way; this only changes how loud it is.
+   */
+  emphasis?: "quiet" | "visible";
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -52,10 +59,10 @@ export function ReportButton({
     <>
       <button
         type="button"
-        className="reportlink"
+        className={emphasis === "visible" ? "reportlink chip" : "reportlink"}
         onClick={() => (signedIn ? setOpen(true) : signInWithGoogle(returnTo))}
       >
-        Report
+        {emphasis === "visible" ? "🚩 Report this poll" : "Report"}
       </button>
 
       <Sheet

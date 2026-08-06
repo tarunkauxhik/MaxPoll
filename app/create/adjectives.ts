@@ -1,9 +1,11 @@
 /**
- * Preset adjectives for person-polls — 03-ux-flows D.
+ * One-tap suggestions for person-poll questions — DECISIONS D7 (2026-08-07).
  *
- * **Positive only, and owner-controlled.** Free-text adjectives on a poll about a
- * named real person is how this product becomes a bullying tool; the preset list
- * is the guardrail.
+ * No longer a guardrail: the question is a free-text field now, and these are
+ * presets underneath it. The preventive control this list used to be is gone;
+ * what remains is reactive — the report button, the 3-report auto-hide, and
+ * the `/admin` moderation queue. See DECISIONS D7 for the trade-off as stated
+ * when the owner made this call.
  *
  * Lives in its own module because a `"use server"` file may only export async
  * functions — a const array there is a build error.
@@ -16,4 +18,10 @@ export const ADJECTIVES = [
   "Most reliable",
   "Most improved",
   "Hardest working",
+  "Most chill",
+  "Best dressed",
+  "Kindest",
+  "Most creative",
+  "Best mentor",
+  "Most punctual",
 ] as const;

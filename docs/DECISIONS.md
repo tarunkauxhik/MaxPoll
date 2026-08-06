@@ -529,3 +529,19 @@ Site URL and redirect allowlist, Google's authorised domains and JavaScript orig
 the Search Console verification, `NEXT_PUBLIC_SITE_URL` and `metadataBase` all point
 at it — and every WhatsApp share already in the wild keeps pointing at the old host.
 Nothing in the code hardcodes it, which is the one thing that makes a move survivable.
+
+### D10 · Person polls take free-text questions (2026-08-07, reverses 03-ux-flows §D)
+
+The preset-only adjective list was the single *preventive* control against a person
+poll becoming a bullying tool; `01-product` rates that risk High. The owner chose
+free text with the trade-off stated. The remaining controls are **reactive**: the
+report button, the 3-report auto-hide, and the `/admin` moderation queue.
+
+If abuse appears, the cheapest re-hardening is a server-side blocklist in
+`create_poll()` — not putting the dropdown back.
+
+**The ₹99 pass now also lifts the 3-per-week poll cap.** `entitlements.kind =
+'sub_monthly'` grants two things, both checked in the database: unlocked voter
+names on every poll (`hasEntitlement()`) and no weekly poll limit (`create_poll()`).
+Not a new grant — `/p/[slug]/unlock` already advertised "unlimited creating" as
+part of the pass; `create_poll()` just didn't enforce it yet.

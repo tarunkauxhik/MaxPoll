@@ -2274,6 +2274,18 @@ textarea.field {
 
 .reportlink:hover { color: var(--heat-text); }
 
+/* Person polls: the report path reads as an available action, not fine
+   print — the report button is a real moderation control here, not decor. */
+.reportlink.chip {
+  text-decoration: none;
+  background: var(--heat-soft);
+  border: 1px solid rgba(232, 69, 44, .25);
+  border-radius: var(--r-sm);
+  color: var(--heat-text);
+  font-weight: 700;
+  padding: 0 var(--s-3);
+}
+
 /* ============================ CREATE ============================ */
 
 .segment {
@@ -2369,6 +2381,32 @@ textarea.field {
 .quotacta.pri {
   background: var(--grad-heat);
   box-shadow: 0 6px 20px -8px rgba(179, 48, 28, .5);
+}
+
+/* ---- person-poll question suggestions ---- */
+.suggchips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+
+.suggchip {
+  min-height: var(--tap-sm);
+  padding: 6px 13px;
+  border-radius: 99px;
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.suggchip.on {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
 }
 
 /* ---- deadline picker ---- */
