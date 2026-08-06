@@ -137,6 +137,30 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/**
+ * The safety net. A poll title, a Space name, a display name, an option label
+ * and a handle are all user text, and one long unbroken token (a URL, a German
+ * compound, a keyboard mash) overflowed every container that held them — there
+ * was no wrap rule anywhere outside the chat bubbles.
+ *
+ * `anywhere` rather than `break-word`: it also allows the browser to shrink the
+ * min-content width, which is what stops a flex item forcing its parent wide.
+ */
+body,
+input,
+textarea,
+button,
+select {
+  overflow-wrap: anywhere;
+}
+
+/* Display faces truncate hardest because of the negative tracking. */
+.t-hero,
+.t-title,
+.t-card {
+  overflow-wrap: anywhere;
+}
+
 /* Emoji: system stack only. Apple Color Emoji is proprietary and cannot be
    bundled as a webfont — see docs/DECISIONS.md (A5). */
 body,
@@ -2238,6 +2262,7 @@ textarea.field {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .ssub { font-size: 12px; color: var(--muted); }
@@ -2441,7 +2466,7 @@ textarea.field {
   border-radius: var(--r-sm);
   white-space: nowrap;
   cursor: pointer;
-  min-height: 36px;
+  min-height: var(--tap-sm);
 }
 
 .anontog.on { border-color: var(--violet); box-shadow: 0 0 0 2px var(--violet-soft); }
