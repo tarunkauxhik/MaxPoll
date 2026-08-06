@@ -49,15 +49,18 @@ export function CreateForm({
         )}
 
         {!hasPass && mode !== "coming_soon" && (
-          <form action={startOrder.bind(null, "pass_30d", null, undefined)}>
-            <button type="submit" className={cn("quotacta", left === 0 && "pri")}>
-              <span>
-                Unlimited polls + see every voter · ₹
-                <span className="num">{rupees(PRICES.pass_30d)}</span> for 30 days
-              </span>
-              <span aria-hidden="true">→</span>
-            </button>
-          </form>
+          <button
+            type="submit"
+            formAction={startOrder.bind(null, "pass_30d", null, undefined)}
+            formNoValidate
+            className={cn("quotacta", left === 0 && "pri")}
+          >
+            <span>
+              Unlimited polls + see every voter · ₹
+              <span className="num">{rupees(PRICES.pass_30d)}</span> for 30 days
+            </span>
+            <span aria-hidden="true">→</span>
+          </button>
         )}
       </div>
 
