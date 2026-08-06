@@ -1745,6 +1745,8 @@ textarea.field {
   margin: var(--s-3) var(--s-3) 0;
   text-decoration: none;
   display: flex;
+  flex-wrap: wrap;
+  text-align: center;
 }
 
 .pollfoot {
