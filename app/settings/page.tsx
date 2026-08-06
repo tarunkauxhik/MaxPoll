@@ -31,7 +31,7 @@ export default async function SettingsPage() {
       <div className="setwrap">
         <h1 className="t-title">Settings</h1>
 
-        <section>
+        <section id="profile">
           <h2 className="t-label">Account</h2>
           <dl className="setlist">
             <div>
@@ -95,13 +95,15 @@ export default async function SettingsPage() {
           </p>
         </section>
 
-        <form action={signOut}>
-          <button type="submit" className="btn sec fullw">
-            Sign out
-          </button>
-        </form>
+        <section id="account">
+          <form action={signOut}>
+            <button type="submit" className="btn sec fullw">
+              Sign out
+            </button>
+          </form>
 
-        <DeleteAccount handle={profile.handle} />
+          <DeleteAccount handle={profile.handle} />
+        </section>
       </div>
     </AppShell>
   );

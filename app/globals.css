@@ -2287,11 +2287,11 @@ textarea.field {
 
 /* ============================ PROFILE ============================ */
 
-.prof { display: grid; gap: var(--s-2); }
+.prof { display: grid; gap: var(--s-2); justify-items: center; text-align: center; }
 .phandle { color: var(--violet); font-size: 14px; font-weight: 600; }
-.pbio { font-size: 14px; line-height: 1.45; color: var(--body); }
+.pbio { font-size: 14px; line-height: 1.45; color: var(--body); max-width: 32ch; }
 
-.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); justify-content: center; }
 
 .socialchip, .badgechip {
   display: inline-flex;
@@ -2304,6 +2304,14 @@ textarea.field {
   border: 1px solid var(--line);
   background: var(--card);
 }
+
+/* Now a real <a>, so it needs a tap target and its own hover/press state. */
+.socialchip {
+  min-height: var(--tap-sm);
+  transition: border-color .15s, background .15s;
+}
+.socialchip:hover { border-color: var(--line-strong); }
+.socialchip:active { background: var(--press); }
 
 .badgechip { font-size: 12px; font-weight: 700; padding: 5px 10px; }
 

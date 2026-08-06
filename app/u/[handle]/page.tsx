@@ -76,6 +76,12 @@ export default async function ProfilePage({
     profile.snapchat && { k: "Snapchat", v: profile.snapchat },
   ].filter(Boolean) as { k: string; v: string }[];
 
+  const SOCIAL_URL: Record<string, (v: string) => string> = {
+    Instagram: (v) => `https://instagram.com/${v.replace(/^@/, "")}`,
+    X: (v) => `https://x.com/${v.replace(/^@/, "")}`,
+    Snapchat: (v) => `https://snapchat.com/add/${v.replace(/^@/, "")}`,
+  };
+
   return (
     <AppShell>
       <div className="feed prof">
@@ -86,9 +92,15 @@ export default async function ProfilePage({
         {socials.length > 0 && (
           <div className="chips">
             {socials.map((s) => (
-              <span key={s.k} className="socialchip">
+              <a
+                key={s.k}
+                className="socialchip"
+                href={SOCIAL_URL[s.k](s.v)}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+              >
                 {s.k} · {s.v}
-              </span>
+              </a>
             ))}
           </div>
         )}
@@ -119,9 +131,14 @@ export default async function ProfilePage({
         </div>
 
         {me && me.id === profile.id && (
-          <a className="btn sec fullw" href="/settings">
-            Edit profile
-          </a>
+          <div className="btnrow">
+            <a className="btn sec" href="/settings#profile">
+              Edit profile
+            </a>
+            <a className="btn sec" href="/settings#account">
+              ⚙️ Settings
+            </a>
+          </div>
         )}
       </div>
 
