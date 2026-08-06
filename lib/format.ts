@@ -46,8 +46,20 @@ export function countdown(
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
 
-  // Under an hour the hours column is noise; MM:SS reads more urgent.
-  const text = urgent || expired ? `${p2(m)}:${p2(s)}` : `${p2(h)}:${p2(m)}:${p2(s)}`;
+  /**
+   * Three forms, because one does not survive the range.
+   *
+   * A six-day poll rendered `146:38:14` — technically the hours remaining, and
+   * unreadable. Nobody counts in 146 hours, and the chip beside it already said
+   * "6d left", so the page contradicted itself. Past a day the seconds are noise
+   * anyway; under an hour the hours column is, and MM:SS reads more urgent.
+   */
+  const text =
+    urgent || expired
+      ? `${p2(m)}:${p2(s)}`
+      : h >= 24
+        ? `${Math.floor(h / 24)}d ${p2(h % 24)}:${p2(m)}`
+        : `${p2(h)}:${p2(m)}:${p2(s)}`;
 
   let elapsed = 0;
   if (startedAt !== undefined && expiresAt > startedAt) {

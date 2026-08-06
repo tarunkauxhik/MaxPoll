@@ -43,10 +43,10 @@
   --press: rgba(17, 17, 20, .045);
 
   /* geometry */
-  --r-sm: 10px;
-  --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 24px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 28px;
   --tap: 48px; /* minimum touch target */
   /* Dense rows — admin queue, dupe warning, unlock CTA. 44px is WCAG 2.5.5's
      floor; these were 36px, which nothing justified. */
@@ -61,9 +61,27 @@
   --s-4: 16px;
   --s-6: 24px;
 
-  /* elevation — a scale, not one-offs */
-  --shadow-1: 0 1px 2px rgba(17, 17, 20, .05), 0 8px 24px -12px rgba(17, 17, 20, .12);
+  /**
+   * Elevation — a scale, not one-offs.
+   *
+   * Three stops each, because one blurred shadow reads as a sticker and two read
+   * as a card: a tight contact shadow for the edge, a mid one for the lift, and a
+   * wide ambient one for the room it sits in. Tinted with `--ink` rather than
+   * black, so the shadow belongs to the same warm paper as everything else —
+   * neutral-black shadows on a warm surface are the single most common reason a
+   * light UI looks cheap.
+   */
+  --shadow-1: 0 1px 1px rgba(17, 17, 20, .04), 0 2px 6px -1px rgba(17, 17, 20, .05),
+    0 12px 28px -14px rgba(17, 17, 20, .14);
   --shadow-2: 0 -12px 40px -14px rgba(17, 17, 20, .3);
+  /* Interactive lift — the pressed/hover partner to shadow-1. */
+  --shadow-lift: 0 1px 1px rgba(17, 17, 20, .05), 0 4px 10px -2px rgba(17, 17, 20, .07),
+    0 20px 40px -18px rgba(17, 17, 20, .2);
+  /**
+   * A 1px inner highlight along the top of a white card. Free depth: it is what
+   * makes a surface read as lit rather than as a rectangle with a border.
+   */
+  --ring: inset 0 1px 0 rgba(255, 255, 255, .9);
 
   /* layout — not in doc 05; the prototypes are fixed-height mockups and
      never had to solve for a real scrolling page */
@@ -86,6 +104,17 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Kills the legacy 300ms click delay on touch without disabling pinch-zoom,
+   which `touch-action: none` would. Every tap in the product feels ~300ms
+   faster for one line. */
+a,
+button,
+[role="button"],
+label,
+summary {
+  touch-action: manipulation;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -95,9 +124,17 @@ body {
   min-height: 100dvh; /* not 100vh — mobile browser chrome */
   background: var(--paper);
   color: var(--ink);
-  font-size: 15px;
-  line-height: 1.45;
+  /**
+   * 16px, not 15px. Two reasons, and the second is the one that matters:
+   * 15px is under every mobile-readability floor there is, and iOS Safari
+   * zooms the whole page when a user focuses an input smaller than 16px.
+   * Line-height 1.5 rather than 1.45 for the same reason — this is a phone
+   * product read one-handed, not a desktop dashboard.
+   */
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 /* Emoji: system stack only. Apple Color Emoji is proprietary and cannot be
@@ -183,7 +220,7 @@ a {
 }
 
 .t-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -294,7 +331,7 @@ a {
   flex: 1;
   min-height: var(--tap);
   color: var(--muted);
-  font-size: 11px; /* 10px in the mockup; nav labels are controls, not decoration */
+  font-size: 12px; /* 10px in the mockup; nav labels are controls, not decoration */
   font-weight: 600;
   letter-spacing: .02em;
   padding: 5px 0;
@@ -345,7 +382,7 @@ a {
 
   .nav a {
     flex: 0 0 auto;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .shell {
@@ -434,6 +471,10 @@ a {
   overflow: hidden;
   cursor: pointer;
   min-height: var(--tap);
+  /* The lit top edge, so a row reads as a raised surface rather than as a boxed
+     one. Rank 1 and .mine both add their own ring — kept first in the list so
+     those overrides replace it cleanly instead of stacking. */
+  box-shadow: var(--ring);
   transition: transform .34s var(--ease), border-color .2s, box-shadow .2s,
     background-color .12s;
 }
@@ -487,7 +528,7 @@ a {
 }
 
 .opt .sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 2px;
   display: flex;
@@ -519,13 +560,13 @@ a {
 /* variant: the user's own pick */
 .opt.mine {
   border-color: var(--ink);
-  box-shadow: 0 0 0 1px var(--ink);
+  box-shadow: var(--ring), 0 0 0 1px var(--ink);
 }
 
 .tagme {
   background: var(--ink);
   color: #fff;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -563,7 +604,7 @@ a {
 /* movement badge */
 .mv {
   font-family: var(--font-num), monospace;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   padding: 2px 5px;
   border-radius: 5px;
@@ -593,7 +634,7 @@ a {
   border-radius: var(--r-sm);
   background: var(--violet-soft);
   color: var(--violet-text);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -637,16 +678,25 @@ a {
   display: grid;
   place-items: center;
   font-family: var(--font-num), monospace;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
 }
 
+/**
+ * `.k` and `.v` are spans, so with no display set they ran **inline** — the bar
+ * rendered "VOTING CLOSES IN 06d 02:38" on one line instead of the stacked label
+ * doc 04 §5.3 draws. It only became obvious once a poll ran long enough for the
+ * value to be wide.
+ */
 .timerbar .lab {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .timerbar .lab .k {
-  font-size: 9.5px;
+  font-size: 12px;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, .55);
@@ -688,7 +738,7 @@ a {
 
 .chip {
   font-family: var(--font-num), monospace;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -718,18 +768,19 @@ a {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  padding: 14px;
-  box-shadow: var(--shadow-1);
-  transition: transform .2s var(--ease);
+  padding: 16px;
+  box-shadow: var(--ring), var(--shadow-1);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
   cursor: pointer;
 }
 
 .pcard:active {
   transform: scale(.985);
+  box-shadow: var(--ring), var(--shadow-lift);
 }
 
 .pcard .space {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -757,7 +808,7 @@ a {
 .mrow .r {
   width: 15px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -959,7 +1010,7 @@ a {
 /* doc 05 §4.12 — load-bearing. Never smaller than 11px. */
 
 .discl {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   background: var(--paper);
   border: 1px solid var(--line);
@@ -976,7 +1027,7 @@ a {
 
 .lbl {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -992,7 +1043,7 @@ a {
 }
 
 .hint {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: var(--s-1);
   line-height: 1.4;
@@ -1101,7 +1152,7 @@ textarea.field {
   gap: 7px;
   background: var(--violet-soft);
   color: var(--violet-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -1226,7 +1277,7 @@ textarea.field {
 }
 
 .lstats .k {
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -1271,18 +1322,41 @@ textarea.field {
   gap: var(--s-3);
 }
 
+/* Privacy and Terms were 14px-tall links. They are also the two URLs Google's
+   OAuth reviewer clicks, so they get a real hit area rather than a smaller one. */
+.lfoot a {
+  display: inline-block;
+  padding: 12px 8px;
+  margin: -12px -4px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ============================ POLL PAGE ============================ */
 
 .pollhead .t-title {
   margin: var(--s-2) 0 var(--s-3);
 }
 
+/**
+ * The Space name above a poll title. It was a 16px-tall link — a real navigation
+ * target with a quarter of the required hit area. Padding rather than a height,
+ * so the text stays optically where the design put it while the tappable box
+ * grows around it; the negative margins keep it from pushing the title down.
+ */
 .spacelink {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   color: var(--violet);
   text-decoration: none;
+  padding: 14px 10px;
+  margin: -14px -10px;
+  border-radius: var(--r-sm);
+}
+
+.spacelink:active {
+  background: var(--press);
 }
 
 .boarderr {
@@ -1394,7 +1468,7 @@ textarea.field {
 }
 
 .rankpill {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -1403,7 +1477,7 @@ textarea.field {
 }
 
 .sugg .cnt {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -1456,7 +1530,7 @@ textarea.field {
   border-radius: 99px;
   background: var(--heat);
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -1522,7 +1596,7 @@ textarea.field {
   border-radius: 7px;
   background: var(--ink);
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -1732,7 +1806,7 @@ textarea.field {
 
 .gtag {
   font-family: var(--font-num), monospace;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   padding: 2px 6px;
@@ -1863,7 +1937,7 @@ textarea.field {
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   padding: 13px 14px;
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--ring), var(--shadow-1);
   text-decoration: none;
   color: inherit;
   min-height: var(--tap);
@@ -1900,10 +1974,10 @@ textarea.field {
   white-space: nowrap;
 }
 
-.ssub { font-size: 11.5px; color: var(--muted); }
+.ssub { font-size: 12px; color: var(--muted); }
 
 .growing {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--violet-text);
   background: var(--violet-soft);
@@ -1940,7 +2014,7 @@ textarea.field {
   background: var(--card);
 }
 
-.badgechip { font-size: 11px; font-weight: 700; padding: 5px 10px; }
+.badgechip { font-size: 12px; font-weight: 700; padding: 5px 10px; }
 
 .badgechip.gold {
   border-color: rgba(245, 179, 36, .5);
@@ -1968,7 +2042,7 @@ textarea.field {
 .statrow .v { font-size: 19px; font-weight: 700; letter-spacing: -.03em; }
 
 .statrow .k {
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -2003,7 +2077,7 @@ textarea.field {
 
 .abody { flex: 1; min-width: 0; display: grid; gap: 6px; }
 .abody p { font-size: 13.5px; line-height: 1.4; }
-.atime { font-size: 10.5px; font-weight: 600; color: var(--muted); }
+.atime { font-size: 12px; font-weight: 600; color: var(--muted); }
 
 /* same_as_you converts best, so it gets the only decorated row. */
 .act.same {
@@ -2016,7 +2090,7 @@ textarea.field {
 .namechips { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .chipn {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -2058,7 +2132,7 @@ textarea.field {
   gap: 3px;
 }
 
-.bub .who { font-size: 10.5px; font-weight: 700; color: var(--muted); }
+.bub .who { font-size: 12px; font-weight: 700; color: var(--muted); }
 
 .bub.them {
   background: var(--card);
@@ -2092,7 +2166,7 @@ textarea.field {
 .composer .field { flex: 1; }
 
 .anontog {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--violet-text);
   background: var(--violet-soft);

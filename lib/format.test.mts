@@ -23,6 +23,17 @@ test("countdown formats and flags urgency", () => {
   assert.equal(soon.urgent, true);
 });
 
+test("countdown counts days once past 24h", () => {
+  // Shipped as "146:38:14" on a six-day poll, beside a chip reading "6d left".
+  assert.equal(countdown(T + 146 * 3600e3 + 38 * 60e3 + 14e3, T).text, "6d 02:38");
+  assert.equal(countdown(T + 24 * 3600e3, T).text, "1d 00:00", "exactly 24h");
+  assert.equal(
+    countdown(T + 23 * 3600e3 + 59 * 60e3, T).text,
+    "23:59:00",
+    "under 24h keeps HH:MM:SS"
+  );
+});
+
 test("countdown clamps instead of going negative", () => {
   const done = countdown(T - 60_000, T);
   assert.equal(done.text, "00:00");
