@@ -851,6 +851,7 @@ a {
   text-decoration: none;
   color: inherit;
   min-height: var(--tap);
+  transition: transform .16s var(--ease), background .16s var(--ease);
 }
 
 .chatentry:active { transform: scale(.985); background: var(--press); }
@@ -1743,6 +1744,7 @@ textarea.field {
   padding: 14px 10px;
   margin: -14px -10px;
   border-radius: var(--r-sm);
+  transition: transform .16s var(--ease), background .16s var(--ease);
 }
 
 .spacelink:active {
@@ -1843,6 +1845,7 @@ textarea.field {
   text-align: left;
   cursor: pointer;
   font: inherit;
+  transition: transform .16s var(--ease), background .16s var(--ease);
 }
 
 .sugg button:active {
@@ -2465,6 +2468,7 @@ textarea.field {
   text-decoration: none;
   color: inherit;
   min-height: var(--tap);
+  transition: transform .16s var(--ease), background .16s var(--ease);
 }
 
 .scard:active { transform: scale(.985); background: var(--press); }
