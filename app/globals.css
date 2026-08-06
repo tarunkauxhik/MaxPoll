@@ -176,8 +176,10 @@ select {
   overflow-wrap: anywhere;
 }
 
-/* Emoji: system stack only. Apple Color Emoji is proprietary and cannot be
-   bundled as a webfont — see docs/DECISIONS.md (A5). */
+/* System emoji stack — still the fallback for emoji inside user content
+   (poll titles, chat messages) that the <Emoji> component doesn't touch.
+   Every emoji literal in our own UI renders as a bundled Apple-style PNG
+   instead, via <Emoji> — DECISIONS D13, reversing A5. */
 body,
 button,
 input,
@@ -185,6 +187,13 @@ textarea,
 select {
   font-family: var(--font-ui), system-ui, -apple-system, "Apple Color Emoji",
     "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+
+.emoji {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -.15em;
 }
 
 a {

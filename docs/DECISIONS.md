@@ -589,3 +589,30 @@ still reads as a raised tile now that the bar around it is dark too.
 Real contrast run: `--muted` on the new `--paper` is 4.71:1 — the tightest
 margin of any unchanged token, and the ceiling on retinting `--paper` any
 further without a matching `--muted` change.
+
+### D13 · Bundled Apple-style emoji, reversing A5 (2026-08-08)
+
+A5 ruled out bundling Apple Color Emoji as a webfont — proprietary, and the
+full set is large. The owner's explicit choice reverses that, knowingly:
+"only iOS emoji, regardless of Android or iOS" was worth the same legal grey
+area A5 flagged, because a Gen Z audience notices when emoji look wrong on
+Android more than they'd ever notice licensing.
+
+What actually shipped is narrower than a webfont. `emoji-datasource-apple`
+(npm, MIT-licensed data/glue code — confirmed current on the registry before
+using it, not assumed from training data) ships every Apple emoji PNG,
+102MB unpacked. A fresh grep for `\p{Extended_Pictographic}` across `app/`
+and `components/` found 28 distinct characters actually used in the UI. Only
+those 28 PNGs (64px, ~188KB total) were extracted into `public/emoji/` —
+the npm package itself was never added as a project dependency, just used
+once as a source to copy from. `lib/emoji.ts` maps each character to its
+filename; `<Emoji char="🔥" />` renders the PNG, falling back to the system
+glyph if a character is ever used without a matching entry.
+
+The system emoji stack (`"Apple Color Emoji", "Segoe UI Emoji", "Noto Color
+Emoji"`) stays as a fallback for emoji inside *user content* — poll titles,
+chat messages — which `<Emoji>` doesn't touch and isn't meant to: rendering
+someone's typed text through a curated 28-glyph map would silently drop any
+emoji outside that set. `app/og/**` also stays on the system stack — Satori
+can't render `<Emoji>`'s `<img>` the same way OG images already avoid custom
+fonts by design (see `app/og/shared.tsx`).
