@@ -65,6 +65,52 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
 
+## Phase 14/15 — real traffic, and an audit (2026-08-06)
+
+Eight people signed in and voted. What they found, and what an audit of the
+codebase against its own claims found, in one pass.
+
+**The 1–2s lag after voting** was the board route's own cache: it is
+`s-maxage=4, stale-while-revalidate=10`, so the refresh fired right after a vote
+was routinely answered from *before* that vote. Adding an option was worse —
+`AddOption` is a **sibling** of `Board` with no channel between them, so a new
+option appeared only when Board's 4s timer next fired.
+
+The route stays cached; A2 is the whole free-tier model. The vote is applied
+locally instead (+1 on the option, +1 on the total, re-ranked by the same
+`rankOptions()` the server uses — not a guess), and one `window` event lets
+AddOption poke the board. That poke cache-busts, so it is **one origin hit per
+mutation, never per view**. Re-verified live: `MISS → HIT → HIT`, no `Set-Cookie`.
+
+**A poll was immutable to its creator, permanently.** `update` on `polls` is
+revoked and `polls_update` was dropped — correctly, since RLS picks rows and not
+columns — but that left no door at all: no close-early, no extend, no typo fix,
+no delete, by anyone including the operator. `update_poll()` and `delete_poll()`
+are that door. Identity from `auth.uid()`, never a parameter (D2c). Deleting is
+refused once anyone has voted: the board is their record too by then.
+
+**`/terms` promised something the product could not do.** It told every user
+"anyone can report a poll, an option or a message". `report_target()` had existed
+since Phase 6, gate-tested, with **no caller anywhere**. 01-product rates
+person-poll defamation *High* and names this as the only mitigation. There is now
+a report button, and `/admin` has a moderation queue grouped by target with the
+reasons attached — the 3-reporter auto-hide is a floor, not the policy.
+
+**Spaces** now need 3 members before *other people* can post into them. The
+creator is exempt, and that exemption is the design: a new Space has one member,
+so a strict floor means nobody can post the first poll and nobody joins an empty
+Space. That deadlock has already shipped twice here.
+
+**Follows removed** — table, trigger, button, counts and the `new_follower` copy.
+The graph fed exactly one notification and a follower count that reads 0 on
+almost every profile. Profiles now show polls and votes cast.
+
+**Seeded polls trimmed 25 → 5.** Everything with a vote survived, including the
+one a real user created.
+
+> Space slugs already carry a random suffix (`india-settle-it-1y42`), so two
+> Spaces with the same name cannot collide. No change was needed there.
+
 ## Phase 13 — the first hour (2026-08-05)
 
 Wiping the seed data exposed something no amount of seeded content could: **the

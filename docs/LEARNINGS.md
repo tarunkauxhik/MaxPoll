@@ -5,6 +5,46 @@ rather than rediscovering.
 
 ---
 
+## Closing a hole can leave no door, and nobody notices for six phases
+
+`20260806110000` revoked `update` on `polls` and dropped `polls_update`. That was
+right — RLS picks rows, not columns, so a creator with an UPDATE policy could
+rewrite their own `vote_count`.
+
+What nobody checked afterwards is what the *legitimate* path became. There wasn't
+one. A poll was immutable to its creator **permanently**: no close-early, no
+extend, no fixing a typo in the title, no delete. `polls` has no delete policy
+either. Six phases shipped on top of that without it being noticed, because
+nothing errors — the button simply does not exist to click.
+
+The fix is a `security definer` function that takes identity from `auth.uid()`
+and touches four named columns. **Revoking a broad grant is only half the job;
+the other half is the narrow, audited door that replaces it.** When a migration
+removes a capability, write down what the supported path now is — or there is
+none.
+
+## A guard nobody can reach is not a guard
+
+`report_target()` shipped in Phase 6: correct, `security definer`, gate-tested,
+with a `reports_once_uniq` index so three reports really means three people. It
+had **no caller anywhere in the app** for its entire life.
+
+Meanwhile `/terms` — which we wrote ourselves — told every user "anyone can
+report a poll, an option or a message. Three separate reports…". 01-product rates
+person-poll defamation **High** and names this as the sole mitigation.
+
+So the published policy, the risk register and the database all agreed on a
+control that no human could invoke. `pnpm check` and 65 gate probes were green
+throughout: the gates call the RPC directly, which is exactly why they could not
+see it. **A gate that tests the function but never the path a user takes will
+pass on a feature that does not exist.**
+
+Two others in the same state, found by the same sweep: `merge_options()` (owner
+RPC, gate-tested, no UI) and the `badges` table (rendered on profiles, no writer
+since Phase 2).
+
+---
+
 ## `now()` is the transaction clock, and it silently killed the tiebreak
 
 `options.created_at` breaks ties for equal vote counts — in `rankOptions()` and in
