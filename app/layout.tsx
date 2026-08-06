@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Space_Grotesk, Space_Mono } from "next/font/google";
+import { Analytics } from "@/components/Analytics";
 import { clean } from "@/lib/env";
 import "./globals.css";
 
@@ -68,7 +69,21 @@ export default function RootLayout({
       lang="en"
       className={`${archivo.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        {/**
+         * Pageviews only, with `/u/*` and `/pay/*` redacted — see the component.
+         *
+         * ⚠️ It injects routes under `/_vercel/insights/*`, which is why the
+         * `proxy.ts` matcher now excludes `_vercel`. Without that exclusion every
+         * pageview beacon would run the proxy — an `auth.getUser()` round trip to
+         * Supabase per view. Same failure shape as DECISIONS A2: nothing errors,
+         * the bill just scales with traffic.
+         *
+         * Does nothing until Web Analytics is enabled in the Vercel dashboard.
+         */}
+        <Analytics />
+      </body>
     </html>
   );
 }

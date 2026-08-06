@@ -15,7 +15,9 @@ export const metadata = {
  * template. If you change what the app stores, change this page in the same
  * commit. The three that go stale fastest: the delete behaviour in
  * app/settings/actions.ts, the columns in the initial-schema migration, and the
- * "no analytics" claim, which is true only while package.json stays clean.
+ * Analytics section — that one already went stale once, the moment
+ * @vercel/analytics landed in package.json while this page still said "there are
+ * no analytics on this site".
  *
  * No new CSS — .setwrap / .t-title / .t-label / .hint all already exist.
  */
@@ -35,8 +37,9 @@ export default function PrivacyPage() {
             you can turn off — so vote accordingly.
           </p>
           <p>
-            There are no analytics, no advertising trackers and no third-party scripts
-            on this site.
+            There are <strong>no advertising trackers</strong> on this site, and
+            nothing here follows you to another one. The only third-party script is
+            Vercel Web Analytics, described below.
           </p>
         </section>
 
@@ -98,6 +101,27 @@ export default function PrivacyPage() {
           <p>
             Signing in sets a session cookie so you stay signed in. That is the only
             cookie MaxPoll sets, and it is not used for tracking.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="t-label">Analytics</h2>
+          <p>
+            We use <strong>Vercel Web Analytics</strong> to count page views. It sets{" "}
+            <strong>no cookies</strong> and builds no profile of you: visitors are
+            counted using a hash of the incoming request that is discarded after 24
+            hours, and it cannot follow you to any other website.
+          </p>
+          <p>
+            What it records per view: the page URL, the referring site, your country
+            and city, your device type, and your browser and operating system version.
+            It does not receive your name, handle, email or IP address.
+          </p>
+          <p>
+            Two URLs are deliberately blurred before they leave your browser —
+            profile pages become <code>/u/[handle]</code> and payment pages become{" "}
+            <code>/pay/[ref]</code> — so a page view can never name a person or a
+            payment.
           </p>
         </section>
 

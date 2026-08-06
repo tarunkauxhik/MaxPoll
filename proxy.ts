@@ -47,7 +47,12 @@ export async function proxy(request: NextRequest) {
  * traffic, and nothing anywhere reports an error.
  *
  * Excluded because they are edge-cached:
- *   api/poll/*​/board · api/poll/*​/messages · og/*
+ *   api/poll/*​/board · api/poll/*​/messages · og/* · opengraph-image
+ *
+ * Excluded because it is a beacon, not a page: `_vercel`. Vercel Web Analytics
+ * adds routes under `/_vercel/insights/*`, and running this proxy on them would
+ * cost an `auth.getUser()` round trip to Supabase **per pageview** — the same
+ * failure shape as the cache one, and just as silent.
  *
  * NOT excluded, and must stay that way: `/admin` and `/pay/*` need cookies to
  * know who you are, and neither is cacheable.
@@ -56,6 +61,6 @@ export async function proxy(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/poll/.*/board|api/poll/.*/messages|og/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
+    "/((?!_next/static|_next/image|_vercel|favicon.ico|opengraph-image|api/poll/.*/board|api/poll/.*/messages|og/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
   ],
 };
