@@ -9,6 +9,7 @@ import {
   type ManageState,
 } from "@/app/p/[slug]/manage-actions";
 import { DeadlinePicker } from "./DeadlinePicker";
+import { Emoji } from "@/components/ui/Emoji";
 
 /**
  * The creator's controls — doc 06 shipped none, so a poll was permanently
@@ -51,7 +52,7 @@ export function ManagePoll({
   return (
     <>
       <button type="button" className="btn sec" onClick={() => setOpen(true)}>
-        ⚙️ Manage poll
+        <Emoji char="⚙" /> Manage poll
       </button>
 
       <Sheet open={open} onOpenChange={setOpen} title="Manage poll" description={title}>

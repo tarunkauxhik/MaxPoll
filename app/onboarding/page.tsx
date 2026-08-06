@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { suggestHandle } from "@/lib/profile";
 import { redirect } from "next/navigation";
 import { OnboardingForm } from "./OnboardingForm";
+import { Emoji } from "@/components/ui/Emoji";
 
 export const metadata = { title: "Set up your profile · MaxPoll" };
 
@@ -44,7 +45,7 @@ export default async function OnboardingPage({
         next={next && next.startsWith("/") ? next : "/"}
       />
       <p className="discl">
-        <span aria-hidden="true">🔓</span>
+        <Emoji char="🔓" />
         <span>
           Votes on MaxPoll are public. Your name will be visible on polls you vote in.
         </span>

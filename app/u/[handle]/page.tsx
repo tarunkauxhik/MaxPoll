@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
+import { Emoji } from "@/components/ui/Emoji";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, POLL_SELECT, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { n } from "@/lib/format";
@@ -109,7 +110,15 @@ export default async function ProfilePage({
           <div className="chips">
             {(badges ?? []).map((b: { type: string; period: string | null }, i: number) => (
               <span key={i} className={b.type === "top_creator" ? "badgechip gold" : "badgechip"}>
-                {b.type === "top_creator" ? "🏆 Top creator" : "🎯 Added a winner"}
+                {b.type === "top_creator" ? (
+                  <>
+                    <Emoji char="🏆" /> Top creator
+                  </>
+                ) : (
+                  <>
+                    <Emoji char="🎯" /> Added a winner
+                  </>
+                )}
                 {b.period && ` · ${b.period}`}
               </span>
             ))}
@@ -136,7 +145,7 @@ export default async function ProfilePage({
               Edit profile
             </a>
             <a className="btn sec" href="/settings#account">
-              ⚙️ Settings
+              <Emoji char="⚙" /> Settings
             </a>
           </div>
         )}

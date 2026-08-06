@@ -3,6 +3,7 @@ import AppShell from "@/components/shell/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import { paymentMode, upiIntentUrl, rupees } from "@/lib/payments";
 import { UtrForm } from "./UtrForm";
+import { Emoji } from "@/components/ui/Emoji";
 import Link from "next/link";
 import QRCode from "qrcode";
 
@@ -47,8 +48,8 @@ export default async function PayPage({
     return (
       <AppShell>
         <div className="state">
-          <div className="ic" aria-hidden="true">
-            ✅
+          <div className="ic">
+            <Emoji char="✅" />
           </div>
           <h1 className="t-card">You&apos;re in</h1>
           <p>Names are unlocked on {what}.</p>
@@ -64,8 +65,8 @@ export default async function PayPage({
     return (
       <AppShell>
         <div className="state err" role="alert">
-          <div className="ic" aria-hidden="true">
-            ⚠️
+          <div className="ic">
+            <Emoji char="⚠" />
           </div>
           <h1 className="t-card">We couldn&apos;t match that payment</h1>
           {/* The admin's note verbatim — it is the only thing the payer gets back. */}
@@ -82,8 +83,8 @@ export default async function PayPage({
     return (
       <AppShell>
         <div className="state">
-          <div className="ic" aria-hidden="true">
-            ⏳
+          <div className="ic">
+            <Emoji char="⏳" />
           </div>
           <h1 className="t-card">Got it — checking your payment</h1>
           <p>Usually within a few hours. This page updates when it&apos;s done.</p>
@@ -102,8 +103,8 @@ export default async function PayPage({
     return (
       <AppShell>
         <div className="state">
-          <div className="ic" aria-hidden="true">
-            🔒
+          <div className="ic">
+            <Emoji char="🔒" />
           </div>
           <h1 className="t-card">Unlocking soon</h1>
           <p>We&apos;re finishing payments. Nothing has been charged.</p>
@@ -173,7 +174,7 @@ export default async function PayPage({
             for the "wait, who am I paying?" moment that otherwise abandons the
             payment. Remove this line the day the business VPA lands — DECISIONS D6. */}
         <p className="discl">
-          <span aria-hidden="true">🔓</span>
+          <Emoji char="🔓" />
           <span>
             Your UPI app will show an individual&apos;s name — MaxPoll is run by one
             person and collects on a personal account. Non-refundable. Pay the exact

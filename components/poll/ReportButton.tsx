@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Sheet } from "./Sheet";
 import { report } from "@/app/p/[slug]/option-actions";
 import { signInWithGoogle } from "@/lib/auth-actions";
+import { Emoji } from "@/components/ui/Emoji";
 
 /**
  * doc 03 §K / 01-product's "person-poll defamation → report, auto-hide at 3".
@@ -62,7 +63,13 @@ export function ReportButton({
         className={emphasis === "visible" ? "reportlink chip" : "reportlink"}
         onClick={() => (signedIn ? setOpen(true) : signInWithGoogle(returnTo))}
       >
-        {emphasis === "visible" ? "🚩 Report this poll" : "Report"}
+        {emphasis === "visible" ? (
+          <>
+            <Emoji char="🚩" /> Report this poll
+          </>
+        ) : (
+          "Report"
+        )}
       </button>
 
       <Sheet

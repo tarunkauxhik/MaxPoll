@@ -9,6 +9,7 @@ import { saveIntent, takeIntent } from "@/lib/vote-intent";
 import { getDeviceId } from "@/lib/device";
 import { gapAbove, rankOptions, type BoardOption } from "@/lib/rank";
 import { n, plural } from "@/lib/format";
+import { Emoji } from "@/components/ui/Emoji";
 
 const TOP_N = 5;
 
@@ -312,7 +313,7 @@ export function Board({
         description={`${n(spaceMembers)} members`}
       >
         <p className="discl sheetdiscl">
-          <span aria-hidden="true">🔓</span>
+          <Emoji char="🔓" />
           <span>Votes on MaxPoll are public. Your name will be visible on this poll.</span>
         </p>
         <button

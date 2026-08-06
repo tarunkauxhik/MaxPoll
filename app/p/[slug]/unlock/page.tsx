@@ -5,6 +5,7 @@ import { getUser } from "@/lib/supabase/server";
 import { resultsLocked } from "@/lib/space";
 import { paymentMode, PRICES, rupees } from "@/lib/payments";
 import { startOrder } from "@/app/pay/actions";
+import { Emoji } from "@/components/ui/Emoji";
 
 export const metadata = { title: "See who voted · MaxPoll" };
 
@@ -37,7 +38,7 @@ export default async function UnlockPage({
     <AppShell>
       <div className="paywall">
         <h1 className="t-title">
-          <span aria-hidden="true">👀</span> See the exact names of voters
+          <Emoji char="👀" /> See the exact names of voters
         </h1>
 
         <ul className="perks">
@@ -68,7 +69,7 @@ export default async function UnlockPage({
              identically, which is what measures real intent. */
           <div className="soon">
             <p>
-              <span aria-hidden="true">🔒</span> Unlocking soon
+              <Emoji char="🔒" /> Unlocking soon
             </p>
             <p className="hint">
               We&apos;re finishing payments. Nothing is charged and nothing is

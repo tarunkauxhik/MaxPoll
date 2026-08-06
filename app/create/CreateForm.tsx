@@ -7,6 +7,7 @@ import { DeadlinePicker } from "@/components/poll/DeadlinePicker";
 import { startOrder } from "@/app/pay/actions";
 import { PRICES, rupees, type PaymentMode } from "@/lib/payments";
 import { cn } from "@/lib/cn";
+import { Emoji } from "@/components/ui/Emoji";
 
 export function CreateForm({
   spaces,
@@ -33,7 +34,7 @@ export function CreateForm({
       <div className="quota">
         {hasPass ? (
           <p className="quota-pass">
-            <span aria-hidden="true">✨</span> Pass active · unlimited polls
+            <Emoji char="✨" /> Pass active · unlimited polls
           </p>
         ) : (
           <>
@@ -84,7 +85,7 @@ export function CreateForm({
           onClick={() => setSubject("person")}
           aria-pressed={subject === "person"}
         >
-          👤 A person
+          <Emoji char="👤" /> A person
         </button>
         <button
           type="button"
@@ -92,7 +93,7 @@ export function CreateForm({
           onClick={() => setSubject("thing")}
           aria-pressed={subject === "thing"}
         >
-          🎬 A thing
+          <Emoji char="🎬" /> A thing
         </button>
       </div>
       <input type="hidden" name="subject_type" value={subject} />

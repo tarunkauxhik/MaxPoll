@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { toLocalInput } from "@/lib/format";
+import { Emoji } from "@/components/ui/Emoji";
 
 type Mode = "keep" | "quick" | "pick" | "none";
 
@@ -72,7 +73,7 @@ export function DeadlinePicker({
           aria-pressed={mode === "quick"}
           onClick={() => setMode("quick")}
         >
-          ⏱ Quick
+          <Emoji char="⏱" /> Quick
         </button>
         <button
           type="button"
@@ -80,7 +81,7 @@ export function DeadlinePicker({
           aria-pressed={mode === "pick"}
           onClick={() => setMode("pick")}
         >
-          📅 Pick
+          <Emoji char="📅" /> Pick
         </button>
         <button
           type="button"

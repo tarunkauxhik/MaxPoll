@@ -1,4 +1,5 @@
 import { signOut } from "@/lib/auth-actions";
+import { Emoji } from "@/components/ui/Emoji";
 
 export const metadata = { title: "MaxPoll is 18+" };
 
@@ -11,8 +12,8 @@ export const metadata = { title: "MaxPoll is 18+" };
 export default function UnderEighteen() {
   return (
     <main className="shell-col state">
-      <div className="ic" aria-hidden="true">
-        🎂
+      <div className="ic">
+        <Emoji char="🎂" />
       </div>
       <h1 className="t-card">MaxPoll is 18+</h1>
       <p>Come back on your birthday — we&apos;ll be here.</p>

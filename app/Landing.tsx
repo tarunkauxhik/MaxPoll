@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SignInButton } from "./SignInButton";
 import { IncognitoIcon } from "@/components/ui/IncognitoIcon";
+import { Emoji } from "@/components/ui/Emoji";
 import { n, shortLeft, plural } from "@/lib/format";
 
 export type LivePoll = {
@@ -198,7 +199,7 @@ export function Landing({
 
       <footer className="lfoot">
         <p className="discl">
-          <span aria-hidden="true">🔓</span>
+          <Emoji char="🔓" />
           <span>
             Votes on MaxPoll are public. Your name will be visible on polls you vote
             in.

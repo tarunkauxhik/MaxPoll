@@ -2,6 +2,7 @@ import { n, shortLeft, plural, unit } from "@/lib/format";
 import { raceGap } from "@/lib/rank";
 import type { FeedPoll } from "@/lib/poll-queries";
 import { cn } from "@/lib/cn";
+import { Emoji } from "@/components/ui/Emoji";
 
 /**
  * doc 04 §5.5. The whole card is one `<a>` — it's a single destination, so it
@@ -42,11 +43,11 @@ export function PollCard({ poll }: { poll: FeedPoll }) {
 
       <div className="counts">
         <span className="chip">
-          🗳️ <span className="num">{n(poll.vote_count)}</span>{" "}
+          <Emoji char="🗳" /> <span className="num">{n(poll.vote_count)}</span>{" "}
           {unit(poll.vote_count, "vote")}
         </span>
         <span className="chip">
-          👥 <span className="num">{n(poll.option_count)}</span>{" "}
+          <Emoji char="👥" /> <span className="num">{n(poll.option_count)}</span>{" "}
           {unit(poll.option_count, "option")}
         </span>
         {/**
@@ -55,7 +56,7 @@ export function PollCard({ poll }: { poll: FeedPoll }) {
          * nothing on any screen saying which one is actually about to close.
          */}
         <span className={cn("chip", poll.endingSoon && !closed && "hot")}>
-          ⏳ {shortLeft(expires)}
+          <Emoji char="⏳" /> {shortLeft(expires)}
         </span>
       </div>
 
@@ -64,7 +65,15 @@ export function PollCard({ poll }: { poll: FeedPoll }) {
           {poll.preview.map((o) => (
             <div key={o.id} className={cn("mrow", o.rank === 1 && "g")}>
               <span className="r num">{o.rank}</span>
-              <span className="nm">{poll.voted ? o.label : "🔒 vote to reveal"}</span>
+              <span className="nm">
+                {poll.voted ? (
+                  o.label
+                ) : (
+                  <>
+                    <Emoji char="🔒" /> vote to reveal
+                  </>
+                )}
+              </span>
               <span className="bar">
                 <i
                   style={{
@@ -79,8 +88,8 @@ export function PollCard({ poll }: { poll: FeedPoll }) {
 
       {race && race.lead <= 5 && (
         <p className="cardgap">
-          🔥 <b className="num">{plural(race.lead, "vote")}</b> between {race.leader} and{" "}
-          {race.runnerUp}
+          <Emoji char="🔥" /> <b className="num">{plural(race.lead, "vote")}</b> between{" "}
+          {race.leader} and {race.runnerUp}
         </p>
       )}
     </a>

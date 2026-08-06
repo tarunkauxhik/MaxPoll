@@ -8,6 +8,7 @@ import { ManagePoll } from "@/components/poll/ManagePoll";
 import { ReportButton } from "@/components/poll/ReportButton";
 import { EmptyState } from "@/components/ui/States";
 import { IncognitoIcon } from "@/components/ui/IncognitoIcon";
+import { Emoji } from "@/components/ui/Emoji";
 import {
   getPollBySlug,
   getBoard,
@@ -124,16 +125,18 @@ export default async function PollPage({
 
         <div className="counts">
           <span className="chip">
-            🗳️ <span className="num">{n(poll.vote_count)}</span>{" "}
+            <Emoji char="🗳" /> <span className="num">{n(poll.vote_count)}</span>{" "}
             {unit(poll.vote_count, "vote")}
           </span>
           <span className="chip">
-            👥 <span className="num">{n(poll.option_count)}</span>{" "}
+            <Emoji char="👥" /> <span className="num">{n(poll.option_count)}</span>{" "}
             {unit(poll.option_count, "option")}
           </span>
           {/* Red is time pressure only — CLAUDE.md. Every live poll used to get
               the hot chip, so red meant "live" and nothing meant "closing". */}
-          <span className={soon ? "chip hot" : "chip"}>⏳ {shortLeft(expiresAt)}</span>
+          <span className={soon ? "chip hot" : "chip"}>
+            <Emoji char="⏳" /> {shortLeft(expiresAt)}
+          </span>
           {myVote && <span className="chip voted">✓ Voted</span>}
         </div>
       </div>
@@ -226,7 +229,7 @@ export default async function PollPage({
       </div>
 
       <p className="discl">
-        <span aria-hidden="true">🔓</span>
+        <Emoji char="🔓" />
         <span>Votes on MaxPoll are public. Your name is visible on this poll.</span>
       </p>
 
@@ -255,8 +258,8 @@ function SpaceGate({ space }: { space: { name: string; member_count: number } })
   const pct = Math.min(100, (space.member_count / SPACE_UNLOCK_MEMBERS) * 100);
   return (
     <div className="state">
-      <div className="ic" aria-hidden="true">
-        🔒
+      <div className="ic">
+        <Emoji char="🔒" />
       </div>
       <p>
         Your vote counts. Results show at{" "}

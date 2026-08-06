@@ -9,7 +9,11 @@ import { EMOJI_MAP } from "@/lib/emoji";
  * already says the same thing, which is the common case here.
  */
 export function Emoji({ char, label }: { char: string; label?: string }) {
-  const file = EMOJI_MAP[char];
+  // Source literals inconsistently include the U+FE0F variation selector
+  // (copy-paste dependent, invisible either way) — EMOJI_MAP keys are the
+  // bare codepoint, so strip it before lookup rather than require every
+  // call site to match exactly.
+  const file = EMOJI_MAP[char.replace(/️/g, "")];
   // Falls back to the system glyph rather than rendering nothing — a
   // forgotten lib/emoji.ts entry should degrade, not disappear.
   if (!file) {

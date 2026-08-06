@@ -1,5 +1,6 @@
 import AppShell from "@/components/shell/AppShell";
 import { EmptyState } from "@/components/ui/States";
+import { Emoji } from "@/components/ui/Emoji";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -130,8 +131,8 @@ function ActivityRow({
 
     return (
       <div className="act same">
-        <span className="ic" aria-hidden="true">
-          👥
+        <span className="ic">
+          <Emoji char="👥" />
         </span>
         <div className="abody">
           <p>
@@ -194,8 +195,8 @@ function ActivityRow({
   const href = p.poll_slug ? `/p/${String(p.poll_slug)}` : undefined;
   const inner = (
     <>
-      <span className="ic" aria-hidden="true">
-        {icons[row.type] ?? "🔔"}
+      <span className="ic">
+        <Emoji char={icons[row.type] ?? "🔔"} />
       </span>
       <div className="abody">
         <p>{copy[row.type] ?? "Something happened"}</p>

@@ -2,6 +2,7 @@
  * Loading, empty and error — doc 04-design.md §5.17.
  * Copy is fixed in docs/03-ux-flows.md: instructions, never apologies.
  */
+import { Emoji } from "./Emoji";
 
 /** Skeleton board. Rows match .opt's height exactly, so the swap to real rows
  *  causes no layout shift. */
@@ -28,8 +29,8 @@ export function EmptyState({
 }) {
   return (
     <div className="state">
-      <span className="ic" aria-hidden="true">
-        {icon}
+      <span className="ic">
+        <Emoji char={icon} />
       </span>
       <p>{message}</p>
       {action}

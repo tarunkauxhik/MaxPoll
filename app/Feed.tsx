@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/States";
 import { getFeed } from "@/lib/poll-queries";
 import { getUser } from "@/lib/supabase/server";
 import { ActivityBell } from "@/components/shell/ActivityBell";
+import { Emoji } from "@/components/ui/Emoji";
 
 /**
  * Home, signed in — doc 04 §6. Raw totals, then velocity, and — above both when
@@ -38,7 +39,9 @@ export async function Feed() {
       {endingSoon.length > 0 && (
         <>
           <div className="feed">
-            <h2 className="t-label hot">⏳ Closing soon</h2>
+            <h2 className="t-label hot">
+              <Emoji char="⏳" /> Closing soon
+            </h2>
           </div>
           <div className="feed">
             {endingSoon.map((p) => (
@@ -49,7 +52,9 @@ export async function Feed() {
       )}
 
       <div className="feed">
-        <h2 className="t-label">🔥 Top performing today</h2>
+        <h2 className="t-label">
+          <Emoji char="🔥" /> Top performing today
+        </h2>
       </div>
       <div className="feed">
         {top.map((p) => (
@@ -60,7 +65,9 @@ export async function Feed() {
       {moving.length > 0 && (
         <>
           <div className="feed">
-            <h2 className="t-label">📈 Moving fast</h2>
+            <h2 className="t-label">
+              <Emoji char="📈" /> Moving fast
+            </h2>
           </div>
           <div className="feed">
             {moving.map((p) => (
