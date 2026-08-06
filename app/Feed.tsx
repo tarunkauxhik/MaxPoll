@@ -5,10 +5,17 @@ import { getFeed } from "@/lib/poll-queries";
 import { getUser } from "@/lib/supabase/server";
 import { ActivityBell } from "@/components/shell/ActivityBell";
 
-/** Home, signed in — doc 04 §6. Two rails: raw totals, then velocity. */
+/**
+ * Home, signed in — doc 04 §6. Raw totals, then velocity, and — above both when
+ * it has anything in it — the polls closing within six hours.
+ *
+ * That order is deliberate: a poll whose result you can still change outranks
+ * one that is merely popular, and it is the only rail on this page with a
+ * deadline attached. All three come from the same query.
+ */
 export async function Feed() {
   const user = await getUser();
-  const { top, moving } = await getFeed(user?.id);
+  const { top, moving, endingSoon } = await getFeed(user?.id);
 
   if (top.length === 0) {
     return (
@@ -28,6 +35,19 @@ export async function Feed() {
 
   return (
     <AppShell topBarRight={<ActivityBell />}>
+      {endingSoon.length > 0 && (
+        <>
+          <div className="feed">
+            <h2 className="t-label hot">⏳ Closing soon</h2>
+          </div>
+          <div className="feed">
+            {endingSoon.map((p) => (
+              <PollCard key={`e-${p.id}`} poll={p} />
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="feed">
         <h2 className="t-label">🔥 Top performing today</h2>
       </div>

@@ -266,7 +266,7 @@ export async function getFeed(userId: string | undefined) {
     .limit(40);
 
   const rows = ((polls ?? []) as unknown as RawPoll[]).map(normalise);
-  if (rows.length === 0) return { top: [], moving: [] };
+  if (rows.length === 0) return { top: [], moving: [], endingSoon: [] };
 
   const ids = rows.map((p) => p.id);
 
@@ -297,5 +297,20 @@ export async function getFeed(userId: string | undefined) {
       .filter((p) => p.vote_count > 0)
       .sort((a, b) => velocity(b) - velocity(a))
       .slice(0, 10),
+    /**
+     * Closing within 6h, soonest first. The only rail with a deadline attached,
+     * so it goes at the top of the feed when it has anything in it — a poll you
+     * can still change the result of outranks one that is merely popular.
+     *
+     * Free: same rows, same query, sorted a third way. `expires_at` is non-null
+     * for every member by construction, so the `!` is safe.
+     */
+    endingSoon: enriched
+      .filter((p) => p.endingSoon)
+      .sort(
+        (a, b) =>
+          new Date(a.expires_at!).getTime() - new Date(b.expires_at!).getTime()
+      )
+      .slice(0, 6),
   };
 }

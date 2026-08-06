@@ -227,6 +227,12 @@ a {
   color: var(--muted);
 }
 
+/* The one section heading with a deadline behind it. Red is time pressure only,
+   and this is the only rail on the feed that has any. */
+.t-label.hot {
+  color: var(--heat-text);
+}
+
 .wordmark {
   font-family: var(--font-display), sans-serif;
   font-weight: 900;
