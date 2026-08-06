@@ -59,6 +59,9 @@ const PAIRS = [
   ['timer label on dark', '--on-dark-dim', '--dark', 4.5],
   ['text on the raised dark stop', '--on-dark', '--dark-2', 4.5],
   ['label on the raised dark stop', '--on-dark-dim', '--dark-2', 4.5],
+  ['nav label on dark nav', '--on-dark-dim', '--dark', 4.5],
+  ['nav active label on dark nav', '--on-dark', '--dark', 4.5],
+  ['top bar wordmark on dark top bar', '--on-dark', '--dark', 4.5],
 ];
 
 let failures = 0;

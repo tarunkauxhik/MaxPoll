@@ -565,3 +565,27 @@ lagged behind several other Phase 16/17 changes (old font names, a removed
 anon toggle, removed follower counts) before this one. `app/globals.css`
 remains the enforced source of truth per CLAUDE.md; the design doc was not
 part of this rename's scope.
+
+### D12 · Structural chrome goes dark; "no dark mode" revised, not reversed (2026-08-08)
+
+Still true: no toggle, no black cards/forms/board. What changed: the top bar
+and bottom nav — present on every signed-in screen via `AppShell` — now
+render on `--dark`/`--grad-ink` instead of a light translucent blur, and
+`--paper`/`--line`/`--line-strong` got a modest warm retint (`#FAFAF7` →
+`#F5F2EA`). Cards, forms, the board, sheets, and legal text are untouched —
+confirmed by reading each, not assumed.
+
+Everything that lived inside the now-dark bars needed an explicit override,
+because "the top bar is dark" doesn't just mean the background — it means
+every child that assumed a light one: `.top .wordmark i` (teal-as-text was
+2.6:1 on `--dark`, fails — forced to `--on-dark` specifically on this
+surface, the logged-out `.lnav` wordmark on `--paper` is untouched),
+`.top .bell` and `.bell .dot`'s ring colour (`ActivityBell`, found by reading
+what `TopBar`'s `right` slot actually renders — `Feed.tsx`), `.top h1`/`h2`
+(unused today, but latent), and `.nav a`/`.nav a[aria-current]`. `.nav
+.create .ic` — already dark from Phase 16 — gained a 1px light border so it
+still reads as a raised tile now that the bar around it is dark too.
+
+Real contrast run: `--muted` on the new `--paper` is 4.71:1 — the tightest
+margin of any unchanged token, and the ceiling on retinting `--paper` any
+further without a matching `--muted` change.
