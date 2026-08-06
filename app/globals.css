@@ -2301,6 +2301,76 @@ textarea.field {
 
 .createform .btn.pri { width: 100%; margin-top: var(--s-6); }
 
+/* ---- quota + paywall ---- */
+.quota {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--s-4);
+  margin-bottom: var(--s-6);
+  box-shadow: var(--ring), var(--shadow-1);
+}
+
+.quota-line {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.quota-pass {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gold-text);
+}
+
+.quotabar {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--line);
+  overflow: hidden;
+  margin-top: var(--s-2);
+}
+
+.quotabar i {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  border-radius: 99px;
+  transition: width .3s var(--ease);
+}
+
+.quotabar.full i { background: var(--heat); }
+
+.quotacta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: var(--s-3);
+  padding: 11px var(--s-3);
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--grad-ink);
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .16s var(--ease);
+}
+
+.quotacta:active { transform: scale(.985); }
+
+/* Once the free cap is hit, this is the primary action on the page — a
+   brighter surface says so without adding a second colour. */
+.quotacta.pri {
+  background: var(--grad-heat);
+  box-shadow: 0 6px 20px -8px rgba(179, 48, 28, .5);
+}
+
 /* ---- deadline picker ---- */
 .deadline { display: grid; gap: var(--s-3); }
 

@@ -4,13 +4,21 @@ import { useActionState, useState } from "react";
 import { createPoll, type CreateState } from "./actions";
 import { ADJECTIVES } from "./adjectives";
 import { DeadlinePicker } from "@/components/poll/DeadlinePicker";
+import { startOrder } from "@/app/pay/actions";
+import { PRICES, rupees, type PaymentMode } from "@/lib/payments";
+import { cn } from "@/lib/cn";
 
 export function CreateForm({
   spaces,
   left,
+  hasPass,
+  mode,
 }: {
   spaces: { id: string; name: string }[];
   left: number;
+  /** An active 30-day pass lifts the 3-per-week cap — checked in create_poll(). */
+  hasPass: boolean;
+  mode: PaymentMode;
 }) {
   const [state, action, pending] = useActionState<CreateState, FormData>(createPoll, {});
   const [subject, setSubject] = useState<"person" | "thing">("person");
@@ -21,9 +29,36 @@ export function CreateForm({
 
   return (
     <form action={action} className="createform">
-      <p className={left === 0 ? "fielderr" : "hint"}>
-        <span className="num">{left}</span> of <span className="num">3</span> left this week
-      </p>
+      <div className="quota">
+        {hasPass ? (
+          <p className="quota-pass">
+            <span aria-hidden="true">✨</span> Pass active · unlimited polls
+          </p>
+        ) : (
+          <>
+            <p className="quota-line">
+              <span className="num">{left}</span> of <span className="num">3</span> polls left
+              this week
+            </p>
+            <div className={cn("quotabar", left === 0 && "full")}>
+              <i style={{ width: `${((3 - left) / 3) * 100}%` }} />
+            </div>
+            <p className="hint">Resets 7 days after your first poll.</p>
+          </>
+        )}
+
+        {!hasPass && mode !== "coming_soon" && (
+          <form action={startOrder.bind(null, "pass_30d", null, undefined)}>
+            <button type="submit" className={cn("quotacta", left === 0 && "pri")}>
+              <span>
+                Unlimited polls + see every voter · ₹
+                <span className="num">{rupees(PRICES.pass_30d)}</span> for 30 days
+              </span>
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+        )}
+      </div>
 
       <label className="lbl" htmlFor="space_id">
         Space
@@ -127,7 +162,7 @@ export function CreateForm({
         </p>
       )}
 
-      <button type="submit" className="btn pri" disabled={pending || left === 0}>
+      <button type="submit" className="btn pri" disabled={pending || (left === 0 && !hasPass)}>
         {pending ? "Creating…" : "Create poll"}
       </button>
     </form>

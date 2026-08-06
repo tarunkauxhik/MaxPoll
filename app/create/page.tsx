@@ -4,6 +4,8 @@ import { CreateForm } from "./CreateForm";
 import { pollsLeftThisWeek } from "./actions";
 import { EmptyState } from "@/components/ui/States";
 import { SignInButton } from "../SignInButton";
+import { activePass } from "@/lib/poll-queries";
+import { paymentMode } from "@/lib/payments";
 
 export const metadata = { title: "Create a poll · MaxPoll" };
 
@@ -22,10 +24,11 @@ export default async function CreatePage() {
   }
 
   const supabase = await createClient();
-  const [{ data: memberships }, { count: spacesAnywhere }, left] = await Promise.all([
+  const [{ data: memberships }, { count: spacesAnywhere }, left, { pass }] = await Promise.all([
     supabase.from("space_members").select("spaces(id, name)").eq("user_id", user.id),
     supabase.from("spaces").select("id", { count: "exact", head: true }),
     pollsLeftThisWeek(user.id),
+    activePass(user.id),
   ]);
 
   const spaces = (memberships ?? []).flatMap(
@@ -66,7 +69,7 @@ export default async function CreatePage() {
     <AppShell>
       <div className="createwrap">
         <h1 className="t-title">New poll</h1>
-        <CreateForm spaces={spaces} left={left} />
+        <CreateForm spaces={spaces} left={left} hasPass={!!pass} mode={paymentMode()} />
       </div>
     </AppShell>
   );
