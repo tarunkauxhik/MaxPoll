@@ -144,6 +144,9 @@ export default async function ProfilePage({
             <a className="btn sec" href="/settings#profile">
               Edit profile
             </a>
+            <a className="btn sec" href="/settings/subscription">
+              Subscription
+            </a>
             <a className="btn sec" href="/settings#account">
               <Emoji char="⚙" /> Settings
             </a>
