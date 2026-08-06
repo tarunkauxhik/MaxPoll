@@ -836,6 +836,42 @@ a {
   width: 0 !important;
 }
 
+/* The room, surfaced above the board rather than buried in the footer —
+   doc 03 chat is where the argument actually happens. */
+.chatentry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 11px 14px;
+  margin: 0 12px 12px;
+  box-shadow: var(--ring), var(--shadow-1);
+  text-decoration: none;
+  color: inherit;
+  min-height: var(--tap);
+}
+
+.chatentry:active { transform: scale(.985); background: var(--press); }
+
+.chatentry .ic {
+  flex: 0 0 auto;
+  font-size: 20px;
+}
+
+.chatentry .body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.chatentry .ttl { font-weight: 700; font-size: 15px; }
+.chatentry .sub { font-size: 13px; color: var(--muted); }
+.chatentry .chev { color: var(--muted); font-size: 20px; flex: 0 0 auto; }
+
 /* ============================ CHIPS ============================ */
 
 .counts {

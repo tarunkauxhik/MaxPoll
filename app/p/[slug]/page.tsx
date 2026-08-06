@@ -18,7 +18,7 @@ import {
 import { getUser } from "@/lib/supabase/server";
 import { resultsLocked, SPACE_UNLOCK_MEMBERS } from "@/lib/space";
 import { raceGap } from "@/lib/rank";
-import { n, shortLeft, endingSoon, unit } from "@/lib/format";
+import { n, shortLeft, endingSoon, unit, plural } from "@/lib/format";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -140,6 +140,23 @@ export default async function PollPage({
         <Timer expiresAt={poll.expires_at} startedAt={poll.created_at} />
       )}
 
+      <a className="chatentry" href={`/p/${poll.slug}/chat`}>
+        <span className="ic" aria-hidden="true">
+          💬
+        </span>
+        <span className="body">
+          <span className="ttl">Poll chat</span>
+          <span className="sub">
+            {poll.message_count > 0
+              ? `${plural(poll.message_count, "message")} · join in`
+              : "Be the first to say something"}
+          </span>
+        </span>
+        <span className="chev" aria-hidden="true">
+          ›
+        </span>
+      </a>
+
       {board.length === 0 ? (
         <EmptyState icon="🗳️" message="Nobody's been added yet. Add the first name." />
       ) : (
@@ -180,9 +197,6 @@ export default async function PollPage({
       )}
 
       <div className="pollfoot">
-        <a className="btn sec" href={`/p/${poll.slug}/chat`}>
-          💬 Poll chat
-        </a>
         <ShareButton
           code={poll.code}
           title={poll.title}

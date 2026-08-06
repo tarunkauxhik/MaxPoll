@@ -17,6 +17,7 @@ export type PollRow = {
   status: "live" | "closed" | "removed";
   vote_count: number;
   option_count: number;
+  message_count: number;
   options_locked: boolean;
   expires_at: string | null;
   created_at: string;
@@ -39,7 +40,7 @@ const SPACE_SELECT = "space:spaces(id, slug, code, name, member_count)";
  * hand, and a column added to `PollRow` then compiled everywhere and returned
  * `undefined` at runtime on the two pages that had their own copy.
  */
-export const POLL_SELECT = `id, slug, code, title, status, vote_count, option_count, options_locked,
+export const POLL_SELECT = `id, slug, code, title, status, vote_count, option_count, message_count, options_locked,
   expires_at, created_at, created_by, is_private, og_version, ${SPACE_SELECT}`;
 
 /**
