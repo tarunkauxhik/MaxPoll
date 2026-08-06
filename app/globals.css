@@ -1125,27 +1125,65 @@ textarea.field {
 }
 
 /* ============================ LANDING ============================ */
-/* doc 04 §6. The hero IS the product: a working board, not a headline. */
+/* doc 04 §6. The hero IS the product: a working board, not a headline.
+
+   Rebuilt for phones first. The order answers the three questions a stranger
+   actually has, in the order they have them: is this real (live polls straight
+   from the database), what do I do (four steps), what happens to me (public
+   votes, 18+, no password). Proof before claims. */
 
 .lander {
   max-width: var(--col);
   margin: 0 auto;
-  padding: 0 var(--s-4) var(--s-6);
+  /* Room for the sticky CTA, so the footer is never trapped under it. */
+  padding: 0 var(--s-4) calc(var(--tap) + var(--s-6) * 2 + env(safe-area-inset-bottom));
 }
 
 .lnav {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--s-3);
   min-height: var(--topbar-h);
   padding: var(--s-2) 0;
+  /* Follows the scroll so "Log in" is always one tap away — landing.csv's
+     sticky-nav-CTA rule, and free here because the bar is 54px. */
+  position: sticky;
+  top: 0;
+  z-index: var(--z-top);
+  background: rgba(250, 250, 247, .88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* `.btn` is width:100% by default — right for a stacked single-column product,
+   wrong inside a flex row, where it resolves to a 100% basis and swallows the
+   whole header. This is the opt-out; `.btnrow` below is the reusable one. */
+.lnav .btn {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 0 var(--s-4);
+}
+
+/* A row of buttons that size to their content. Use this instead of fighting the
+   full-width default with a per-container override. */
+.btnrow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+
+.btnrow > .btn {
+  width: auto;
+  flex: 1 1 auto;
 }
 
 .lhero {
-  padding: var(--s-6) 0;
+  padding: var(--s-6) 0 var(--s-4);
 }
 
-/* Carries a REAL aggregate or is not rendered at all — 01-product. */
+/* Carries a REAL aggregate, or falls back to a claim that needs no number. */
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -1157,8 +1195,15 @@ textarea.field {
   letter-spacing: .06em;
   text-transform: uppercase;
   border-radius: 99px;
-  padding: 5px 11px;
-  margin-bottom: var(--s-4);
+  padding: 6px 12px;
+  margin: 0 0 var(--s-4);
+}
+
+/* 41px wrapped this headline to four lines at 360px, which is a wall rather
+   than a hook. Fluid instead: 34px on a small phone, up to 44px where there is
+   room, with no breakpoint to maintain. */
+.lhero .t-hero {
+  font-size: clamp(34px, 9.4vw, 44px);
 }
 
 .lhero .t-hero i {
@@ -1167,59 +1212,67 @@ textarea.field {
 }
 
 .lsub {
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 16px;
+  line-height: 1.5;
   color: var(--body);
   margin: var(--s-3) 0 var(--s-6);
+  /* 35–60 characters is the readable measure on a phone. */
+  max-width: 34ch;
 }
 
 /* The demo board. Clearly a sample — never presented as live data. */
 .demo {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 13px;
-  box-shadow: var(--shadow-1);
+  border-radius: var(--r-lg);
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  box-shadow: var(--ring), var(--shadow-1);
   margin-bottom: var(--s-6);
 }
 
 .drow {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 7px 0;
+  gap: 10px;
+  padding: 9px 0;
 }
 
 .drow .r {
-  width: 22px;
-  font-size: 12px;
+  width: 24px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--muted);
 }
 
+/* The name wins the row. It is the only part a stranger reads. */
 .drow .nm {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Was a fixed 64px stub. It is the only thing on the page that shows a *race*,
+   so it gets real width — but it yields to the name rather than truncating it,
+   which is what `flex: 1 1 96px` on both did ("Verma Ma'am" became "Verma …"). */
 .drow .bar {
-  width: 64px;
-  height: 5px;
+  flex: 0 1 104px;
+  min-width: 48px;
+  height: 6px;
   border-radius: 99px;
   background: var(--line);
   overflow: hidden;
-  flex: 0 0 64px;
 }
 
 .drow .bar i {
   display: block;
   height: 100%;
   background: var(--ink);
+  border-radius: 99px;
+  transform-origin: left center;
 }
 
 .drow.g1 .bar i {
@@ -1231,22 +1284,110 @@ textarea.field {
 }
 
 .drow .p {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  width: 34px;
+  width: 36px;
   text-align: right;
 }
 
 .demo .gap {
-  margin: var(--s-2) 0 0;
+  margin: var(--s-3) 0 0;
+  align-items: flex-start;
 }
 
-.lander .btn.pri {
-  width: 100%;
+/**
+ * Bars grow in, staggered, once. `scaleX` and not `width`: it is composited, it
+ * does not reflow, and — the reason it is written this way — the un-animated
+ * state is `scale(1)`, so `prefers-reduced-motion` (which kills animations
+ * outright, further up this file) leaves the bars at their true widths instead
+ * of collapsed to zero. An animation whose disabled state is broken is worse
+ * than no animation.
+ */
+@keyframes grow-bar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
+
+.drow .bar i {
+  animation: grow-bar .62s var(--ease) both;
+}
+
+.drow:nth-child(1) .bar i { animation-delay: .10s; }
+.drow:nth-child(2) .bar i { animation-delay: .19s; }
+.drow:nth-child(3) .bar i { animation-delay: .28s; }
 
 .lcenter {
   text-align: center;
+}
+
+.lhero .hint {
+  margin-top: var(--s-3);
+}
+
+/* ---- live proof: real polls, from the real database ---- */
+
+.lproof {
+  margin: var(--s-6) 0;
+}
+
+.lproof .t-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: var(--s-3);
+}
+
+.lpolls {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.lpoll {
+  display: grid;
+  gap: 5px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  box-shadow: var(--ring), var(--shadow-1);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+
+.lpoll:active {
+  transform: scale(.985);
+  box-shadow: var(--ring), var(--shadow-lift);
+}
+
+.lpoll .meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--violet);
+}
+
+.lpoll .ttl {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.lpoll .foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.lpoll .foot b {
+  color: var(--ink);
+  font-weight: 700;
 }
 
 /* Three equal cells split by a hairline — doc 04 §6. */
@@ -1260,7 +1401,7 @@ textarea.field {
 .lstats > div {
   flex: 1;
   text-align: center;
-  padding: 14px 6px;
+  padding: var(--s-4) 6px;
   border-right: 1px solid var(--line);
   display: grid;
   gap: 3px;
@@ -1271,7 +1412,7 @@ textarea.field {
 }
 
 .lstats .v {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -.03em;
 }
@@ -1284,29 +1425,38 @@ textarea.field {
   color: var(--muted);
 }
 
+.lhow {
+  margin-top: var(--s-6);
+}
+
 .lhow ol {
   list-style: none;
   display: grid;
-  gap: var(--s-3);
+  gap: var(--s-2);
   margin-top: var(--s-4);
+  padding: 0;
 }
 
 .lhow li {
   display: flex;
   gap: var(--s-3);
   align-items: flex-start;
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--body);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4);
 }
 
 .lhow .s {
-  flex: 0 0 24px;
-  height: 24px;
-  border-radius: 8px;
+  flex: 0 0 26px;
+  height: 26px;
+  border-radius: 9px;
   background: var(--ink);
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -1326,10 +1476,61 @@ textarea.field {
    OAuth reviewer clicks, so they get a real hit area rather than a smaller one. */
 .lfoot a {
   display: inline-block;
-  padding: 12px 8px;
-  margin: -12px -4px;
+  /* 14px, measured: 12px landed the box at 41px against a 44px floor. The
+     negative margin keeps the paragraph the height it looks. */
+  padding: 14px 8px;
+  margin: -14px -4px;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/**
+ * The sticky CTA. Fades in once the hero's own button has scrolled away, via a
+ * scroll-driven animation — no listener, no JS. Browsers without
+ * `animation-timeline` show it from the top, which is the right fallback: a
+ * visible sign-in button is never the failure mode.
+ */
+.lsticky {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-nav);
+  padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom));
+  background: linear-gradient(rgba(250, 250, 247, 0), var(--paper) 38%);
+}
+
+.lsticky .btn {
+  max-width: var(--col);
+  margin: 0 auto;
+  box-shadow: var(--shadow-lift);
+}
+
+@supports (animation-timeline: scroll()) {
+  .lsticky {
+    opacity: 0;
+    pointer-events: none;
+    animation: sticky-cta linear both;
+    animation-timeline: scroll(root);
+    /* Starts appearing once roughly the hero has gone. */
+    animation-range: 380px 520px;
+  }
+}
+
+@keyframes sticky-cta {
+  to {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Reduced motion kills the animation, which would leave the CTA at opacity 0
+   forever. Pin it visible instead — the same end state, no fade. */
+@media (prefers-reduced-motion: reduce) {
+  .lsticky {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* ============================ POLL PAGE ============================ */

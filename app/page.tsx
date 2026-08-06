@@ -14,7 +14,10 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return <Landing stats={await realStats()} />;
+  if (!user) {
+    const [stats, live] = await Promise.all([realStats(), livePolls()]);
+    return <Landing stats={stats} live={live} />;
+  }
 
   const profile = await getProfile();
   /**
@@ -61,4 +64,50 @@ async function realStats() {
 
   if (votes < 50) return null;
   return { votes, polls: polls.count ?? 0, spaces: spaces.count ?? 0 };
+}
+
+/**
+ * Three real, live, public polls for the landing page.
+ *
+ * Proof beats claims: a stranger who can read *"Greatest Indian ODI batter ·
+ * 47 votes · 4h left"* before signing in knows what this is, and knows it has
+ * people in it. The demo board above is unmistakably a sample and cannot do
+ * that job.
+ *
+ * Titles and counts only — no options, and therefore no names. That keeps this
+ * to one small query on the busiest anonymous route, and keeps the "vote to
+ * reveal" gate intact on a page nobody has signed in to yet.
+ */
+async function livePolls() {
+  const supabase = createAnonClient();
+  const { data } = await supabase
+    .from("polls")
+    .select("slug, title, vote_count, expires_at, space:spaces(name)")
+    .eq("status", "live")
+    .eq("is_private", false)
+    // A poll on zero votes is not proof of anything — it is the exact thing this
+    // section exists to disprove. Better to show two than three with a dead one.
+    .gt("vote_count", 0)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+    .order("vote_count", { ascending: false })
+    .limit(3);
+
+  // PostgREST types an embedded to-one relation as an array — it cannot know the
+  // FK is single-valued without generated types. Same normalisation as
+  // poll-queries' `normalise()`.
+  type Row = {
+    slug: string;
+    title: string;
+    vote_count: number | null;
+    expires_at: string | null;
+    space: { name: string } | { name: string }[] | null;
+  };
+
+  return ((data ?? []) as unknown as Row[]).map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    votes: p.vote_count ?? 0,
+    expiresAt: p.expires_at,
+    space: (Array.isArray(p.space) ? p.space[0] : p.space)?.name ?? null,
+  }));
 }

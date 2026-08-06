@@ -14,17 +14,20 @@ export function SignInButton({
   next,
   label = "Continue with Google",
   variant = "pri",
+  className,
 }: {
   next?: string;
   label?: string;
   variant?: "pri" | "sec";
+  /** Full override, for the two landing placements that need `sm` or `fullw`. */
+  className?: string;
 }) {
   const [pending, start] = useTransition();
 
   return (
     <button
       type="button"
-      className={`btn ${variant}`}
+      className={className ?? `btn ${variant}`}
       disabled={pending}
       onClick={() => start(() => signInWithGoogle(next))}
     >

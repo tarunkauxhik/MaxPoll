@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { SignInButton } from "./SignInButton";
-import { n } from "@/lib/format";
+import { n, shortLeft, plural } from "@/lib/format";
+
+export type LivePoll = {
+  slug: string;
+  title: string;
+  votes: number;
+  expiresAt: string | null;
+  space: string | null;
+};
 
 /**
  * Logged-out landing — doc 04 §6.
@@ -8,12 +16,20 @@ import { n } from "@/lib/format";
  * **The hero IS the product**: a working leaderboard with a gap line, not a
  * headline about one. Someone who has never heard of MaxPoll should understand
  * it from the shape of the thing before reading a word.
+ *
+ * Everything under the hero exists to answer the three questions a stranger
+ * actually has, in the order they have them: *is this real* (live polls from the
+ * database), *what do I do* (four steps), *what happens to me* (votes are
+ * public, 18+, no password). Claims are last, proof is first.
  */
 export function Landing({
   stats,
+  live,
 }: {
   /** Real aggregates, or null when there isn't enough data to be honest about. */
   stats: { votes: number; polls: number; spaces: number } | null;
+  /** Real live polls. Empty on a cold database, and the section then disappears. */
+  live: LivePoll[];
 }) {
   return (
     <div className="lander">
@@ -21,19 +37,23 @@ export function Landing({
         <div className="wordmark">
           Max<i>Poll</i>
         </div>
-        <SignInButton label="Log in" variant="sec" />
+        <SignInButton label="Log in" variant="sec" className="btn sec sm" />
       </header>
 
       <section className="lhero">
         {/* Only shown when the number is real. 01-product: real aggregates only —
             an invented "12,400 votes" is the fastest way to lose the one thing
             a public voting product has to have. */}
-        {stats && (
-          <p className="eyebrow">
-            <span className="livedot" aria-hidden="true" />
-            <span className="num">{n(stats.votes)}</span> votes cast
-          </p>
-        )}
+        <p className="eyebrow">
+          <span className="livedot" aria-hidden="true" />
+          {stats ? (
+            <>
+              <span className="num">{n(stats.votes)}</span> votes cast
+            </>
+          ) : (
+            "Live now · India"
+          )}
+        </p>
 
         <h1 className="t-hero">
           Everyone has an opinion.
@@ -45,7 +65,9 @@ export function Landing({
           record.
         </p>
 
-        {/* Static demo — clearly a sample, never presented as live data. */}
+        {/* Static demo — clearly a sample, never presented as live data. The bars
+            animate in via scaleX, so with animations off they are already at
+            their final width rather than collapsed to nothing. */}
         <div className="demo" aria-label="Example leaderboard">
           <div className="drow g1">
             <span className="r num">01</span>
@@ -72,14 +94,44 @@ export function Landing({
             <span className="p num">19%</span>
           </div>
           <div className="gap">
-            ↑ <b className="num">17 votes</b> behind Verma Ma&apos;am. Share to close
-            the gap.
+            <span aria-hidden="true">↑</span>
+            <span>
+              <b className="num">17 votes</b> behind Verma Ma&apos;am. Share to close
+              the gap.
+            </span>
           </div>
         </div>
 
-        <SignInButton label="Continue with Google" />
-        <p className="hint lcenter">18+ · No password, ever</p>
+        <SignInButton label="Continue with Google" className="btn pri fullw" />
+        <p className="hint lcenter">18+ · No password, ever · Free</p>
       </section>
+
+      {live.length > 0 && (
+        <section className="lproof">
+          <h2 className="t-label">
+            <span className="livedot" aria-hidden="true" />
+            Live right now
+          </h2>
+          <div className="lpolls">
+            {live.map((p) => (
+              <a key={p.slug} className="lpoll" href={`/p/${p.slug}`}>
+                <span className="meta">
+                  <span className="livedot" aria-hidden="true" />
+                  {p.space ?? "MaxPoll"}
+                </span>
+                <span className="ttl">{p.title}</span>
+                <span className="foot">
+                  <b className="num">{plural(p.votes, "vote")}</b>
+                  <span aria-hidden="true">·</span>
+                  <span>
+                    {shortLeft(p.expiresAt ? new Date(p.expiresAt).getTime() : null)}
+                  </span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       {stats && (
         <section className="lstats">
@@ -143,6 +195,20 @@ export function Landing({
           <Link href="/terms">Terms</Link>
         </p>
       </footer>
+
+      {/**
+       * Sticky CTA. It is the only thing on this page that matters, and on a
+       * phone the hero button is off-screen for most of the scroll.
+       *
+       * Revealed by a scroll-driven animation rather than a scroll listener —
+       * zero JS, same mechanism as the top bar's shadow. Browsers without
+       * `animation-timeline` simply show it from the start, which is the correct
+       * fallback: a visible CTA is never the failure mode. `prefers-reduced-
+       * motion` lands in the same place.
+       */}
+      <div className="lsticky">
+        <SignInButton label="Continue with Google" className="btn pri fullw" />
+      </div>
     </div>
   );
 }
