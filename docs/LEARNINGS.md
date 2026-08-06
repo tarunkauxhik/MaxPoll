@@ -815,3 +815,57 @@ Promise<void>` — which doesn't structurally match the `(formData: FormData) =>
 a form's `action` prop expects, and `tsc` catches it. Binding the trailing optional
 argument too (`.bind(null, "pass_30d", null, undefined)`) leaves nothing unbound and
 the type checks.
+
+## Phase 17 — polish, trust signals, two missing screens
+
+### A `<form>` nested inside another `<form>` silently reparents its children
+
+`CreateForm.tsx`'s Phase-16 paywall CTA was `<form action={startOrder.bind(...)}>`
+written **inside** the poll-creation `<form action={action}>`. Nested `<form>`
+elements are invalid HTML, and the browser's parser doesn't nest them or reject
+them — it drops the inner `<form>` start tag entirely (a parse error, silently
+recovered from) and the button becomes a plain child of whatever's currently open.
+A `<button type="submit">` with no `form` attribute associates with the *nearest
+ancestor* `<form>`, which was now the outer one. So "Unlimited polls · ₹99" was
+calling `createPoll`, not `startOrder` — shipped, unnoticed, because the button
+still "worked" in the sense of submitting *something*.
+
+**No build error, no lint error, no type error.** TypeScript and ESLint both see
+valid JSX; the bug only exists in the browser's HTML tree-construction algorithm,
+which none of the toolchain simulates. The only way this surfaces is either
+reading the rendered DOM, or reasoning through the HTML spec by hand — which is
+what caught it here, during a deliberate "verify Phase 16's buttons actually
+fire" pass, not from a bug report.
+
+**Fix:** `formAction` on the submit button instead of a second `<form>`. A button
+can override its form's action/method without needing to *be* a different form,
+and `formNoValidate` skips the outer form's `required` fields, which have nothing
+to do with this button's own request.
+
+**Generalise:** any second button-that-does-something-else inside an existing
+form needs `formAction`, never a nested `<form>` — grep for `<form` counts per
+file before adding one; more than one in a component that already renders inside
+another form-bearing component is worth a second look.
+
+### `chrome.exe --version` isn't safe when a real browser is already running
+
+Debugging why the CDP layout-audit script (`audit.mjs`, used since Phase 14 for
+360px/1440px screenshots) had started failing with "Cannot navigate to invalid
+URL" led to running `chrome.exe --version` directly to sanity-check the binary.
+On Windows, with the user's own Chrome already open, this did not print a
+version string and exit — it attached to the existing browser process instead,
+and the command hung. Stopping the hung background task killed that process,
+which took down the entire already-open browser (all child processes/windows)
+along with it, since they share one process tree.
+
+**The actual audit-script failure was never diagnosed.** `--user-data-dir` was
+already a distinct profile from the real browser's, which should have kept them
+isolated — something about this Windows Chrome install routes bare `chrome.exe`
+invocations through a single-instance mechanism regardless. Worth investigating
+*before* trusting `audit.mjs` again, rather than re-attempting it cold.
+
+**Generalise:** never run a bare `chrome.exe <flag>` command to "just check" the
+binary when a real browser might be running — every invocation is a launch
+attempt, not a read-only query, on this platform. If a headless-Chrome script
+needs debugging, add logging inside the script's own spawned process rather than
+probing the executable directly from the shell.

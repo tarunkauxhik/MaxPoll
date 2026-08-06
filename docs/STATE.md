@@ -1,7 +1,7 @@
 # State
 
-_Last updated: 2026-08-07 · **Live at [viratkohli.tech](https://viratkohli.tech).**
-Google OAuth published, payments on, `CRON_SECRET` enforced, **65 gate probes and
+_Last updated: 2026-08-08 · **Live at [viratkohli.tech](https://viratkohli.tech).**
+Google OAuth published, payments on, `CRON_SECRET` enforced, **68 gate probes and
 75 unit tests green**. Remaining: the browser checks only a human can do, a
 business VPA, and **enabling Web Analytics in the Vercel dashboard**._
 
@@ -26,6 +26,7 @@ business VPA, and **enabling Web Analytics in the Vercel dashboard**._
 | 14 — Real traffic + audit | ✅ Owner controls, moderation, Space floor, follows removed |
 | 15 — Share surface + front door | ✅ Short codes, three OG previews, landing rebuilt, analytics |
 | 16 — The screens people actually use | ✅ Timer, chat, deadline picker, quota + paywall, free-text person polls |
+| 17 — Polish, trust signals, two missing screens | ✅ Teal rebrand, dark chrome, bundled emoji, always-anonymous chat, profile edit, subscription page |
 
 ```bash
 pnpm dev      # http://localhost:3000
@@ -68,6 +69,113 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 `https://maxpoll.vercel.app`. A localhost value there sends every production
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
+
+## Phase 17 — polish, trust signals, two missing screens (2026-08-08)
+
+A large mixed bag on top of Phase 16: two real bugs, a Phase-16 verification
+pass that found one of them, an identity-level colour and font change, a
+"moderate, mixed" surface redesign, a licence-trade-off reversal, a chat
+behaviour simplification, and two net-new screens. 15 steps, each its own
+commit, all against the live database and the real `pnpm check:contrast`.
+
+**The mobile "zoomed out" bug was real, and traced to `.unlockcta`.** The ₹9
+CTA on the poll page ("See the exact names of voters") was `display: flex`
+with long text and no `flex-wrap` — one overflowing element makes the whole
+page render zoomed out on mobile, not just that element. `flex-wrap: wrap;
+text-align: center;` fixed it.
+
+**Verifying Phase 16's buttons found a real one: the paywall CTA on `/create`
+was silently submitting the wrong form.** A `<form>` nested inside the
+poll-creation `<form>` is invalid HTML — the parser drops the nested tag
+entirely, and its button falls back to the *outer* form's action. So
+"Unlimited polls · ₹99" was calling `createPoll`, not `startOrder`. Fixed
+with `formAction` on the button instead of a second `<form>`. Every other
+Phase 16 binding was reviewed and is wired correctly.
+
+**Violet is teal now** — [DECISIONS D11](DECISIONS.md). "Purple reads as AI
+slop," the owner's words. ~37 selector references, 2 raw-rgba spots, the OG
+colour map, and the 4 contrast-check pairs moved together. Real contrast run:
+6.86:1 on `--paper`, more headroom than violet's 4.33:1 ever had.
+
+**Structural chrome goes dark** — [DECISIONS D12](DECISIONS.md), a revision
+of "no dark mode," not a reversal of it. The top bar and bottom nav (every
+signed-in screen, via `AppShell`) now render on `--dark`/`--grad-ink`;
+`--paper`/`--line` got a modest warm retint. Cards, forms, the board, sheets
+and legal text are untouched — confirmed by reading each. Every child that
+assumed the old light bar needed an explicit override: the wordmark, the
+activity bell and its badge ring, the nav labels. 24 contrast pairs, all
+measured and passing; `--muted` on the new `--paper` is 4.71:1, the tightest
+margin and the ceiling on retinting further.
+
+**Fonts are Inter + Lora**, replacing Archivo + Space Grotesk. Lora tops out
+at weight 700 (no 800/900, even the variable font) — every `--font-display`
+headline that assumed otherwise got clamped. The wordmark is pinned off
+`--font-display` entirely, onto `--font-ui` (Inter, which does go to 900): a
+synthetically-bolded serif logotype reads worse than not following the
+headline font here.
+
+**Chat is unconditionally anonymous now** — no toggle. `send_message()`
+dropped its `p_anon` parameter; the handle derivation always runs, so no
+code path can leave `anon_handle` null. A backfill migration gave the 4
+pre-existing messages a handle too. The poll page's chat entry swapped its
+emoji for a new incognito-style icon plus a visible "Anonymous" badge, and
+the landing page now pitches the anonymous chat room as its own section
+between the live-polls proof and the stats strip.
+
+**Emoji are bundled Apple-style PNGs now, on Android and iOS both** —
+[DECISIONS D13](DECISIONS.md), reversing A5. `emoji-datasource-apple` was
+confirmed current on the npm registry before use (not assumed from training
+data) — MIT-licensed data/glue code, 102MB unpacked, **never added as a
+project dependency**. A fresh grep found 28 distinct characters actually
+used in the UI; only those 28 PNGs (188KB total) were extracted into
+`public/emoji/` and committed as static files. `<Emoji char="🔥" />` renders
+the bundled glyph, falling back to the system one if a character has no
+entry. Two deliberate exceptions stay on the system stack: `app/og/**`
+(Satori can't render the `<img>` the same way) and `global-error.tsx` (must
+not depend on anything that could itself fail).
+
+**A real profile-edit form exists now.** `20260806110000` had revoked
+`update` on `profiles` entirely — correctly, since no edit screen existed.
+`20260808200000` re-opens exactly 5 columns (`display_name`, `bio`,
+`instagram`, `x_handle`, `snapchat`) with a `profiles_update_own` RLS policy,
+the D2b/D2e pattern precisely. Not granted: `handle` (every `/@handle` link
+depends on it), `dob` (the 18+ record, not a preference), `id`/`created_at`.
+
+**A subscription page exists at `/settings/subscription`.** Active pass
+shows status and expiry; no pass shows the perks, the price, and a CTA — the
+same `paymentMode()`-gated live/coming-soon pattern as `/p/[slug]/unlock`.
+"Already paid?" reuses `startOrder`'s existing dedup-to-open-order behaviour,
+not a new lookup mechanism. The profile page's owner button row gained a
+third button linking here.
+
+**Smaller fixes along the way:** a "✓ Voted" chip near the poll title when
+`myVote` is set; more padding on the feed's poll cards (16→18px) and its
+mini-board rows (20px min-height); a WhatsApp glyph on the share button; four
+interactive classes that snapped instead of easing (`.chatentry`,
+`.spacelink`, `.sugg button`, `.scard`) now have a real transition; the "How
+it works" section on the landing page is bigger and its step badges have
+real weight (26px→32px, a shadow).
+
+**Chrome automation took down a real browser session mid-phase.** Debugging
+why the CDP audit script (used for layout screenshots in Phases 14–16)
+wasn't working led to running `chrome.exe --version` directly, which
+attached to the already-running desktop browser instead of printing a
+version and exiting; stopping the hung command killed that browser's whole
+process tree. The owner chose to skip live screenshots for the rest of this
+phase rather than risk it again — every visual claim above was checked by
+code review (reading the actual CSS/JSX, computing real contrast ratios)
+rather than a rendered screenshot. Worth revisiting *why* it hijacked the
+real browser before trusting that script again.
+
+### Your turn
+
+1. **Look at it in a real browser.** Nothing in this phase was
+   screenshot-verified — see above. 360px and 1440px, the usual routes,
+   especially the dark top bar/nav and the teal buttons together.
+2. `docs/04-design.md` still describes violet, Archivo/Space Grotesk, and a
+   few other things Phase 16/17 already changed. Not touched this phase —
+   `app/globals.css` is the enforced source of truth per CLAUDE.md — but it's
+   worth a pass if you're using that doc to onboard someone.
 
 ## Phase 16 — the screens people actually use (2026-08-07)
 
@@ -585,9 +693,9 @@ pnpm check   # build + lint + typecheck + contrast
 
 ## Open questions
 
-- **Emoji strategy** — system stack now; inline Twemoji SVG if Android/iOS divergence
-  proves to matter. Deferred to Phase 4, when the real glyph set is known
-  ([DECISIONS](DECISIONS.md) A5)
+- **Emoji strategy** — resolved in Phase 17: bundled Apple-style PNGs via
+  `<Emoji>`, on Android and iOS both ([DECISIONS](DECISIONS.md) D13,
+  reversing A5)
 - **Chat cache window** — whether `/api/poll/[id]/messages` needs its own window
   separate from the board's 4s. Decide in Phase 7 with real volume
 
