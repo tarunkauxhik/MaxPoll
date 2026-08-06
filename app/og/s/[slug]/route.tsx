@@ -87,7 +87,7 @@ export async function GET(
                 width: 96,
                 height: 96,
                 borderRadius: 28,
-                backgroundColor: C.violet,
+                backgroundColor: C.teal,
                 fontSize: 38,
                 fontWeight: 800,
               }}
@@ -145,7 +145,7 @@ export async function GET(
 
         <Hook
           text={hook}
-          accent={members < SPACE_UNLOCK_MEMBERS ? C.violet : C.gold}
+          accent={members < SPACE_UNLOCK_MEMBERS ? C.teal : C.gold}
         />
       </div>
     ),

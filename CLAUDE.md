@@ -23,7 +23,7 @@ you which file answers which question.
   Unspecified anywhere → ask, don't improvise.
 - **Every number** wrapped in `.num` (Space Mono, tabular figures). Live counts
   jitter otherwise, and that is the fastest way a leaderboard looks cheap.
-- **Colour has one job each.** Gold = rank 1 only. Violet = movement only.
+- **Colour has one job each.** Gold = rank 1 only. Teal = movement only.
   Red = time pressure only. Reaching for a colour to decorate → use `--line` or
   `--muted`.
 - **Contrast is measured, not eyeballed.** Every text pair ≥4.5:1. Two tokens already

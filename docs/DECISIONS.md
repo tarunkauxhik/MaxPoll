@@ -545,3 +545,23 @@ If abuse appears, the cheapest re-hardening is a server-side blocklist in
 names on every poll (`hasEntitlement()`) and no weekly poll limit (`create_poll()`).
 Not a new grant — `/p/[slug]/unlock` already advertised "unlimited creating" as
 part of the pass; `create_poll()` just didn't enforce it yet.
+
+### D11 · Violet → teal (2026-08-08)
+
+The brand accent moved from violet (`#6B4EFF`) to a deep teal (`#0B6169`), the
+owner's choice over cobalt and copper — "purple reads as AI slop." Same job as
+before — movement, plus the small set of soft-pill badge reuses it already
+had. All violet selectors in `app/globals.css` (tokens, focus rings, buttons,
+badges, the gap line, the `NEW` badge, Space/profile accents, chat's anon
+handle colour), 2 raw-rgba spots (`--grad-glow`, `.act.same`), the OG colour
+map (`app/og/shared.tsx`, `app/og/s/[slug]/route.tsx`), and the 4
+`scripts/check-contrast.mjs` pairs were renamed together, not left
+half-migrated. The new hue has more headroom than violet did (6.86:1 vs
+violet's 4.33:1 that D1/C1 already had to work around on `--paper`), which is
+what let D12's paper retint happen safely.
+
+`docs/04-design.md` still describes violet throughout — that document already
+lagged behind several other Phase 16/17 changes (old font names, a removed
+anon toggle, removed follower counts) before this one. `app/globals.css`
+remains the enforced source of truth per CLAUDE.md; the design doc was not
+part of this rename's scope.

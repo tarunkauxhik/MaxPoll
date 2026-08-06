@@ -22,7 +22,7 @@ export const OG = { width: 1200, height: 630 };
 export const C = {
   ink: "#111114",
   gold: "#F5B324",
-  violet: "#6B4EFF",
+  teal: "#0B6169",
   heat: "#E8452C",
   paper: "#FAFAF7",
   dim: "rgba(255,255,255,.55)",
@@ -48,10 +48,10 @@ export const shell: CSSProperties = {
   height: "100%",
   justifyContent: "space-between",
   padding: "54px 72px",
-  // A single soft violet light source, top-left, over near-black. Reads as depth
+  // A single soft teal light source, top-left, over near-black. Reads as depth
   // rather than as a decorative gradient sitting on top of the content.
   backgroundColor: C.ink,
-  backgroundImage: `radial-gradient(1100px 620px at 8% -10%, rgba(107,78,255,.55), rgba(17,17,20,0) 62%)`,
+  backgroundImage: `radial-gradient(1100px 620px at 8% -10%, rgba(11,97,105,.55), rgba(17,17,20,0) 62%)`,
   color: "#fff",
   fontFamily: "sans-serif",
 };
