@@ -5,7 +5,7 @@ import { searchOptions, addOption, type Suggestion } from "@/app/p/[slug]/option
 import { signInWithGoogle } from "@/lib/auth-actions";
 import { castVote } from "@/app/p/[slug]/actions";
 import { getDeviceId } from "@/lib/device";
-import { n } from "@/lib/format";
+import { n, unit } from "@/lib/format";
 import { similarity } from "@/lib/similarity";
 import { BOARD_CHANGED } from "./Board";
 
@@ -133,7 +133,7 @@ export function AddOption({
                 <span className="nm">{h.label}</span>
                 <span className="rankpill num">#{h.rank}</span>
                 <span className="cnt">
-                  <span className="num">{n(h.vote_count)}</span> votes
+                  <span className="num">{n(h.vote_count)}</span> {unit(h.vote_count, "vote")}
                 </span>
               </button>
             </li>

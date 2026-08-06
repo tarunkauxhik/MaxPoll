@@ -69,6 +69,23 @@ export function countdown(
   return { text, urgent, expired, elapsed };
 }
 
+/**
+ * Is this poll close enough to the end that saying so is *information* rather
+ * than decoration?
+ *
+ * CLAUDE.md: red is time pressure only. Every live poll was rendering the red
+ * `.chip.hot`, which means red said "this poll exists" and nothing on any screen
+ * said "this one is about to close". Six hours is the window where a share can
+ * still change the result — past that it is a reminder, not a deadline.
+ */
+export const ENDING_SOON_MS = 6 * 3600e3;
+
+export function endingSoon(expiresAt: number | null, now: number = Date.now()): boolean {
+  if (expiresAt === null) return false;
+  const left = expiresAt - now;
+  return left > 0 && left <= ENDING_SOON_MS;
+}
+
 /** The chip form: `4h left`, `3d left`, `12m left`, `Closed`. */
 export function shortLeft(expiresAt: number | null, now: number = Date.now()): string {
   if (expiresAt === null) return "No deadline";
@@ -121,4 +138,11 @@ export function monogram(name: string): string {
  * where the product's credibility is decided before anyone has clicked.
  */
 export const plural = (count: number, one: string, many = `${one}s`) =>
-  `${n(count)} ${count === 1 ? one : many}`;
+  `${n(count)} ${unit(count, one, many)}`;
+
+/**
+ * Just the noun. For the chips, where the digits need their own `.num` span —
+ * CLAUDE.md: every number is wrapped, without exception, or live counts jitter.
+ */
+export const unit = (count: number, one: string, many = `${one}s`) =>
+  count === 1 ? one : many;

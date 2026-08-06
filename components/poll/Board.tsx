@@ -8,7 +8,7 @@ import { signInWithGoogle } from "@/lib/auth-actions";
 import { saveIntent, takeIntent } from "@/lib/vote-intent";
 import { getDeviceId } from "@/lib/device";
 import { gapAbove, rankOptions, type BoardOption } from "@/lib/rank";
-import { n } from "@/lib/format";
+import { n, plural } from "@/lib/format";
 
 const TOP_N = 5;
 
@@ -56,6 +56,23 @@ export function Board({
   const [mine, setMine] = useState(myOptionId);
   const [pendingOption, setPendingOption] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Votes that have landed since this page opened — the "something is happening
+   * right now" signal.
+   *
+   * Derived from the 4s poll that already runs, so it costs **no query, no RPC
+   * and no migration**. A server-side "votes in the last hour" would need a
+   * `security definer` count (RLS hides `votes` from everyone) on the hottest
+   * page in the product, and it would still be less convincing than a number
+   * that moves while you watch it.
+   */
+  const [since, setSince] = useState(0);
+  /**
+   * Your own vote does not count as "other people are voting". Without this the
+   * line reads "1 vote since you opened this" the moment you vote, which is both
+   * untrue in spirit and the exact thing that makes a quiet poll look staged.
+   */
+  const votedHere = useRef(false);
   const [, startTransition] = useTransition();
   const listRef = useRef<HTMLDivElement>(null);
   const positions = useRef(new Map<string, number>());
@@ -85,12 +102,17 @@ export function Board({
         if (!r.ok) return;
         const data = (await r.json()) as { options: BoardOption[]; voteCount: number };
         setBoard(data.options);
+        // Counted against the total this page opened with, not against the
+        // previous tick — otherwise it resets to 0 every 4s and reads as noise.
+        // Clamped at 0 because the cached response can be *older* than what we
+        // already applied optimistically after a vote.
+        setSince(Math.max(0, data.voteCount - voteCount - (votedHere.current ? 1 : 0)));
         setTotal(data.voteCount);
       } catch {
         // A dropped poll is not an error state — the next tick retries.
       }
     },
-    [pollId]
+    [pollId, voteCount]
   );
 
   const submit = useCallback(
@@ -100,6 +122,7 @@ export function Board({
         if (res.ok) {
           setMine(optionId);
           setError(null);
+          votedHere.current = true;
           /**
            * Applied locally rather than re-fetched. The board route is cached at
            * s-maxage=4, so an immediate fetch is routinely served a response
@@ -248,6 +271,21 @@ export function Board({
       {error && (
         <p className="fielderr boarderr" role="alert">
           {error}
+        </p>
+      )}
+
+      {/**
+       * The live pulse. Only rendered once it is true and only while the poll is
+       * open — "0 votes since you opened this" is an advertisement for a dead
+       * poll, and the whole point is the opposite.
+       *
+       * Behind `resultsLocked` with everything else: it is a vote count, and the
+       * Space gate does not have exceptions for the fun numbers.
+       */}
+      {!closed && !resultsLocked && since > 0 && (
+        <p className="pulse" aria-live="polite">
+          <span className="livedot" aria-hidden="true" />
+          <b className="num">{plural(since, "vote")}</b> since you opened this
         </p>
       )}
 

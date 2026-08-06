@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { rankOptions, type BoardOption, type RankInput } from "@/lib/rank";
 import { keyFilter } from "@/lib/short-code";
+import { endingSoon } from "@/lib/format";
 
 export type { BoardOption, RankInput };
 
@@ -207,6 +208,8 @@ export type FeedPoll = PollRow & {
   voted: boolean;
   /** Resolved server-side — see isExpired(). Cards must not read the clock. */
   expired: boolean;
+  /** Inside the 6h window where a share can still change the result. */
+  endingSoon: boolean;
 };
 
 /**
@@ -233,6 +236,7 @@ export function buildFeedPolls(
     ...p,
     voted: votedPollIds.has(p.id),
     expired: isExpired(p, now),
+    endingSoon: endingSoon(p.expires_at ? new Date(p.expires_at).getTime() : null, now),
     preview: rankOptions(byPoll.get(p.id) ?? [], p.vote_count).slice(0, 3),
   }));
 }

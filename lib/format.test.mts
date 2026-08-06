@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pctOf, countdown, shortLeft, ago, monogram, plural, n } from "./format.ts";
+import { pctOf, countdown, shortLeft, endingSoon, ago, monogram, plural, n } from "./format.ts";
 
 const T = Date.UTC(2026, 7, 4, 12, 0, 0);
 
@@ -98,4 +98,12 @@ test("plural", () => {
 test("n uses Indian grouping", () => {
   assert.equal(n(100000), "1,00,000");
   assert.equal(n(340), "340");
+});
+
+test("endingSoon is the 6h window, not 'is live'", () => {
+  assert.equal(endingSoon(null, T), false, "no deadline is never urgent");
+  assert.equal(endingSoon(T - 1, T), false, "already closed is not 'ending soon'");
+  assert.equal(endingSoon(T + 1, T), true);
+  assert.equal(endingSoon(T + 6 * 3600e3, T), true, "exactly 6h is inside");
+  assert.equal(endingSoon(T + 6 * 3600e3 + 1, T), false, "past 6h is not");
 });

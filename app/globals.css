@@ -645,6 +645,29 @@ a {
   font-family: var(--font-num), monospace;
 }
 
+/**
+ * The live pulse — votes that landed while this page has been open. Derived
+ * from the board's own 4s poll, so it costs nothing.
+ *
+ * Deliberately quiet: it sits under the board as a status line, not a banner.
+ * A number that moves on its own is already the loudest thing on a static page.
+ */
+.pulse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: var(--s-2) var(--s-3) 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pulse b {
+  color: var(--ink);
+  font-weight: 700;
+}
+
 /* ============================ TIMER ============================ */
 /* doc 05 §4.3 — the only dark block on a paper page. */
 
@@ -777,6 +800,35 @@ a {
 .pcard:active {
   transform: scale(.985);
   box-shadow: var(--ring), var(--shadow-lift);
+}
+
+/* Closing within 6h. A hairline down the leading edge, not a red card — the
+   urgency has to be findable while scrolling without shouting over the title.
+   Red is time pressure only, and this is the only place on a feed it appears. */
+.pcard.soon {
+  border-left: 3px solid var(--heat);
+  padding-left: 14px;
+}
+
+/* The race, on the card. Same job as .gap on the board, but it names the top
+   two rather than your own pick, because the feed does not know which is yours. */
+.cardgap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: var(--s-3) 0 0;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  background: var(--heat-soft);
+  color: var(--heat-text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cardgap b {
+  font-family: var(--font-num), monospace;
+  white-space: nowrap;
 }
 
 .pcard .space {

@@ -18,7 +18,7 @@ import {
 import { getUser } from "@/lib/supabase/server";
 import { resultsLocked, SPACE_UNLOCK_MEMBERS } from "@/lib/space";
 import { raceGap } from "@/lib/rank";
-import { n, shortLeft } from "@/lib/format";
+import { n, shortLeft, endingSoon, unit } from "@/lib/format";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -95,7 +95,9 @@ export default async function PollPage({
   }
 
   const user = await getUser();
-  const [board, myVote, entitled, member, expired] = await Promise.all([
+  const expiresAt = poll.expires_at ? new Date(poll.expires_at).getTime() : null;
+
+  const [board, myVote, entitled, member, expired, soon] = await Promise.all([
     getBoard(poll.id, poll.vote_count),
     getMyVote(poll.id, user?.id),
     hasEntitlement(poll.id, user?.id),
@@ -103,6 +105,7 @@ export default async function PollPage({
     // Awaited alongside the data so the clock is read in the data phase, not
     // during render — components must be pure.
     Promise.resolve(isExpired(poll)),
+    Promise.resolve(endingSoon(expiresAt)),
   ]);
 
   const spaceLocked = resultsLocked(poll);
@@ -120,15 +123,16 @@ export default async function PollPage({
 
         <div className="counts">
           <span className="chip">
-            🗳️ <span className="num">{n(poll.vote_count)}</span> votes
+            🗳️ <span className="num">{n(poll.vote_count)}</span>{" "}
+            {unit(poll.vote_count, "vote")}
           </span>
           <span className="chip">
-            👥 <span className="num">{n(poll.option_count)}</span> options
+            👥 <span className="num">{n(poll.option_count)}</span>{" "}
+            {unit(poll.option_count, "option")}
           </span>
-          <span className={expired ? "chip" : "chip hot"}>
-            ⏳{" "}
-            {shortLeft(poll.expires_at ? new Date(poll.expires_at).getTime() : null)}
-          </span>
+          {/* Red is time pressure only — CLAUDE.md. Every live poll used to get
+              the hot chip, so red meant "live" and nothing meant "closing". */}
+          <span className={soon ? "chip hot" : "chip"}>⏳ {shortLeft(expiresAt)}</span>
         </div>
       </div>
 

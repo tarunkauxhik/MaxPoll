@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { n, unit } from "@/lib/format";
 
 /**
  * The board row — doc 04-design.md §5.1, the most important component.
@@ -53,7 +54,7 @@ export default function OptionRow({
           <span className="sub">
             {votes !== undefined && (
               <span>
-                <span className="num">{votes.toLocaleString("en-IN")}</span> votes
+                <span className="num">{n(votes)}</span> {unit(votes, "vote")}
               </span>
             )}
             <Movement value={movement} />

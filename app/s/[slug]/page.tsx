@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/ui/States";
 import { JoinButton } from "./JoinButton";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, getSpaceByKey, type PollRow, type RankInput } from "@/lib/poll-queries";
-import { monogram, n } from "@/lib/format";
+import { monogram, n, unit } from "@/lib/format";
 import { SPACE_UNLOCK_MEMBERS as UNLOCK } from "@/lib/space";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -111,8 +111,9 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
               )}
             </h1>
             <p className="t-sec">
-              <span className="num">{n(space.member_count)}</span> members ·{" "}
-              <span className="num">{n(rows.length)}</span> polls
+              <span className="num">{n(space.member_count)}</span>{" "}
+              {unit(space.member_count, "member")} ·{" "}
+              <span className="num">{n(rows.length)}</span> {unit(rows.length, "poll")}
             </p>
           </div>
         </div>
