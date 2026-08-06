@@ -5,9 +5,11 @@
  * seen side by side in the same WhatsApp thread, and two different-looking cards
  * from the same product is the thing that reads as amateur.
  *
- * **Dark on purpose.** The rest of MaxPoll is a light paper surface, and this is
- * the one place doc 04 permits a gradient. A chat list is a column of white
- * bubbles; a dark card is the only thing in it that stops a thumb.
+ * **Dark on purpose, and now matches the rest of the site too** — DECISIONS
+ * D14 moved MaxPoll's own base theme to the same deep-navy-plus-teal-glow
+ * language this card already used. Kept as its own tuned constants rather
+ * than importing from globals.css: Satori can't read CSS custom properties,
+ * and a 1200×630 share card has different needs than a phone screen anyway.
  *
  * No custom fonts. `next/font` writes its files into the build output, not the
  * repo, so loading Lora here would mean fetching a font over the network on
@@ -18,13 +20,13 @@ import type { CSSProperties } from "react";
 
 export const OG = { width: 1200, height: 630 };
 
-/** Straight from `:root` in globals.css — the same colours, the same jobs. */
+/** Same colours, same jobs as `:root` in globals.css — see the note above for
+ *  why these are separate constants rather than a shared import. */
 export const C = {
-  ink: "#111114",
+  ink: "#05070E",
   gold: "#F5B324",
-  teal: "#0B6169",
+  teal: "#0F7A82",
   heat: "#E8452C",
-  paper: "#FAFAF7",
   dim: "rgba(255,255,255,.55)",
   dimmer: "rgba(255,255,255,.16)",
 } as const;
@@ -51,7 +53,7 @@ export const shell: CSSProperties = {
   // A single soft teal light source, top-left, over near-black. Reads as depth
   // rather than as a decorative gradient sitting on top of the content.
   backgroundColor: C.ink,
-  backgroundImage: `radial-gradient(1100px 620px at 8% -10%, rgba(11,97,105,.55), rgba(17,17,20,0) 62%)`,
+  backgroundImage: `radial-gradient(1100px 620px at 8% -10%, rgba(15,122,130,.55), rgba(5,7,14,0) 62%)`,
   color: "#fff",
   fontFamily: "sans-serif",
 };

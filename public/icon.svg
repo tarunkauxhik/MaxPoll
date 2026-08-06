@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MaxPoll">
   <!--
     The product in one glyph: three bars, the leader in gold. Same colours as
-    :root in globals.css — #111114 ink, #F5B324 gold, and gold is rank 1 only,
-    here as everywhere.
+    :root in globals.css — #05070E (--dark), #F5B324 gold, and gold is rank 1
+    only, here as everywhere. Same background OG's share cards use too —
+    DECISIONS D14 — kept in sync per CLAUDE.md whenever either changes.
 
     SVG rather than PNG so it stays crisp at every size a homescreen or tab asks
     for, from one 1KB file.
   -->
-  <rect width="64" height="64" rx="15" fill="#111114"/>
+  <rect width="64" height="64" rx="15" fill="#05070E"/>
   <rect x="14" y="18" width="36" height="7" rx="3.5" fill="#F5B324"/>
   <rect x="14" y="30" width="25" height="7" rx="3.5" fill="#FFFFFF" opacity=".72"/>
   <rect x="14" y="42" width="17" height="7" rx="3.5" fill="#FFFFFF" opacity=".38"/>

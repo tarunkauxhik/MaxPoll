@@ -45,8 +45,8 @@ const PAIRS = [
   ['.opt .rk on a card', '--muted', '--card', 4.5],
   ['.badge.g gold text', '--gold-text', '--gold-soft', 4.5],
   ['gold text on a card', '--gold-text', '--card', 4.5],
-  ['.wordmark i', '--teal', '--paper', 4.5],
-  ['.pcard .space label', '--teal', '--card', 4.5],
+  ['.wordmark i', '--teal-text', '--paper', 4.5],
+  ['.pcard .space label', '--teal-text', '--card', 4.5],
   ['.gap line text', '--teal-text', '--teal-soft', 4.5],
   ['.mv.new badge', '--teal-text', '--teal-soft', 4.5],
   ['.mv.up badge', '--up-text', '--up-soft', 4.5],
@@ -61,7 +61,7 @@ const PAIRS = [
   ['label on the raised dark stop', '--on-dark-dim', '--dark-2', 4.5],
   ['nav label on dark nav', '--on-dark-dim', '--dark', 4.5],
   ['nav active label on dark nav', '--on-dark', '--dark', 4.5],
-  ['top bar wordmark on dark top bar', '--on-dark', '--dark', 4.5],
+  ['top bar wordmark on dark top bar', '--teal-text', '--dark', 4.5],
 ];
 
 let failures = 0;

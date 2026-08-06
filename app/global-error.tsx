@@ -24,8 +24,8 @@ export default function GlobalError({
           display: "grid",
           placeItems: "center",
           padding: 24,
-          background: "#FAFAF7",
-          color: "#111114",
+          background: "#0A0E1C",
+          color: "#F1F4FC",
           fontFamily: "system-ui, sans-serif",
           textAlign: "center",
         }}
@@ -33,7 +33,7 @@ export default function GlobalError({
         <div style={{ maxWidth: 360 }}>
           <p style={{ fontSize: 40, margin: 0 }}>🛠️</p>
           <h1 style={{ fontSize: 22, margin: "12px 0 8px" }}>MaxPoll is down</h1>
-          <p style={{ color: "#55555F", lineHeight: 1.5, margin: "0 0 20px" }}>
+          <p style={{ color: "#B7C0DE", lineHeight: 1.5, margin: "0 0 20px" }}>
             Not your connection — ours. Try again in a minute.
           </p>
           {/* A plain <a>, deliberately. <Link> is a client-side navigation, and
@@ -49,7 +49,7 @@ export default function GlobalError({
               lineHeight: "48px",
               padding: "0 24px",
               borderRadius: 16,
-              background: "#111114",
+              background: "#0F7A82",
               color: "#fff",
               fontWeight: 700,
               textDecoration: "none",
@@ -58,7 +58,7 @@ export default function GlobalError({
             Reload
           </a>
           {error.digest && (
-            <p style={{ color: "#6B6B75", fontSize: 12, marginTop: 20 }}>
+            <p style={{ color: "#8B94B6", fontSize: 12, marginTop: 20 }}>
               Reference {error.digest}
             </p>
           )}
