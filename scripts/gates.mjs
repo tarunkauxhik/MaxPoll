@@ -472,11 +472,35 @@ try {
     `create_space() forces is_verified false and joins the creator (${JSON.stringify(madeRow.body?.[0])})`
   );
 
-  const ownProfile = await patch(`/rest/v1/profiles?id=eq.${alice.id}`, { display_name: "Renamed" }, alice.token);
-  const profRow = await api(`/rest/v1/profiles?id=eq.${alice.id}&select=display_name`, SEC);
+  // 20260808200000 re-opened exactly 5 columns (D2b/D2e) — display_name is one
+  // of them, handle is deliberately not (it's every /@handle link and share).
+  const ownDisplayName = await patch(
+    `/rest/v1/profiles?id=eq.${alice.id}`,
+    { display_name: "Renamed" },
+    alice.token
+  );
+  const nameRow = await api(`/rest/v1/profiles?id=eq.${alice.id}&select=display_name`, SEC);
   ok(
-    ownProfile.status === 403 && profRow.body?.[0]?.display_name !== "Renamed",
-    `profiles is insert-once — no edit path exists yet (${ownProfile.status})`
+    ownDisplayName.status < 300 && nameRow.body?.[0]?.display_name === "Renamed",
+    `display_name is editable through the column grant (${ownDisplayName.status})`
+  );
+
+  const ownHandle = await patch(`/rest/v1/profiles?id=eq.${alice.id}`, { handle: "hijacked" }, alice.token);
+  const handleRow = await api(`/rest/v1/profiles?id=eq.${alice.id}&select=handle`, SEC);
+  ok(
+    ownHandle.status === 403 && handleRow.body?.[0]?.handle !== "hijacked",
+    `handle stays out of the grant — every /@handle link depends on it (${ownHandle.status})`
+  );
+
+  const crossUser = await patch(
+    `/rest/v1/profiles?id=eq.${alice.id}`,
+    { display_name: "Bob was here" },
+    bob.token
+  );
+  const crossRow = await api(`/rest/v1/profiles?id=eq.${alice.id}&select=display_name`, SEC);
+  ok(
+    crossRow.body?.[0]?.display_name !== "Bob was here",
+    `profiles_update_own refuses a write to someone else's row (${crossUser.status}, still "${crossRow.body?.[0]?.display_name}")`
   );
 
   // No `Prefer: return=representation`: with it, a denied read-back masquerades as

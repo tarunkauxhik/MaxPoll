@@ -3,6 +3,7 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { signOut } from "@/lib/auth-actions";
 import { DeleteAccount } from "./DeleteAccount";
+import { ProfileEditForm } from "./ProfileEditForm";
 import { n } from "@/lib/format";
 import { activePass } from "@/lib/poll-queries";
 
@@ -14,7 +15,11 @@ export default async function SettingsPage() {
 
   const supabase = await createClient();
   const [{ data: profile }, { data: spaces }, { pass, total }] = await Promise.all([
-    supabase.from("profiles").select("handle, display_name, bio").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("handle, display_name, bio, instagram, x_handle, snapchat")
+      .eq("id", user.id)
+      .maybeSingle(),
     supabase.from("space_members").select("spaces(id, slug, name)").eq("user_id", user.id),
     activePass(user.id),
   ]);
@@ -39,10 +44,6 @@ export default async function SettingsPage() {
               <dd>@{profile.handle}</dd>
             </div>
             <div>
-              <dt>Name</dt>
-              <dd>{profile.display_name}</dd>
-            </div>
-            <div>
               <dt>Email</dt>
               <dd>{user.email}</dd>
             </div>
@@ -52,6 +53,14 @@ export default async function SettingsPage() {
               <dd className="t-sec">Locked</dd>
             </div>
           </dl>
+
+          <ProfileEditForm
+            displayName={profile.display_name}
+            bio={profile.bio}
+            instagram={profile.instagram}
+            xHandle={profile.x_handle}
+            snapchat={profile.snapchat}
+          />
         </section>
 
         <section>
