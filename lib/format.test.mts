@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pctOf, countdown, shortLeft, endingSoon, ago, monogram, plural, n, segments } from "./format.ts";
+import { pctOf, countdown, shortLeft, endingSoon, ago, monogram, plural, n, segments, toLocalInput } from "./format.ts";
 
 const T = Date.UTC(2026, 7, 4, 12, 0, 0);
 
@@ -140,6 +140,16 @@ test("segments at exactly 24h is a days block, not 24 hours", () => {
     { value: "00", unit: "HRS" },
     { value: "00", unit: "MIN" },
   ]);
+});
+
+test("toLocalInput formats local wall-clock time for datetime-local", () => {
+  const d = new Date(2026, 7, 9, 18, 30);
+  assert.equal(toLocalInput(d), "2026-08-09T18:30");
+});
+
+test("toLocalInput zero-pads month, day, hour, minute", () => {
+  const d = new Date(2026, 0, 5, 3, 7);
+  assert.equal(toLocalInput(d), "2026-01-05T03:07");
 });
 
 test("endingSoon is the 6h window, not 'is live'", () => {

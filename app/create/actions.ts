@@ -6,14 +6,6 @@ import { redirect } from "next/navigation";
 
 export type CreateState = { error?: string };
 
-const DURATIONS: Record<string, number | null> = {
-  "6h": 6 * 3600e3,
-  "24h": 24 * 3600e3,
-  "3d": 3 * 24 * 3600e3,
-  "7d": 7 * 24 * 3600e3,
-  none: null,
-};
-
 export async function createPoll(_prev: CreateState, form: FormData): Promise<CreateState> {
   const supabase = await createClient();
   const {
@@ -26,7 +18,8 @@ export async function createPoll(_prev: CreateState, form: FormData): Promise<Cr
   const scope = String(form.get("scope") ?? "").trim();
   const freeTitle = String(form.get("title") ?? "").trim();
   const spaceId = String(form.get("space_id") ?? "").trim();
-  const duration = String(form.get("duration") ?? "24h");
+  const expiresRaw = String(form.get("expires_at") ?? "").trim();
+  const expires = expiresRaw && expiresRaw !== "none" ? expiresRaw : null;
 
   const title = subjectType === "person" ? `${adjective} ${scope}`.trim() : freeTitle;
   if (title.length < 4) return { error: "Give the poll a title people will recognise." };
@@ -37,8 +30,6 @@ export async function createPoll(_prev: CreateState, form: FormData): Promise<Cr
   if (options.length < 2) return { error: "Add at least 2 starting options." };
   if (options.length > 10) return { error: "10 starting options maximum." };
 
-  const ms = DURATIONS[duration] ?? null;
-
   // create_poll() enforces the 3-per-week limit inside the transaction, so two
   // rapid submits can't both slip past a check-then-insert race.
   const { data, error } = await supabase.rpc("create_poll", {
@@ -47,7 +38,7 @@ export async function createPoll(_prev: CreateState, form: FormData): Promise<Cr
     p_title: title,
     p_subject_type: subjectType,
     p_category: subjectType === "person" ? "people" : "things",
-    p_expires: ms ? new Date(Date.now() + ms).toISOString() : null,
+    p_expires: expires,
     p_options: options,
   });
 
@@ -55,6 +46,8 @@ export async function createPoll(_prev: CreateState, form: FormData): Promise<Cr
     if (error.message?.includes("WEEKLY_LIMIT")) {
       return { error: "You've created 3 polls this week. The limit resets 7 days after your first." };
     }
+    if (error.message?.includes("EXPIRY_TOO_FAR")) return { error: "A poll can run for 7 days at most." };
+    if (error.message?.includes("EXPIRY_IN_PAST")) return { error: "Pick a deadline in the future." };
     if (error.message?.includes("TOO_FEW_OPTIONS")) return { error: "Add at least 2 options." };
     if (error.message?.includes("TOO_MANY_OPTIONS")) return { error: "10 options maximum." };
     return { error: "Couldn't create the poll. Try again." };

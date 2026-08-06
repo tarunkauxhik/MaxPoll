@@ -32,6 +32,7 @@ const MESSAGES: Record<string, string> = {
   REMOVED: "This poll was removed by moderation and can't be edited.",
   TITLE_TOO_SHORT: "Give the poll a title people will recognise.",
   EXPIRY_IN_PAST: "Pick a deadline in the future.",
+  EXPIRY_TOO_FAR: "A poll can run for 7 days at most.",
   HAS_VOTES: "People have voted, so this can't be deleted. Close it instead.",
 };
 

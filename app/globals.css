@@ -2301,6 +2301,30 @@ textarea.field {
 
 .createform .btn.pri { width: 100%; margin-top: var(--s-6); }
 
+/* ---- deadline picker ---- */
+.deadline { display: grid; gap: var(--s-3); }
+
+.btn.sec.on {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.dquick { display: grid; gap: var(--s-2); }
+
+.drange {
+  width: 100%;
+  height: var(--tap-sm);
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.dquick-val {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--body);
+}
+
 /* ============================ SPACE CARD ============================ */
 
 .scard {

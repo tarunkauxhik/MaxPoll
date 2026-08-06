@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { createPoll, type CreateState } from "./actions";
 import { ADJECTIVES } from "./adjectives";
+import { DeadlinePicker } from "@/components/poll/DeadlinePicker";
 
 export function CreateForm({
   spaces,
@@ -117,16 +118,8 @@ export function CreateForm({
       )}
       <p className="hint">Anyone can add more once it&apos;s live.</p>
 
-      <label className="lbl" htmlFor="duration">
-        Voting closes in
-      </label>
-      <select id="duration" name="duration" className="field" defaultValue="24h">
-        <option value="6h">6 hours</option>
-        <option value="24h">24 hours</option>
-        <option value="3d">3 days</option>
-        <option value="7d">7 days</option>
-        <option value="none">No deadline</option>
-      </select>
+      <p className="lbl">Voting closes in</p>
+      <DeadlinePicker />
 
       {state.error && (
         <p className="fielderr" role="alert">

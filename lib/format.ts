@@ -193,3 +193,14 @@ export const plural = (count: number, one: string, many = `${one}s`) =>
  */
 export const unit = (count: number, one: string, many = `${one}s`) =>
   count === 1 ? one : many;
+
+const p2pad = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * `datetime-local` wants local time `YYYY-MM-DDTHH:mm`; `toISOString()` is
+ * UTC. Used by the deadline picker so the native date/time input shows the
+ * poll creator their own wall-clock time, not a UTC one.
+ */
+export function toLocalInput(d: Date): string {
+  return `${d.getFullYear()}-${p2pad(d.getMonth() + 1)}-${p2pad(d.getDate())}T${p2pad(d.getHours())}:${p2pad(d.getMinutes())}`;
+}
