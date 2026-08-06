@@ -219,6 +219,37 @@ rejects URLs that don't resolve, so this order matters.
 > **The only proof that matters:** sign in with a Google account that is *not* on the
 > test-user list. Everything else is a setting that looks right.
 
+#### The Supabase URL on the sign-in screen
+
+The consent screen shows a line like *"to continue to
+`biwcdpefkzrkkdajfyaj.supabase.co`"*. That is **not** something this repo can change.
+
+Google renders the host of the `redirect_uri` it was given, and Supabase builds that
+URI from the project URL. Verified directly against the live authorize call:
+
+```
+redirect_uri = https://biwcdpefkzrkkdajfyaj.supabase.co/auth/v1/callback
+```
+
+No DNS record, proxy rewrite, environment variable or code change moves it. The only
+thing that does is **Supabase's Custom Domain add-on ($10/mo)**, which re-issues the
+callback under your own host. Deferred until there is revenue — DECISIONS.
+
+**The free mitigation is step 2 above, and it is worth doing properly.** With Branding
+filled in, the screen leads with *"Sign in to **MaxPoll**"* and a logo, and the project
+ref drops to a grey subtitle most people never read. With Branding empty, the ref *is*
+the headline. Specifically:
+
+- **App name** — exactly `MaxPoll`. This is the large text on the screen.
+- **App logo** — upload a 120×120 PNG. Without one the screen shows a generic globe,
+  which is what makes the domain line the most prominent thing on it. Google may
+  re-review a logo change; the sign-in flow keeps working while it does.
+- **User support email** and **developer contact email** — both must resolve, and both
+  appear on the screen under "MaxPoll wants access".
+
+Do not attempt to add `supabase.co` to Authorised domains to "fix" this. You cannot
+verify a domain you do not own, and the attempt fails the Branding step.
+
 ```
 === SEND ME AFTER SECTION 2 ===
 Google Cloud project name:  MaxPoll

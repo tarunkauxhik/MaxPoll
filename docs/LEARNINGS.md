@@ -5,6 +5,84 @@ rather than rediscovering.
 
 ---
 
+## `loading.tsx` turns every 404 on that route into a 200
+
+Adding `app/p/[slug]/loading.tsx` — a skeleton for the most-shared page in the
+product — silently changed what a dead poll link returns:
+
+```
+with loading.tsx      /p/<bad>  →  200
+without               /p/<bad>  →  404
+```
+
+A segment-level `loading.tsx` wraps the segment in Suspense, so the page renders
+inside a stream, and **once streaming begins the status line is already on the
+wire**. Next's own streaming guide says this outright: a mid-stream `notFound()`
+cannot change the status, so it injects `<meta name="robots" content="noindex">`
+instead. The SEO damage is contained; a link checker, a crawler and a WhatsApp
+unfurl all still see a page that exists.
+
+**Moving `notFound()` into `generateMetadata` does not rescue it** — that was the
+obvious guess, it was measured, and it still returned 200.
+
+The only two fixes are: no segment-level boundary, or a `<Suspense>` around just
+the slow part *after* the existence check (which is the pattern the Next docs
+show). At ~267ms TTFB the skeleton was not worth the refactor, so the file was
+deleted and a warning left in `page.tsx`.
+
+**Generalise:** anything that starts a stream — `loading.tsx`, a Suspense
+boundary, a component that suspends — is a commitment to `200`. Do the existence
+check and the auth check before it.
+
+## Vercel Web Analytics records the URL, and two of ours name a person
+
+The quickstart is three lines and neither of the two things that mattered here is
+in it.
+
+**It stores the full path of every pageview.** Vercel's own privacy page names the
+shape to watch for — `acme.com/[name of individual]/…` — and MaxPoll has two:
+`/u/<handle>` is a real person and `/pay/<ref>` is a payment identifier. Both are
+now collapsed by `beforeSend` before the beacon leaves the browser. `/p/<slug>`
+and `/s/<slug>` stay, because per-poll traffic is the reason for adding analytics
+at all.
+
+**It injects routes under `/_vercel/insights/*`,** and the `proxy.ts` matcher did
+not exclude them. Left alone, every pageview beacon would have run the session
+proxy — an `auth.getUser()` round trip to Supabase per view. That is DECISIONS A2
+in a different costume: nothing errors, the bill just scales with traffic. The
+matcher rule is therefore **"exclude everything that must not run the proxy"**,
+not "exclude what is cached".
+
+Also worth knowing before someone wires one: **custom events are Pro-only**.
+`track()` compiles, ships and does nothing on Hobby, which is 50,000 pageview
+events a month.
+
+And the reason this was easy to get wrong: `/privacy` said *"there are no
+analytics, no advertising trackers and no third-party scripts on this site"*. That
+sentence became false the moment `pnpm add` finished. **A privacy policy is code
+that can go stale, and it has no test.** The file's own header comment had already
+flagged that exact claim as the one most likely to rot — it was right.
+
+## Contrast and overflow are measurable without installing anything
+
+Chrome ships on the machine and Node 24 has a global `WebSocket`, so a ~90-line
+script drives the DevTools Protocol with **zero dependencies** — no Puppeteer, no
+Playwright. It navigates, runs `Runtime.evaluate` to list every element wider than
+the viewport and every interactive element under 44px, and captures a screenshot.
+
+This immediately paid for itself twice, in opposite directions:
+
+- A plain `chrome --headless --screenshot --window-size=360,1400` *looked* like the
+  poll page overflowed horizontally. It did not — the capture was clipped, not the
+  page. `Emulation.setDeviceMetricsOverride` plus `document.scrollWidth` is the
+  measurement; a screenshot is not.
+- It then found two things eyes had missed across several sessions: the Space link
+  above a poll title was a **16px-tall `<a>`**, and the landing's Privacy/Terms
+  links were 14px — the two URLs a Google OAuth reviewer clicks.
+
+`--force-device-scale-factor=1` matters, and Git Bash mangles a bare `/` argument
+into a Windows path, so run it with `MSYS_NO_PATHCONV=1`.
+
 ## Closing a hole can leave no door, and nobody notices for six phases
 
 `20260806110000` revoked `update` on `polls` and dropped `polls_update`. That was

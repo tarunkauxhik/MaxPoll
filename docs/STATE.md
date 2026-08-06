@@ -1,8 +1,9 @@
 # State
 
-_Last updated: 2026-08-05 · **Live at [viratkohli.tech](https://viratkohli.tech).**
-Google OAuth published, payments on, `CRON_SECRET` enforced, 63 gate probes green.
-Remaining: the browser checks only a human can do, and a business VPA._
+_Last updated: 2026-08-06 · **Live at [viratkohli.tech](https://viratkohli.tech).**
+Google OAuth published, payments on, `CRON_SECRET` enforced, **65 gate probes and
+67 unit tests green**. Remaining: the browser checks only a human can do, a
+business VPA, and **enabling Web Analytics in the Vercel dashboard**._
 
 ## Where we are
 
@@ -22,11 +23,13 @@ Remaining: the browser checks only a human can do, and a business VPA._
 | 11 — Go live | ✅ Domain, OAuth published, payments on, `/privacy` + `/terms` |
 | 12 — Polls that end | ✅ **Gate X** — daily cron closes them, `CRON_SECRET` enforced |
 | 13 — The first hour | ✅ First run no longer dead-ends; `pnpm launch` for real content |
+| 14 — Real traffic + audit | ✅ Owner controls, moderation, Space floor, follows removed |
+| 15 — Share surface + front door | ✅ Short codes, three OG previews, landing rebuilt, analytics |
 
 ```bash
 pnpm dev      # http://localhost:3000
-pnpm check    # build + lint + typecheck + contrast + 56 unit tests
-pnpm gates    # 63 probes against the REAL database, then tears its data down
+pnpm check    # build + lint + typecheck + contrast + 67 unit tests
+pnpm gates    # 65 probes against the REAL database, then tears its data down
 pnpm sql supabase/seed.sql   #  seed  ·  pnpm sql --wipe  to remove
 pnpm launch supabase/launch.json   #  real opening content · --apply to write
 ```
@@ -65,7 +68,64 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
 
-## Phase 14/15 — real traffic, and an audit (2026-08-06)
+## Phase 15 — the share surface and the front door (2026-08-06)
+
+**Only `/p/[slug]` had an `og:image`.** Pasting `viratkohli.tech` itself, or a
+Space link, unfurled as a bare blue URL — the largest hole in a funnel whose
+entire growth model is a link travelling between WhatsApp groups. Three previews
+now, sharing one chrome file: a poll shows its **actual top 3** with bars and the
+gold rank-1 treatment; a Space shows live poll titles, because *"what are people
+in here arguing about"* is the question a pasted Space link has to answer; the
+root is static at build time (a live number there would cost a query per unfurl
+and go stale between deploys).
+
+**Short share codes.** `/p/j6ev26t` and `/p/greatest-indian-odi-batter-…-r4df0`
+are the same poll. The readable slug stays canonical because it is what search
+indexes; the code exists for the paste. It is a column **DEFAULT**, not app code —
+there are four writers and only one is TypeScript — and both `security definer`
+creators were proven to pick it up with no change to either function.
+
+> `lib/short-code.ts` validates the URL segment before building the PostgREST
+> filter. A comma or a dot is *filter syntax*, so `/p/x,vote_count.gt.0` would be
+> parsed, not escaped.
+
+**The landing was rebuilt.** It had a full-width "Log in" swallowing its own
+header, a headline wrapping to four lines at 360px, and — below 50 votes, which is
+where the product is — no social proof at all. It now leads with three real live
+polls from the database, and carries a sticky CTA revealed by a scroll-driven
+animation (no listener, no JS).
+
+**Type floor 16px**, nothing below 12px. 15px is under every mobile readability
+floor, and iOS Safari zooms the page when an input under 16px takes focus.
+
+**Vercel Web Analytics**, pageviews only, with `/u/<handle>` and `/pay/<ref>`
+redacted before the beacon leaves the browser. `/privacy` used to claim there were
+no analytics at all; it now describes what is actually collected.
+
+**The files that never existed**: `not-found`, `error`, `global-error`,
+`robots.txt`, `sitemap.xml`, `manifest`, `icon.svg`.
+
+> ⚠️ A `loading.tsx` for `/p/[slug]` was written and **deleted**. It turned every
+> 404 on that route into a 200 — streaming commits the status before
+> `notFound()` runs, and moving the call into `generateMetadata` does not rescue
+> it. Both measured. See LEARNINGS before re-adding one.
+
+**Red now means something.** `.chip.hot` was rendering on every live poll, so red
+said "this poll exists" and nothing said which poll was closing. `endingSoon()` is
+a real 6h window. And the board shows a live pulse — *"3 votes since you opened
+this"* — derived from the 4s poll it already runs, so it costs no query, no RPC
+and no migration. It excludes your own vote.
+
+### Your turn
+
+1. **Vercel dashboard → project → Analytics → Enable.** The package does nothing
+   until this is clicked.
+2. Paste a poll link, a Space link and `viratkohli.tech` into a WhatsApp chat with
+   yourself and check all three previews render.
+3. Google OAuth **Branding**, if not done — [07-setup §2.7](07-setup.md). It is the
+   only free way to stop the Supabase project ref leading the sign-in screen.
+
+## Phase 14 — real traffic, and an audit (2026-08-06)
 
 Eight people signed in and voted. What they found, and what an audit of the
 codebase against its own claims found, in one pass.
