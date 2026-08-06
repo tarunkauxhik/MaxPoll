@@ -236,13 +236,20 @@ a {
 .wordmark {
   font-family: var(--font-display), sans-serif;
   font-weight: 900;
-  font-size: 19px;
+  font-size: 22px;
   letter-spacing: -.05em;
 }
 
 .wordmark i {
   font-style: normal;
   color: var(--violet);
+}
+
+.top .wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding-right: var(--s-2);
 }
 
 /* ============================ SHELL ============================ */

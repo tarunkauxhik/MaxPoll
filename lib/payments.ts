@@ -49,6 +49,8 @@ export function paymentMode(): PaymentMode {
 
 export const paymentsEnabled = () => paymentMode() !== "coming_soon";
 
+// NEXT_PUBLIC_UPI_VPA looks like an email but is a UPI payment handle, not a
+// contact address — do not confuse it with app/legal.ts CONTACT_EMAIL.
 const vpa = () => clean("NEXT_PUBLIC_UPI_VPA", process.env.NEXT_PUBLIC_UPI_VPA);
 
 /** Rupees for display. Every rendered amount goes through `.num` — DECISIONS B6. */

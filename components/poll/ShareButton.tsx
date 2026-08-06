@@ -37,10 +37,10 @@ export function ShareButton({
     // to name at all.
     const text =
       gap !== null && leader
-        ? `${leader} is only ${plural(gap, "vote")} ahead in "${title}" 👇`
+        ? `your pov matters : ${leader} is only ${plural(gap, "vote")} ahead in "${title}"`
         : leader
-          ? `${leader} is leading "${title}" 👇`
-          : `bhai isme vote kardo 👇`;
+          ? `your pov matters : ${leader} is leading "${title}"`
+          : `your pov matters : vote in "${title}"`;
 
     if (navigator.share) {
       try {

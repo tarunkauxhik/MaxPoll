@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 /**
  * Sticky top bar — doc 05 §3.
  * `right` is the slot the activity bell fills in Phase 7; leaving it a slot
@@ -6,9 +8,9 @@
 export default function TopBar({ right }: { right?: React.ReactNode }) {
   return (
     <header className="top">
-      <span className="wordmark">
+      <Link href="/" className="wordmark" aria-label="MaxPoll home">
         Max<i>Poll</i>
-      </span>
+      </Link>
       <span className="spacer" />
       {right}
     </header>
