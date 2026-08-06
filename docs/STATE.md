@@ -1,8 +1,8 @@
 # State
 
-_Last updated: 2026-08-06 · **Live at [viratkohli.tech](https://viratkohli.tech).**
+_Last updated: 2026-08-07 · **Live at [viratkohli.tech](https://viratkohli.tech).**
 Google OAuth published, payments on, `CRON_SECRET` enforced, **65 gate probes and
-67 unit tests green**. Remaining: the browser checks only a human can do, a
+75 unit tests green**. Remaining: the browser checks only a human can do, a
 business VPA, and **enabling Web Analytics in the Vercel dashboard**._
 
 ## Where we are
@@ -25,10 +25,11 @@ business VPA, and **enabling Web Analytics in the Vercel dashboard**._
 | 13 — The first hour | ✅ First run no longer dead-ends; `pnpm launch` for real content |
 | 14 — Real traffic + audit | ✅ Owner controls, moderation, Space floor, follows removed |
 | 15 — Share surface + front door | ✅ Short codes, three OG previews, landing rebuilt, analytics |
+| 16 — The screens people actually use | ✅ Timer, chat, deadline picker, quota + paywall, free-text person polls |
 
 ```bash
 pnpm dev      # http://localhost:3000
-pnpm check    # build + lint + typecheck + contrast + 67 unit tests
+pnpm check    # build + lint + typecheck + contrast + 75 unit tests
 pnpm gates    # 65 probes against the REAL database, then tears its data down
 pnpm sql supabase/seed.sql   #  seed  ·  pnpm sql --wipe  to remove
 pnpm launch supabase/launch.json   #  real opening content · --apply to write
@@ -67,6 +68,77 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 `https://maxpoll.vercel.app`. A localhost value there sends every production
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
+
+## Phase 16 — the screens people actually use (2026-08-07)
+
+Phase 15 fixed the share surface and the front door. This phase is the inside of
+the product — the screens a signed-in user touches daily, unchanged since Phase 7.
+
+**The timer reads as a deadline now, not a status bar.** Segmented digit blocks
+(`06 DAYS · 00 HRS · 42 MIN`, like an airport gate display) replace the single mono
+string, over a dark gradient with a draining gold track underneath. Under an hour it
+switches to a heat gradient and the last block pulses (opacity only, killed by
+`prefers-reduced-motion`). It also now renders in the closed state — it used to
+disappear the moment a poll ended, leaving nothing where the deadline used to be.
+
+**Chat moved to the top of the poll**, as a real entry row with a live message
+count (`message_count`, denormalised + trigger, same shape as `vote_count` —
+verified live with a rolled-back transaction: insert/hide/delete all update it
+correctly). The old `💬 Poll chat` button in the footer is gone; same destination,
+one entry point.
+
+**A deadline picker**, replacing the six-option `<select>` on both Create and
+Manage poll: a hover slider up to 24h with `+6h/+12h/+24h` presets, or a native
+`datetime-local` for an exact time, capped at 7 days. The cap is enforced in
+`create_poll()` and `update_poll()` themselves (`EXPIRY_TOO_FAR`), not just the
+input's `max` attribute — a Server Action is a public endpoint. Manage poll also
+gained `+1h/+6h/+24h` quick-extend buttons that read the poll's *current* deadline
+from the database before adding to it, so the base is never a client guess.
+
+**The ₹99 pass now lifts the 3-per-week poll cap**, checked inside `create_poll()`'s
+own transaction — not a new grant, `/p/[slug]/unlock` already advertised "unlimited
+creating" as part of the pass; the database just didn't enforce it yet. `/create`
+shows the quota as a real block (`2 of 3 left this week`, a usage bar, a paywall CTA
+reading the live price from `lib/payments.ts`) instead of one small line of text.
+
+**Person polls take free-text questions** — [DECISIONS D10](DECISIONS.md), a
+reversal of `03-ux-flows` §D made and owned by the operator, with the risk stated:
+the preset-only list was the one *preventive* control against a person poll
+becoming a bullying tool. The presets survive as one-tap suggestions, and the
+report path is a visible chip on person polls specifically now, since the
+remaining controls (report, 3-report auto-hide, `/admin` queue) are all reactive.
+
+**A global `overflow-wrap: anywhere`** — the actual fix for "text breaks in a lot
+of places." The codebase had exactly 3 wrap rules in ~2,400 lines of CSS, all
+inside chat bubbles; every other container holding user text (a title, a Space
+name, a handle) had no safety net. One rule, plus the `min-width: 0` gaps a flex
+row needs to actually honour it, plus the `.anontog` tap target that was still
+36px against Phase 14's 44px floor.
+
+**Dark accent surfaces, not a second theme.** `--dark` / `--dark-2` / `--on-dark` /
+`--on-dark-dim`, plus `--grad-ink` / `--grad-heat` / `--grad-glow`, applied to the
+timer, the primary button and the create-poll icon. Light stays the base — no
+toggle, no `prefers-color-scheme`. Four new contrast pairs, all measured (21 pairs
+total, all passing).
+
+**The profile page is centred**, socials are real outbound links
+(`rel="noopener noreferrer nofollow"`, shown only when set — that part was already
+correct), and Settings has its own button (`/settings#profile` vs
+`/settings#account`) instead of hiding behind "Edit profile". The top-bar wordmark
+is a working link home for the first time, and 3px bigger.
+
+**Every occurrence of the old personal email in code** (`app/legal.ts`) is now
+`support@viratkohli.tech`. The UPI VPA (`tarunkaushikraya@oksbi`) is untouched —
+it looks like an email but is a payment handle, not a contact address, and a
+comment in `lib/payments.ts` now says so. The WhatsApp share text lost its emoji
+and now opens with *"your pov matters : "*.
+
+### Your turn
+
+1. **Create `support@viratkohli.tech`** — a forwarder at the registrar is enough.
+   It's live on `/privacy` and `/terms` now.
+2. Confirm **₹99 / 30 days** is still the price you want advertised on `/create`
+   and `/p/[slug]/unlock` — both read `lib/payments.ts`, so one place to change it.
 
 ## Phase 15 — the share surface and the front door (2026-08-06)
 

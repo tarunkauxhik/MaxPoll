@@ -763,3 +763,55 @@ then backdate `expires_at`, which is also the only sequence that happens in real
 
 **A failing probe is a claim about the code, and it is worth one minute of doubt
 before it becomes a bug report.**
+
+## Phase 16 — reading the clock in a client component
+
+### `react-hooks/set-state-in-effect` rejects the obvious fix for `Date.now()`
+
+`DeadlinePicker` needed "now" once, on mount, to compute a slider's target time and
+a `datetime-local`'s min/max. `Date.now()` in the render body is already blocked by
+React's purity lint (DECISIONS/earlier phases). The next-most-obvious fix —
+`useEffect(() => setNow(Date.now()), [])` — is **also** rejected, by a different
+rule: `react-hooks/set-state-in-effect`, which treats a bare `setState` inside an
+effect body as a cascading-render smell, full stop, independent of what the state
+is for.
+
+The sanctioned escape hatch is a `useState` **lazy initializer**:
+
+```ts
+const [now] = useState(() => Date.now());
+```
+
+The function only runs once per mount, outside the render body the purity lint
+inspects, and outside any effect the cascading-render lint inspects. `lib/use-now.ts`
+already solved the *ticking* version of this with `useSyncExternalStore`; this is
+the cheaper answer for "read it once and move on."
+
+### `pnpm supabase db push` doesn't know about a migration applied by hand
+
+The Phase 15 `short_codes` migration was applied via a direct `scripts/sql.mjs`-style
+connection, not `db push` — so the CLI's migrations catalog never recorded it as
+applied. The next `db push` (this phase) tried to re-apply it and succeeded, because
+every statement in it is idempotent (`add column if not exists`, `create or replace
+function`, a guarded backfill). **Nothing broke, but it could have**, if that
+migration had contained a bare `create table` or an unguarded `insert`.
+
+**Generalise:** if a migration is ever applied outside `db push`, assume the CLI will
+try it again later, and write it so a second run is a no-op.
+
+### `entitlements.source` has a CHECK constraint, and forgetting it fails late
+
+Live-probing the pass-lifts-the-cap logic meant inserting a throwaway `entitlements`
+row. The first attempt used `source: 'test'` and got `entitlements_source_check`
+back — the column only accepts `'manual_upi' | 'razorpay' | 'comp'`. `'comp'` is the
+correct value for anything that isn't a real payment (comped access, test fixtures).
+Worth knowing before writing another probe against this table.
+
+### Binding a Server Action for a `<form action>` needs every argument bound
+
+`startOrder(kind, pollId, pollSlug?)` used as `startOrder.bind(null, "pass_30d",
+null)` left `pollSlug` unbound, so the resulting type was `(pollSlug?: string) =>
+Promise<void>` — which doesn't structurally match the `(formData: FormData) => void`
+a form's `action` prop expects, and `tsc` catches it. Binding the trailing optional
+argument too (`.bind(null, "pass_30d", null, undefined)`) leaves nothing unbound and
+the type checks.

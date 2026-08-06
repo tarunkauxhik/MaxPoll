@@ -96,6 +96,15 @@ WhatsApp link tap
 **Adjective list (owner-controlled, positive only):** Best · Most helpful · Most
 underrated · Funniest · Most reliable · Most improved · Hardest working
 
+> ⚠️ **Superseded 2026-08-07 — [DECISIONS D10](DECISIONS.md).** The person-poll
+> question is free-text now; this list is one-tap suggestions underneath it, not
+> the only option. Left here as the record of what the preset-only rule was and
+> why it existed, not as current behaviour.
+
+> ⚠️ **The timer picker is also superseded.** `DeadlinePicker` (a quick-hours slider
+> + a `datetime-local` picker, 7-day cap) replaced the six-option `<select>` shown
+> above, on both Create and Manage poll.
+
 ## E — Add an option
 
 ```
@@ -115,7 +124,7 @@ closed.
 | Action | Rule |
 |---|---|
 | Close early | Any time. Irreversible. Confirm |
-| Extend timer | ₹99 tier only |
+| Extend timer | Any owner, any time — not tier-gated. `+1h`/`+6h`/`+24h` quick-extend, or the picker directly. This row originally said "₹99 tier only"; that was never built, and Phase 16 shipped it open on purpose — `update_poll()` has never gated on payment tier for anything else it does either |
 | Remove an option | Only before 10 votes; after that **merge**, don't delete |
 | **Merge options** | Combines vote counts. Available always. **Build before launch** |
 | Delete poll | Confirm modal naming the count: *"Delete? 340 votes will be lost. This can't be undone."* Soft-delete 30 days, then purge |
