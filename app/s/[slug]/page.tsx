@@ -4,15 +4,31 @@ import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
 import { JoinButton } from "./JoinButton";
 import { createClient, getUser } from "@/lib/supabase/server";
-import { buildFeedPolls, type PollRow, type RankInput } from "@/lib/poll-queries";
+import { buildFeedPolls, getSpaceByKey, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { monogram, n } from "@/lib/format";
 import { SPACE_UNLOCK_MEMBERS as UNLOCK } from "@/lib/space";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data } = await supabase.from("spaces").select("name").eq("slug", slug).maybeSingle();
-  return { title: data ? `${data.name} · MaxPoll` : "Space · MaxPoll" };
+  const space = await getSpaceByKey(slug);
+  if (!space) return { title: "Space · MaxPoll" };
+
+  const description = `${space.member_count} members · ${
+    space.description ?? "Polls that settle arguments."
+  }`;
+
+  return {
+    title: `${space.name} · MaxPoll`,
+    description,
+    // Space links travel in group chats exactly like poll links do. Without
+    // this the preview was a bare title and no image.
+    alternates: { canonical: `/s/${space.slug}` },
+    openGraph: {
+      title: space.name,
+      description,
+      images: [`/og/s/${space.slug}`],
+    },
+  };
 }
 
 export default async function SpacePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -20,11 +36,7 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
   const supabase = await createClient();
   const user = await getUser();
 
-  const { data: space } = await supabase
-    .from("spaces")
-    .select("id, slug, name, description, member_count, is_verified")
-    .eq("slug", slug)
-    .maybeSingle();
+  const space = await getSpaceByKey(slug);
 
   if (!space) notFound();
 
@@ -32,7 +44,7 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
     supabase
       .from("polls")
       .select(
-        "id, slug, title, status, vote_count, option_count, options_locked, expires_at, created_at, created_by, is_private, og_version"
+        "id, slug, code, title, status, vote_count, option_count, options_locked, expires_at, created_at, created_by, is_private, og_version"
       )
       .eq("space_id", space.id)
       .neq("status", "removed")
@@ -69,6 +81,7 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
   const spaceRef = {
     id: space.id,
     slug: space.slug,
+    code: space.code,
     name: space.name,
     member_count: space.member_count,
   };

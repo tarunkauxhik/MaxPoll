@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { rankOptions } from "@/lib/rank";
 import { shortLeft } from "@/lib/format";
+import { keyFilter } from "@/lib/short-code";
 
 /**
  * WhatsApp preview — doc 04 §5.16. **The only place a gradient is permitted.**
@@ -19,12 +20,15 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+  const filter = keyFilter(slug);
+  if (!filter) return new Response("Not found", { status: 404 });
+
   const supabase = createAnonClient();
 
   const { data: poll } = await supabase
     .from("polls")
     .select("id, title, vote_count, expires_at, space:spaces(name)")
-    .eq("slug", slug)
+    .or(filter)
     .maybeSingle();
 
   if (!poll) return new Response("Not found", { status: 404 });

@@ -3,7 +3,7 @@ import AppShell from "@/components/shell/AppShell";
 import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
 import { createClient, getUser } from "@/lib/supabase/server";
-import { buildFeedPolls, type PollRow, type RankInput } from "@/lib/poll-queries";
+import { buildFeedPolls, POLL_SELECT, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { n } from "@/lib/format";
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }) {
@@ -42,9 +42,7 @@ export default async function ProfilePage({
   const [{ data: polls }, { data: badges }] = await Promise.all([
     supabase
       .from("polls")
-      .select(
-        "id, slug, title, status, vote_count, option_count, options_locked, expires_at, created_at, created_by, is_private, og_version, space:spaces(id, slug, name, member_count)"
-      )
+      .select(POLL_SELECT)
       .eq("created_by", profile.id)
       .neq("status", "removed")
       .order("created_at", { ascending: false })

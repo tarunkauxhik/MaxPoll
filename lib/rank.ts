@@ -71,3 +71,22 @@ export function gapAbove(
   const above = board[i - 1];
   return { need: above.votes - board[i].votes + 1, target: above.label };
 }
+
+/**
+ * The same hook, for someone who has not voted yet — how close the race at the
+ * top is. Used by the share text and the WhatsApp preview, where there is no
+ * "my option" to be behind.
+ *
+ * Null when there is no race to describe: fewer than two options, or a leader on
+ * zero votes (where "0 votes ahead" is noise, not tension).
+ */
+export function raceGap(
+  board: BoardOption[]
+): { lead: number; leader: string; runnerUp: string } | null {
+  if (board.length < 2 || board[0].votes === 0) return null;
+  return {
+    lead: board[0].votes - board[1].votes,
+    leader: board[0].label,
+    runnerUp: board[1].label,
+  };
+}

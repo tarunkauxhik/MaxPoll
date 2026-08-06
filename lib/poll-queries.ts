@@ -3,12 +3,15 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAnonClient } from "@/lib/supabase/anon";
 import { rankOptions, type BoardOption, type RankInput } from "@/lib/rank";
+import { keyFilter } from "@/lib/short-code";
 
 export type { BoardOption, RankInput };
 
 export type PollRow = {
   id: string;
   slug: string;
+  /** Short share code. `/p/<code>` and `/p/<slug>` both resolve — see byKey(). */
+  code: string;
   title: string;
   status: "live" | "closed" | "removed";
   vote_count: number;
@@ -19,11 +22,23 @@ export type PollRow = {
   created_by: string | null;
   is_private: boolean;
   og_version: number;
-  space: { id: string; slug: string; name: string; member_count: number } | null;
+  space: {
+    id: string;
+    slug: string;
+    code: string;
+    name: string;
+    member_count: number;
+  } | null;
 };
 
-const SPACE_SELECT = "space:spaces(id, slug, name, member_count)";
-const POLL_SELECT = `id, slug, title, status, vote_count, option_count, options_locked,
+const SPACE_SELECT = "space:spaces(id, slug, code, name, member_count)";
+
+/**
+ * Exported because a profile and a Space page were both spelling this out by
+ * hand, and a column added to `PollRow` then compiled everywhere and returned
+ * `undefined` at runtime on the two pages that had their own copy.
+ */
+export const POLL_SELECT = `id, slug, code, title, status, vote_count, option_count, options_locked,
   expires_at, created_at, created_by, is_private, og_version, ${SPACE_SELECT}`;
 
 /**
@@ -74,15 +89,51 @@ export const getBoard = cache(async (pollId: string, totalVotes: number) => {
   return rankOptions(data ?? [], totalVotes);
 });
 
-/** Memoised for the same reason as getBoard: metadata and page both need it. */
+/**
+ * By readable slug **or** short code — `/p/best-teacher-x8f2q` and `/p/k7m2xqp`
+ * are the same poll. One query, no redirect: this is the hottest path in the
+ * product and a 301 hop on it would be paid by every share.
+ *
+ * Memoised for the same reason as getBoard: metadata and page both need it.
+ */
 export const getPollBySlug = cache(async (slug: string) => {
+  const filter = keyFilter(slug);
+  if (!filter) return null;
+
   const supabase = await createClient();
   const { data } = await supabase
     .from("polls")
     .select(POLL_SELECT)
-    .eq("slug", slug)
+    .or(filter)
     .maybeSingle();
   return data ? normalise(data as unknown as RawPoll) : null;
+});
+
+export type SpaceRow = {
+  id: string;
+  slug: string;
+  code: string;
+  name: string;
+  description: string | null;
+  member_count: number;
+  is_verified: boolean;
+};
+
+/**
+ * Same two-key resolution as getPollBySlug. Memoised because `generateMetadata`
+ * and the page body both need the Space, and they were each fetching it.
+ */
+export const getSpaceByKey = cache(async (key: string) => {
+  const filter = keyFilter(key);
+  if (!filter) return null;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("spaces")
+    .select("id, slug, code, name, description, member_count, is_verified")
+    .or(filter)
+    .maybeSingle();
+  return (data as SpaceRow | null) ?? null;
 });
 
 /** The signed-in user's vote on this poll, if any. */

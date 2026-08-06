@@ -17,6 +17,7 @@ import {
 } from "@/lib/poll-queries";
 import { getUser } from "@/lib/supabase/server";
 import { resultsLocked, SPACE_UNLOCK_MEMBERS } from "@/lib/space";
+import { raceGap } from "@/lib/rank";
 import { n, shortLeft } from "@/lib/format";
 import type { Metadata } from "next";
 
@@ -41,6 +42,13 @@ export async function generateMetadata({
   return {
     title: `${poll.title} · MaxPoll`,
     description,
+    /**
+     * A poll answers to two URLs — its readable slug and its short code. Without
+     * this, search engines see two pages with identical content and split the
+     * ranking between them. The readable one wins because it is the one worth
+     * indexing.
+     */
+    alternates: { canonical: `/p/${poll.slug}` },
     openGraph: {
       title: poll.title,
       description,
@@ -156,9 +164,12 @@ export default async function PollPage({
           💬 Poll chat
         </a>
         <ShareButton
-          slug={poll.slug}
+          code={poll.code}
           title={poll.title}
           leader={board[0]?.label ?? null}
+          /* The gap is a result, so it stays behind the Space gate like every
+             other number on this page. */
+          gap={spaceLocked ? null : (raceGap(board)?.lead ?? null)}
         />
         {/* Rendered only for the owner, but that is presentation — update_poll()
             and delete_poll() take identity from auth.uid(), so hiding the button

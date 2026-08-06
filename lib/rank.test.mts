@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rankOptions, gapAbove, type RankInput } from "./rank.ts";
+import { rankOptions, gapAbove, raceGap, type RankInput } from "./rank.ts";
 
 const opt = (
   id: string,
@@ -91,4 +91,22 @@ test("gapAbove on a tie still asks for one vote", () => {
     10
   );
   assert.deepEqual(gapAbove(board, "b"), { need: 1, target: "a" });
+});
+
+test("raceGap names the top two and the distance between them", () => {
+  const board = rankOptions(
+    [opt("lead", 82, "2026-01-01T00:00:00Z"), opt("second", 65, "2026-01-02T00:00:00Z")],
+    147
+  );
+  assert.deepEqual(raceGap(board), { lead: 17, leader: "lead", runnerUp: "second" });
+});
+
+test("raceGap is null when there is no race to describe", () => {
+  assert.equal(raceGap([]), null, "empty board");
+  assert.equal(raceGap(rankOptions([opt("a", 5)], 5)), null, "one option");
+  assert.equal(
+    raceGap(rankOptions([opt("a", 0), opt("b", 0, "2026-01-02T00:00:00Z")], 0)),
+    null,
+    "leader on zero votes — '0 ahead' is noise, not tension"
+  );
 });
