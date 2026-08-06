@@ -83,6 +83,21 @@
    */
   --ring: inset 0 1px 0 rgba(255, 255, 255, .9);
 
+  /**
+   * Dark accent surfaces — NOT a second theme. Light stays the base; these are
+   * the blocks that need to stop a thumb: the timer, section headers, the
+   * primary CTA. Same visual language as the WhatsApp preview cards (one violet
+   * light source, top-left, over near-black).
+   */
+  --dark: #111114; /* same as --ink, named for its surface job */
+  --dark-2: #1C1C22; /* the raised stop in a dark gradient */
+  --on-dark: #FFFFFF; /* 17.4:1 on --dark */
+  --on-dark-dim: #A8A8B3; /* 7.2:1 on --dark — measured, not guessed */
+
+  --grad-ink: linear-gradient(145deg, var(--dark-2), var(--dark) 62%);
+  --grad-heat: linear-gradient(145deg, #3A140D, #7A1E10 55%, #B3301C);
+  --grad-glow: radial-gradient(120% 140% at 8% -20%, rgba(107, 78, 255, .42), transparent 60%);
+
   /* layout — not in doc 05; the prototypes are fixed-height mockups and
      never had to solve for a real scrolling page */
   --col: 480px; /* centred content column */
@@ -393,7 +408,7 @@ a {
 }
 
 .nav .create .ic {
-  background: var(--ink);
+  background: var(--grad-ink);
   color: #fff;
   width: 38px;
   height: 32px;
@@ -454,7 +469,7 @@ a {
 }
 
 .btn.pri {
-  background: var(--ink);
+  background: var(--grad-ink);
   color: #fff;
 }
 
@@ -712,7 +727,7 @@ a {
   display: flex;
   align-items: center;
   gap: 11px;
-  background: var(--ink);
+  background: var(--grad-glow), var(--grad-ink);
   color: #fff;
   border-radius: var(--r-md);
   padding: 11px 14px;
@@ -759,7 +774,7 @@ a {
   font-size: 12px;
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, .55);
+  color: var(--on-dark-dim);
   font-weight: 700;
 }
 

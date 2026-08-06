@@ -55,6 +55,10 @@ const PAIRS = [
   ['.state.err text', '--heat-text', '--paper', 4.5],
   ['.field border', '--line-strong', '--card', 3],
   ['.field border on page', '--line-strong', '--paper', 3],
+  ['timer text on dark', '--on-dark', '--dark', 4.5],
+  ['timer label on dark', '--on-dark-dim', '--dark', 4.5],
+  ['text on the raised dark stop', '--on-dark', '--dark-2', 4.5],
+  ['label on the raised dark stop', '--on-dark-dim', '--dark-2', 4.5],
 ];
 
 let failures = 0;
