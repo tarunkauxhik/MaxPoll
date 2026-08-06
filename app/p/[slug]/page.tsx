@@ -133,6 +133,7 @@ export default async function PollPage({
           {/* Red is time pressure only — CLAUDE.md. Every live poll used to get
               the hot chip, so red meant "live" and nothing meant "closing". */}
           <span className={soon ? "chip hot" : "chip"}>⏳ {shortLeft(expiresAt)}</span>
+          {myVote && <span className="chip voted">✓ Voted</span>}
         </div>
       </div>
 

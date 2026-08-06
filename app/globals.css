@@ -899,6 +899,12 @@ a {
   color: var(--heat-text);
 }
 
+.chip.voted {
+  background: var(--up-soft);
+  border-color: rgba(14, 138, 79, .25);
+  color: var(--up-text);
+}
+
 /* ============================ POLL CARD ============================ */
 
 .feed {
@@ -912,7 +918,7 @@ a {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  padding: 16px;
+  padding: 18px;
   box-shadow: var(--ring), var(--shadow-1);
   transition: transform .2s var(--ease), box-shadow .2s var(--ease);
   cursor: pointer;
@@ -967,7 +973,7 @@ a {
 .mini {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 7px;
   margin: 11px 0;
 }
 
@@ -976,6 +982,7 @@ a {
   align-items: center;
   gap: 8px;
   font-size: 13px;
+  min-height: 20px;
 }
 
 .mrow .r {
