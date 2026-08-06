@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pctOf, countdown, shortLeft, ago, monogram, n } from "./format.ts";
+import { pctOf, countdown, shortLeft, ago, monogram, plural, n } from "./format.ts";
 
 const T = Date.UTC(2026, 7, 4, 12, 0, 0);
 
@@ -67,6 +67,21 @@ test("monogram", () => {
   assert.equal(monogram("a b"), "AB");
   assert.equal(monogram(""), "??");
   assert.equal(monogram("   "), "??");
+
+  // A separator is not an initial. This shipped as "I·" on a real Space avatar
+  // and on its WhatsApp preview.
+  assert.equal(monogram("India · Settle It"), "IS");
+  assert.equal(monogram("St. Xavier's College"), "SX");
+  assert.equal(monogram("·  ·"), "??", "punctuation only");
+});
+
+test("plural", () => {
+  assert.equal(plural(0, "vote"), "0 votes");
+  assert.equal(plural(1, "vote"), "1 vote");
+  assert.equal(plural(2, "vote"), "2 votes");
+  assert.equal(plural(100000, "vote"), "1,00,000 votes", "keeps Indian grouping");
+  assert.equal(plural(1, "person", "people"), "1 person");
+  assert.equal(plural(3, "person", "people"), "3 people");
 });
 
 test("n uses Indian grouping", () => {

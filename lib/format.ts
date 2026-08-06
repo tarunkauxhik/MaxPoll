@@ -83,10 +83,30 @@ export function ago(at: number, now: number = Date.now()): string {
   return `${Math.floor(days / 7)}w ago`;
 }
 
-/** Two-letter monogram for Space avatars — doc 04 §5.13. */
+/**
+ * Two-letter monogram for Space avatars — doc 04 §5.13.
+ *
+ * Punctuation is stripped **before** words are counted. "India · Settle It" was
+ * rendering as `I·` — the interpunct is its own whitespace-delimited word, and a
+ * separator is not an initial. Names with a middle dot are common here, since
+ * that is how the Space picker suggests formatting them.
+ */
 export function monogram(name: string): string {
-  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  const words = (name ?? "")
+    .split(/\s+/)
+    .map((w) => w.replace(/[^\p{L}\p{N}]/gu, ""))
+    .filter(Boolean);
+
   if (words.length === 0) return "??";
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
 }
+
+/**
+ * `1 vote` / `12 votes`. Grouped by `n()`, so it is still safe inside `.num`.
+ *
+ * Exists because "1 votes" appeared on a share preview — the single surface
+ * where the product's credibility is decided before anyone has clicked.
+ */
+export const plural = (count: number, one: string, many = `${one}s`) =>
+  `${n(count)} ${count === 1 ? one : many}`;

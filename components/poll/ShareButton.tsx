@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { plural } from "@/lib/format";
 
 /**
  * doc 03 §L. Native share where it exists, copy-link with a toast otherwise.
@@ -36,7 +37,7 @@ export function ShareButton({
     // to name at all.
     const text =
       gap !== null && leader
-        ? `${leader} is only ${gap} vote${gap === 1 ? "" : "s"} ahead in "${title}" 👇`
+        ? `${leader} is only ${plural(gap, "vote")} ahead in "${title}" 👇`
         : leader
           ? `${leader} is leading "${title}" 👇`
           : `bhai isme vote kardo 👇`;

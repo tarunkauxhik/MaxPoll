@@ -39,6 +39,18 @@ export const metadata: Metadata = {
   title: "MaxPoll",
   description:
     "Make a poll about anything. Watch names climb a live leaderboard. Every vote is on the record.",
+  // The image itself comes from app/opengraph-image.tsx — Next wires it in and
+  // every nested route inherits it unless it builds its own. Without these two
+  // blocks the site's own link unfurled as a bare URL, which for a product that
+  // spreads by being pasted into group chats was the largest hole in the funnel.
+  openGraph: {
+    type: "website",
+    siteName: "MaxPoll",
+    title: "MaxPoll — everyone has an opinion, now there's a scoreboard",
+    description:
+      "Make a poll about anything. Watch names climb a live leaderboard. Every vote is on the record.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

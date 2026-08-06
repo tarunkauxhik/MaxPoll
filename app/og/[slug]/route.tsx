@@ -1,11 +1,17 @@
 import { ImageResponse } from "next/og";
 import { createAnonClient } from "@/lib/supabase/anon";
-import { rankOptions } from "@/lib/rank";
-import { shortLeft } from "@/lib/format";
+import { rankOptions, raceGap } from "@/lib/rank";
+import { shortLeft, plural, n } from "@/lib/format";
 import { keyFilter } from "@/lib/short-code";
+import { C, OG, HEADERS, shell, row, col, Eyebrow, Hook, clip } from "../shared";
 
 /**
- * WhatsApp preview — doc 04 §5.16. **The only place a gradient is permitted.**
+ * WhatsApp preview for a poll — doc 04 §5.16.
+ *
+ * It shows the **actual leaderboard**, not a headline about one. A card that
+ * says "Vote in this poll" is an advertisement; a card that shows Kohli ahead of
+ * Tendulkar by four votes with three hours left is an argument, and an argument
+ * is what travels between groups.
  *
  * ⚠️ DECISIONS A2: excluded from the proxy matcher and built on the anonymous
  * client, so the response carries no `Set-Cookie` and stays CDN-cacheable.
@@ -27,7 +33,7 @@ export async function GET(
 
   const { data: poll } = await supabase
     .from("polls")
-    .select("id, title, vote_count, expires_at, space:spaces(name)")
+    .select("id, title, vote_count, expires_at, status, space:spaces(name)")
     .or(filter)
     .maybeSingle();
 
@@ -40,63 +46,161 @@ export async function GET(
     .eq("hidden", false)
     .is("merged_into", null);
 
-  const leader = rankOptions(options ?? [], poll.vote_count ?? 0)[0];
+  const board = rankOptions(options ?? [], poll.vote_count ?? 0);
+  const top = board.slice(0, 3);
   const space = Array.isArray(poll.space) ? poll.space[0] : poll.space;
-  const left = shortLeft(poll.expires_at ? new Date(poll.expires_at).getTime() : null);
+  const endsAt = poll.expires_at ? new Date(poll.expires_at).getTime() : null;
+  const left = shortLeft(endsAt);
+  const closed = poll.status !== "live" || (endsAt !== null && endsAt <= Date.now());
+
+  const race = raceGap(board);
+  // Order matters: the tightest true statement wins. "2 votes apart" beats
+  // "47 votes" beats "be the first", and an empty board must never claim a race.
+  const hook = closed
+    ? board[0]
+      ? `${clip(board[0].label, 26)} won`
+      : "Voting closed"
+    : race && race.lead <= 5
+      ? `Only ${plural(race.lead, "vote")} apart`
+      : poll.vote_count > 0
+        ? `${plural(poll.vote_count, "vote")} so far · tap to add yours`
+        : "Be the first to vote";
+
+  const accent = closed ? C.dim : race && race.lead <= 5 ? C.heat : C.gold;
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: 72,
-          background: "linear-gradient(135deg, #111114, #2A2145 60%, #6B4EFF)",
-          color: "#fff",
-          fontFamily: "sans-serif",
-        }}
-      >
-        <div
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            letterSpacing: 4,
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,.6)",
-          }}
-        >
-          {space?.name ?? "MaxPoll"}
+      <div style={shell}>
+        <div style={{ ...row, justifyContent: "space-between" }}>
+          <Eyebrow text={space?.name ?? "MaxPoll"} live={!closed} />
+          <div style={{ ...row, gap: 14, fontSize: 26, color: C.dim }}>
+            <div style={{ display: "flex", fontWeight: 700, color: "#fff" }}>
+              {n(poll.vote_count ?? 0)}
+            </div>
+            <div style={{ display: "flex" }}>votes</div>
+            <div style={{ display: "flex", color: C.dimmer }}>·</div>
+            <div style={{ display: "flex", color: closed ? C.dim : C.heat }}>{left}</div>
+          </div>
         </div>
 
-        <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.1, letterSpacing: -2 }}>
-          {poll.title}
-        </div>
+        <div style={{ ...col, gap: 30 }}>
+          <div
+            style={{
+              display: "flex",
+              // Two lines is the budget. Past it the board loses a row, and the
+              // board is the reason the card works.
+              fontSize: poll.title.length > 44 ? 52 : 62,
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: -2,
+            }}
+          >
+            {clip(poll.title, 84)}
+          </div>
 
-        <div style={{ display: "flex", fontSize: 28, color: "rgba(255,255,255,.85)" }}>
-          {leader ? (
-            <span style={{ display: "flex" }}>
-              🥇&nbsp;
-              <span style={{ color: "#F5B324", fontWeight: 700 }}>{leader.label}</span>
-              &nbsp;leading ·&nbsp;
-              <span style={{ color: "#F5B324", fontWeight: 700 }}>{poll.vote_count}</span>
-              &nbsp;votes · {left}
-            </span>
-          ) : (
-            <span>Be the first to vote</span>
+          {top.length > 0 && (
+            <div style={{ ...col, gap: 18 }}>
+              {top.map((o) => (
+                <Bar
+                  key={o.id}
+                  rank={o.rank}
+                  label={o.label}
+                  pct={o.pct}
+                  votes={o.votes}
+                  lead={board[0].votes}
+                />
+              ))}
+            </div>
           )}
         </div>
+
+        <Hook text={hook} accent={accent} />
       </div>
     ),
-    {
-      width: 1200,
-      height: 630,
-      headers: {
-        "Cache-Control": "public, max-age=0",
-        "CDN-Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
-      },
-    }
+    { ...OG, headers: HEADERS }
+  );
+}
+
+/**
+ * One leaderboard row. The bar is scaled against the **leader**, not against the
+ * total — at 3 options and 40% / 30% / 30% every bar would otherwise be a stub,
+ * and the whole point of the card is that you can see the shape of the race in
+ * the half-second before you decide to tap.
+ */
+function Bar({
+  rank,
+  label,
+  pct,
+  votes,
+  lead,
+}: {
+  rank: number;
+  label: string;
+  pct: number;
+  votes: number;
+  lead: number;
+}) {
+  const first = rank === 1;
+  const width = lead > 0 ? Math.max(4, (votes / lead) * 100) : 0;
+
+  return (
+    // flex-start, not center: the rank must sit on the *name's* line. Centred
+    // against the whole column it drifts down to the bar and reads misaligned.
+    <div style={{ ...row, alignItems: "flex-start", gap: 22 }}>
+      <div
+        style={{
+          display: "flex",
+          width: 44,
+          paddingTop: 4,
+          fontSize: 28,
+          fontWeight: 700,
+          color: first ? C.gold : C.dim,
+        }}
+      >
+        {String(rank).padStart(2, "0")}
+      </div>
+
+      <div style={{ ...col, flex: 1, gap: 8 }}>
+        <div style={{ ...row, justifyContent: "space-between" }}>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 32,
+              fontWeight: first ? 700 : 500,
+              color: first ? "#fff" : "rgba(255,255,255,.82)",
+            }}
+          >
+            {clip(label, 30)}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 28,
+              fontWeight: 700,
+              color: first ? C.gold : C.dim,
+            }}
+          >
+            {pct}%
+          </div>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            height: 10,
+            borderRadius: 99,
+            backgroundColor: "rgba(255,255,255,.10)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              width: `${width}%`,
+              borderRadius: 99,
+              backgroundColor: first ? C.gold : "rgba(255,255,255,.42)",
+            }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
