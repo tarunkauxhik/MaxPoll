@@ -83,6 +83,37 @@ This immediately paid for itself twice, in opposite directions:
 `--force-device-scale-factor=1` matters, and Git Bash mangles a bare `/` argument
 into a Windows path, so run it with `MSYS_NO_PATHCONV=1`.
 
+Two things to know when reading its screenshots. A full-page capture
+(`captureBeyondViewport`) paints `position: fixed` elements **once, at their
+viewport offset** — so the bottom nav appears stranded in the middle of a long
+page and the left rail stops dead at the viewport height. Neither is a bug.
+And Next's dev-mode indicator is a dark circle in the bottom-left corner; it is
+not part of the UI.
+
+## The signed-in screens are the ones that break, and they redirect
+
+Half the app 307s to sign-in when logged out, so a CDP sweep silently only ever
+proves the *public* routes. `/admin` and `/settings` are exactly the two that
+have been reported broken, and exactly the two a sweep skips.
+
+Google blocks OAuth from an automated browser, so don't fight it. Mint a session
+directly instead — the same admin affordance `scripts/gates.mjs` already uses:
+create a user with `POST /auth/v1/admin/users`, `POST
+/auth/v1/admin/generate_link` for a magic link, then `GET /auth/v1/verify` with
+`redirect: 'manual'` and read `access_token` out of the **URL fragment** of the
+303. Wrap it in the shape `@supabase/ssr` expects —
+`'base64-' + btoa(JSON.stringify(session))` under `sb-<project-ref>-auth-token` —
+and set it with CDP's `Network.setCookie`. Delete the user afterwards.
+
+Two snags found doing it: `orders.amount_paise` is a **generated column**, so an
+insert has to omit it, and the admin queue filters on `status = 'submitted'`, not
+`'pending'` — a seeded row with the wrong status renders an empty queue and looks
+like the page is fine.
+
+`/admin` additionally needs the user in `ADMIN_USER_IDS`, which means restarting
+the dev server with it set. Next 16 refuses to start a second dev server for the
+same directory, so stop the first one rather than trying to use another port.
+
 ## Closing a hole can leave no door, and nobody notices for six phases
 
 `20260806110000` revoked `update` on `polls` and dropped `polls_update`. That was
