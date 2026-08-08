@@ -161,7 +161,7 @@ function ActivityRow({
             )}
           </div>
           {hidden > 0 && (
-            <a className="btn sm vio" href={`/p/${slug}/unlock`}>
+            <a className="btn sm accent" href={`/p/${slug}/unlock`}>
               Unlock names · ₹<span className="num">9</span>
             </a>
           )}

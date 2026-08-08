@@ -4,6 +4,7 @@ import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
 import { JoinButton } from "./JoinButton";
 import { ShareButton } from "@/components/poll/ShareButton";
+import { tint } from "@/components/SpaceCard";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, getSpaceByKey, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { monogram, n, unit } from "@/lib/format";
@@ -99,7 +100,9 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
     <AppShell>
       <div className="feed spacehead">
         <div className="shead">
-          <span className="av lg" aria-hidden="true">
+          {/* Same tint as the Space's card in a list — a Space that is teal in
+              the directory and navy on its own page reads as two Spaces. */}
+          <span className="av lg" style={{ background: tint(space.name) }} aria-hidden="true">
             {monogram(space.name)}
           </span>
           <div>

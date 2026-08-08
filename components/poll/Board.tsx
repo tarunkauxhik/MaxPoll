@@ -395,7 +395,7 @@ function UnderList({
           to reveal, so ₹9 would buy a board that stays blank. Never offer a
           purchase that cannot deliver. */}
       {showCounts && !entitled && (
-        <a className="btn vio unlockcta" href={`/p/${slug}/unlock`}>
+        <a className="btn accent unlockcta" href={`/p/${slug}/unlock`}>
           See the exact names of voters · ₹9
         </a>
       )}

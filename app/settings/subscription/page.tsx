@@ -51,7 +51,7 @@ export default async function SubscriptionPage() {
 
             {live ? (
               <form action={startOrder.bind(null, "pass_30d", null, undefined)}>
-                <button type="submit" className="btn vio">
+                <button type="submit" className="btn accent">
                   Get the 30-day pass
                 </button>
               </form>

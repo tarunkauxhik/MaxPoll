@@ -1,27 +1,38 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lora, Space_Mono } from "next/font/google";
+import { Inter, Instrument_Serif, Lora } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
-// Inter and Lora are variable fonts — one file each covers every weight.
-// Space Mono is static-only, so 400/700 ship as two files.
+/**
+ * Three faces, and no fourth — DECISIONS D15.
+ *
+ * Inter and Lora are variable, so one file each covers every weight they're
+ * allowed to use. Instrument Serif is not variable and ships `400` only, which
+ * is exactly why it takes the largest type: it *cannot* render faux-bold, and
+ * the hero is where that would show most.
+ *
+ * Lora can go to 700 and must not. That cap is enforced in
+ * scripts/check-contrast.mjs, not here — a bundler can't see a CSS weight.
+ *
+ * Space Mono is gone; `.num` uses Inter's tabular figures instead.
+ */
 const inter = Inter({
   variable: "--font-ui",
   subsets: ["latin"],
   display: "swap",
 });
 
-const lora = Lora({
+const instrumentSerif = Instrument_Serif({
   variable: "--font-display",
   subsets: ["latin"],
+  weight: "400",
   display: "swap",
 });
 
-const spaceMono = Space_Mono({
-  variable: "--font-num",
+const lora = Lora({
+  variable: "--font-serif",
   subsets: ["latin"],
-  weight: ["400", "700"],
   display: "swap",
 });
 
@@ -50,7 +61,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0A0E1C",
+  // The chrome, not the page — this is what tints the browser and Android status
+  // bar, and the bar it sits against is `--dark`. app/manifest.ts carries the
+  // same value for the same reason; its `background_color` is the page.
+  themeColor: "#121A2E",
 };
 
 export default function RootLayout({
@@ -59,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${lora.variable} ${spaceMono.variable}`}
+      className={`${inter.variable} ${instrumentSerif.variable} ${lora.variable}`}
     >
       <body>
         {children}

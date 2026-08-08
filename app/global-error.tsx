@@ -5,7 +5,9 @@
  *
  * This replaces `<html>` and `<body>` entirely, so it cannot use AppShell, the
  * design tokens, or anything from globals.css: none of it has loaded. Hence the
- * inline styles, which is the one place in this codebase they are correct.
+ * inline styles, which is the one place in this codebase they are correct — and
+ * hence the hardcoded hex, which has to be updated by hand when the palette
+ * moves. It mirrors `:root` as of DECISIONS D15: page, ink, body, brand, muted.
  *
  * It should essentially never render. If it does, the deploy is broken, not the
  * page — so the copy says so rather than offering a retry that will fail again.
@@ -24,8 +26,8 @@ export default function GlobalError({
           display: "grid",
           placeItems: "center",
           padding: 24,
-          background: "#0A0E1C",
-          color: "#F1F4FC",
+          background: "#F4F6FA",
+          color: "#101828",
           fontFamily: "system-ui, sans-serif",
           textAlign: "center",
         }}
@@ -33,7 +35,7 @@ export default function GlobalError({
         <div style={{ maxWidth: 360 }}>
           <p style={{ fontSize: 40, margin: 0 }}>🛠️</p>
           <h1 style={{ fontSize: 22, margin: "12px 0 8px" }}>MaxPoll is down</h1>
-          <p style={{ color: "#B7C0DE", lineHeight: 1.5, margin: "0 0 20px" }}>
+          <p style={{ color: "#3D485C", lineHeight: 1.5, margin: "0 0 20px" }}>
             Not your connection — ours. Try again in a minute.
           </p>
           {/* A plain <a>, deliberately. <Link> is a client-side navigation, and
@@ -49,7 +51,7 @@ export default function GlobalError({
               lineHeight: "48px",
               padding: "0 24px",
               borderRadius: 16,
-              background: "#0F7A82",
+              background: "#3B4FD8",
               color: "#fff",
               fontWeight: 700,
               textDecoration: "none",
@@ -58,7 +60,7 @@ export default function GlobalError({
             Reload
           </a>
           {error.digest && (
-            <p style={{ color: "#8B94B6", fontSize: 12, marginTop: 20 }}>
+            <p style={{ color: "#59637A", fontSize: 12, marginTop: 20 }}>
               Reference {error.digest}
             </p>
           )}

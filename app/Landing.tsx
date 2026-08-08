@@ -34,13 +34,19 @@ export function Landing({
   live: LivePoll[];
 }) {
   return (
-    <div className="lander">
+    /* The header sits OUTSIDE .lander deliberately: .lander is width-capped and
+       centred, and a header nested inside it stops at that cap, leaving a dark
+       bar floating in the middle of a light page on a laptop. It centres its own
+       contents to the same column instead — see .lnav in globals.css. */
+    <>
       <header className="lnav">
         <div className="wordmark">
           Max<i>Poll</i>
         </div>
         <SignInButton label="Log in" variant="sec" className="btn sec sm" />
       </header>
+
+      <div className="lander">
 
       <section className="lhero">
         {/* Only shown when the number is real. 01-product: real aggregates only —
@@ -223,9 +229,10 @@ export function Landing({
        * fallback: a visible CTA is never the failure mode. `prefers-reduced-
        * motion` lands in the same place.
        */}
-      <div className="lsticky">
-        <SignInButton label="Continue with Google" className="btn pri fullw" />
+        <div className="lsticky">
+          <SignInButton label="Continue with Google" className="btn pri fullw" />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

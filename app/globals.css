@@ -1,62 +1,95 @@
-/* ============================================================
-   MaxPoll — design tokens + component CSS
-
-   THIS FILE IS THE VISUAL SOURCE OF TRUTH.
-   docs/04-design.md explains what these values mean and why.
-   Where the two disagree, this file is what ships.
-
-   Dark is the base theme now — DECISIONS D14, reversing D12/D13's
-   "not a second theme" stance. Every text/background pair here is
-   >=4.5:1 (WCAG AA), measured against the dark base, not eyeballed.
-   Two tokens failed that once in the old light theme — see
-   docs/DECISIONS.md C1 before changing --muted or using --teal as text.
-   ============================================================ */
+/**
+ * MaxPoll — the whole stylesheet. Plain CSS, no Tailwind (DECISIONS B1).
+ *
+ * This file is the visual source of truth; docs/04-design.md explains it and
+ * does not outrank it. Rebuilt in DECISIONS D15: light page, dark chrome, three
+ * typefaces, four breakpoints.
+ *
+ * Two rules about editing it:
+ *
+ *   1. `scripts/check-contrast.mjs` parses the `:root` block below by text and
+ *      runs inside `pnpm check`. Renaming a token that a PAIRS entry names
+ *      fails the build. That is the point.
+ *   2. A token rename is never exhaustive. Grep raw hex and rgba too — two
+ *      hardcoded colours survived two retints each by never being a `var()`.
+ *
+ * Colours that can't be read from CSS live in app/og/**, public/icon.svg,
+ * app/global-error.tsx and app/manifest.ts. They are updated by hand.
+ */
 
 :root {
-  /* surface — deep blue-black base, cards one step lighter (raised) */
-  --paper: #0A0E1C; /* page background */
-  --card: #131B30; /* cards, sheets */
-  --line: #232C48; /* decorative hairlines & separators */
-  --line-strong: #5B6892; /* form control borders — WCAG 1.4.11 */
+  /* ── surfaces ────────────────────────────────────────────────────────────
+     Light where you read. The page is a hair cooler than the cards, which is
+     what lets a white card lift off it without needing a heavy border. */
+  --paper: #F4F6FA; /* page */
+  --card: #FFFFFF; /* cards, sheets, inputs */
+  --line: #E2E7F0; /* decorative hairlines & separators */
+  --line-strong: #79859F; /* form control borders — WCAG 1.4.11, 3.4:1 */
 
-  /* text — every pair below is >=4.5:1 on --paper, measured */
-  --ink: #F1F4FC; /* primary          17.5:1 */
-  --body: #B7C0DE; /* paragraphs       10.6:1 */
-  --muted: #8B94B6; /* secondary, labels 6.4:1 */
+  /* ── text ────────────────────────────────────────────────────────────────
+     Ratios are against --paper, the harder of the two light surfaces. */
+  --ink: #101828; /* primary          16.4:1 */
+  --body: #3D485C; /* paragraphs        8.5:1 */
+  --muted: #59637A; /* secondary, labels 5.6:1 */
 
-  /* semantic — each colour has ONE job, never decorative.
-     The -text variants exist because the brand colour is a surface colour;
-     used as text it fails contrast. Never swap one for the other. */
-  --gold: #F5B324; /* RANK 1 ONLY — fills, rank digit, ring */
-  --gold-text: #FFCB57; /* gold as text     10.6 gold-soft / 11.3 card */
-  --gold-soft: #2B2008;
-  --teal: #0F7A82; /* MOVEMENT ONLY — fills, dots, button backgrounds */
-  --teal-text: #4FD8CC; /* teal as text     11.0 paper / 9.8 card / 9.3 teal-soft */
-  --teal-soft: #0C2426;
-  --heat: #E8452C; /* TIME PRESSURE ONLY — bars, fills */
-  --heat-text: #FF8266; /* heat as text     7.2 heat-soft / 7.9 paper */
-  --heat-soft: #2E1109;
-  --up: #0E8A4F; /* rank gain — fills */
-  --up-text: #5FE3A0; /* up as text      10.2 on up-soft */
-  --up-soft: #0C2318;
+  /* ── the dark chrome ─────────────────────────────────────────────────────
+     Where you navigate, and where the design wants weight: top bar, nav,
+     primary buttons, the timer, monogram tiles, your own chat bubbles.
+     16.0:1 against the page, so the split is unmistakable rather than muddy. */
+  --dark: #121A2E;
+  --dark-2: #1E2942; /* the raised stop in a dark gradient */
+  --on-dark: #FFFFFF; /* 17.3:1 on --dark */
+  --on-dark-dim: #AAB4CC; /* 8.3:1 on --dark — measured, not guessed */
 
-  /* pressed — a background LIGHTENS now, since the base is dark.
-     Darkening a dark surface further is invisible. */
-  --press: rgba(255, 255, 255, .06);
+  /* ── semantic accents ────────────────────────────────────────────────────
+     Each has ONE job and is never decorative. Gold = rank 1. Indigo =
+     movement. Red = time pressure. Green = rank gain.
 
-  /* geometry */
+     Each ships as a family because a brand colour is a SURFACE colour — the
+     same hue used as type usually fails contrast. `-text` carries type on
+     light, `-soft` backs a pill, `-on-dark` carries type on the chrome.
+     Never substitute one member for another. */
+
+  /* indigo — movement, focus rings, the wordmark accent, the live dot.
+     Deliberately the same family as --dark: an unrelated accent against navy
+     reads as two colours sharing a page, this reads as one system. */
+  --brand: #3B4FD8; /* fills, dots, button backgrounds */
+  --brand-text: #2E3DAE; /* 8.1:1 paper · 8.8:1 card · 7.5:1 brand-soft */
+  --brand-soft: #E9ECFC;
+  --brand-on-dark: #A9B6FF; /* 8.9:1 on --dark */
+
+  --gold: #C08A0E; /* RANK 1 ONLY — fills, rank digit, the draining track */
+  --gold-text: #7E5C07; /* 6.1:1 card · 5.7:1 paper · 5.5:1 gold-soft */
+  --gold-soft: #FBF1DA;
+  --gold-on-dark: #F0BE4A; /* 10.0:1 on --dark */
+
+  --heat: #D93B20; /* TIME PRESSURE ONLY — bars, fills, the urgent timer */
+  --heat-text: #B23018; /* 6.3:1 card · 5.8:1 paper · 5.4:1 heat-soft */
+  --heat-soft: #FCE9E4;
+  --heat-on-dark: #FF9B80; /* 8.5:1 on --dark */
+
+  --up: #157F4A; /* RANK GAIN ONLY — fills */
+  --up-text: #0F6B3D; /* 6.6:1 card · 5.8:1 up-soft */
+  --up-soft: #E2F5EA;
+
+  /* Pressed. A darkening again — the base is light, so lightening a surface
+     under a finger is invisible. */
+  --press: rgba(16, 24, 40, .05);
+
+  /* ── geometry ────────────────────────────────────────────────────────── */
   --r-sm: 12px;
   --r-md: 16px;
   --r-lg: 22px;
   --r-xl: 28px;
   --tap: 48px; /* minimum touch target */
-  /* Dense rows — admin queue, dupe warning, unlock CTA. 44px is WCAG 2.5.5's
-     floor; these were 36px, which nothing justified. */
+  /* Dense rows — admin queue, dupe warning, suggestion chips. 44px is WCAG
+     2.5.5's floor and nothing goes under it. */
   --tap-sm: 44px;
   --ease: cubic-bezier(.22, 1, .36, 1);
 
-  /* spacing — layout rhythm and all new components. Component-internal
-     padding stays as the design drew it; those are optical choices. */
+  /* ── spacing ─────────────────────────────────────────────────────────────
+     Layout rhythm and all new components. Component-internal padding stays as
+     drawn where it was an optical choice; retrofitting those is drift. */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
@@ -66,58 +99,42 @@
   /**
    * Elevation — a scale, not one-offs.
    *
-   * Three stops each, because one blurred shadow reads as a sticker and two read
-   * as a card: a tight contact shadow for the edge, a mid one for the lift, and a
-   * wide ambient one for the room it sits in. Pure black at real opacity — the
-   * old warm-ink tint at .04-.14 alpha was tuned for a light page and reads as
-   * nothing against a base that's already near-black.
+   * Three layers each: a tight contact shadow for the edge, a mid one for the
+   * lift, a wide ambient one for the room it sits in. One blurred shadow reads
+   * as a sticker; two read as a card.
+   *
+   * Tinted with the ink rather than pure black, and at low alpha. Pure black at
+   * .3+ was tuned for a near-black page and reads as grime on a light one.
    */
-  --shadow-1: 0 1px 1px rgba(0, 0, 0, .3), 0 2px 8px -1px rgba(0, 0, 0, .35),
-    0 14px 30px -14px rgba(0, 0, 0, .5);
-  --shadow-2: 0 -12px 40px -14px rgba(0, 0, 0, .55);
+  --shadow-1: 0 1px 2px rgba(16, 24, 40, .04), 0 2px 6px -1px rgba(16, 24, 40, .06),
+    0 12px 24px -12px rgba(16, 24, 40, .10);
+  --shadow-2: 0 -8px 40px -12px rgba(16, 24, 40, .22);
   /* Interactive lift — the pressed/hover partner to shadow-1. */
-  --shadow-lift: 0 1px 1px rgba(0, 0, 0, .35), 0 4px 12px -2px rgba(0, 0, 0, .4),
-    0 22px 44px -18px rgba(0, 0, 0, .55);
+  --shadow-lift: 0 1px 2px rgba(16, 24, 40, .05), 0 4px 10px -2px rgba(16, 24, 40, .09),
+    0 20px 36px -16px rgba(16, 24, 40, .16);
   /**
-   * A 1px inner highlight along the top of a card. Free depth: it is what makes
-   * a surface read as lit rather than as a rectangle with a border. Much dimmer
-   * than the old light-theme value — white at .9 alpha on a navy card is a
-   * glare, not a highlight.
+   * The card's own edge. On the dark theme this was a lit top highlight; a
+   * white highlight on a white card is nothing, so on light it inverts into a
+   * soft bottom inner shade. Same job — the surface reads as a solid with a
+   * near edge rather than as a rectangle with a border.
    */
-  --ring: inset 0 1px 0 rgba(255, 255, 255, .06);
-
-  /**
-   * Deep accent panels — timer, hero, primary CTA — one step darker than
-   * --paper, so they still read as a distinct recessed surface even though
-   * the whole page is dark now. Same visual language as the WhatsApp preview
-   * cards (one light source, top-left, over near-black) — DECISIONS D14.
-   */
-  --dark: #05070E;
-  --dark-2: #101830; /* the raised stop in a dark gradient */
-  --on-dark: #FFFFFF; /* 20.1:1 on --dark */
-  --on-dark-dim: #A9B2D0; /* 9.6:1 on --dark — measured, not guessed */
+  --ring: inset 0 -1px 0 rgba(16, 24, 40, .05);
 
   --grad-ink: linear-gradient(145deg, var(--dark-2), var(--dark) 62%);
-  --grad-heat: linear-gradient(145deg, #3A140D, #7A1E10 55%, #B3301C);
-  --grad-glow: radial-gradient(120% 140% at 8% -20%, rgba(15, 122, 130, .38), transparent 60%);
+  --grad-heat: linear-gradient(145deg, #4A1608, #8F2411 55%, #C2331B);
+  /* One soft indigo light source, top-left, over the navy. */
+  --grad-glow: radial-gradient(120% 140% at 8% -20%, rgba(59, 79, 216, .34), transparent 60%);
 
-  /**
-   * The page-wide shader — DECISIONS D14. Three layered radial glows over
-   * --paper: a blue wash top-left, a small teal one top-right (the brand
-   * accent, kept minor so blue stays the dominant hue), and a deep indigo
-   * one rising from the bottom. Painted on a fixed pseudo-element (see
-   * body::before below) so it never stretches across a long scroll.
-   */
-  --grad-page: radial-gradient(120% 70% at 15% -10%, rgba(31, 82, 158, .35), transparent 55%),
-    radial-gradient(90% 60% at 100% 0%, rgba(15, 122, 130, .2), transparent 60%),
-    radial-gradient(100% 80% at 50% 120%, rgba(20, 40, 90, .45), transparent 65%);
-
-  /* layout — not in doc 05; the prototypes are fixed-height mockups and
-     never had to solve for a real scrolling page */
+  /* ── layout ──────────────────────────────────────────────────────────────
+     --col and --rail-w both grow at the breakpoints at the bottom of this
+     file. Designed at 360px; everything above is a step up from there. */
   --col: 480px; /* centred content column */
   --topbar-h: 54px;
   --nav-h: 62px; /* bottom nav height, reserved as scroll inset */
-  --rail-w: 88px; /* left rail at >=768px */
+  --rail-w: 88px; /* left rail at >=768px, labelled sidebar at >=1024px */
+  /* Ranked and chronological lists never widen past this, at any viewport —
+     rank only reads down one narrow column. */
+  --col-list: 620px;
 
   /* z-index scale — declared once so layers never get invented ad hoc */
   --z-nav: 20;
@@ -146,6 +163,9 @@ summary {
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* One theme, and it is light. Tells the UA to render native form controls,
+     scrollbars and autofill in their light variants rather than guessing. */
+  color-scheme: light;
 }
 
 body {
@@ -153,7 +173,6 @@ body {
   min-height: 100dvh; /* not 100vh — mobile browser chrome */
   background: var(--paper);
   color: var(--ink);
-  position: relative;
   /**
    * 16px, not 15px. Two reasons, and the second is the one that matters:
    * 15px is under every mobile-readability floor there is, and iOS Safari
@@ -167,26 +186,10 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* The shader itself — DECISIONS D14. A fixed pseudo-element rather than
-   `background-attachment: fixed` on body: iOS Safari has a long history of
-   repaint bugs with fixed backgrounds on scroll, and this pattern sidesteps
-   it entirely. Negative z-index with no positioned ancestor above it paints
-   behind normal-flow content, which is every card/form/board on the site —
-   they all keep their own opaque backgrounds and sit on top untouched. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: var(--grad-page);
-  pointer-events: none;
-}
-
 /**
  * The safety net. A poll title, a Space name, a display name, an option label
  * and a handle are all user text, and one long unbroken token (a URL, a German
- * compound, a keyboard mash) overflowed every container that held them — there
- * was no wrap rule anywhere outside the chat bubbles.
+ * compound, a keyboard mash) overflowed every container that held them.
  *
  * `anywhere` rather than `break-word`: it also allows the browser to shrink the
  * min-content width, which is what stops a flex item forcing its parent wide.
@@ -199,7 +202,7 @@ select {
   overflow-wrap: anywhere;
 }
 
-/* Display faces truncate hardest because of the negative tracking. */
+/* Display faces truncate hardest, so they get it explicitly too. */
 .t-hero,
 .t-title,
 .t-card {
@@ -208,8 +211,7 @@ select {
 
 /* System emoji stack — still the fallback for emoji inside user content
    (poll titles, chat messages) that the <Emoji> component doesn't touch.
-   Every emoji literal in our own UI renders as a bundled Apple-style PNG
-   instead, via <Emoji> — DECISIONS D13, reversing A5. */
+   Every emoji literal in our own UI renders as a bundled PNG via <Emoji>. */
 body,
 button,
 input,
@@ -231,27 +233,44 @@ a {
   text-decoration: none;
 }
 
-/* Every number, without exception. Tabular figures so live counts don't jitter. */
+/**
+ * Every number, without exception — DECISIONS B6.
+ *
+ * Inter, not a mono face: proportional digits change width as counts tick, so
+ * rows jitter during a count-up, and `tabular-nums` is the actual fix. Inter
+ * ships real tabular figures, so the guarantee holds with one font file fewer
+ * and numbers that look part of the UI instead of bolted onto it.
+ */
 .num {
-  font-family: var(--font-num), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
-/* Accessibility floor — see docs/04-design.md §9 */
+/* Accessibility floor — docs/04-design.md §8 */
 :focus-visible {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* The base teal ring already clears 3:1 everywhere now that the whole page
-   is dark, but these three are the highest-emphasis targets on the site
-   (the primary CTA, the timer, the create tile) — full white is a crisper
-   focus indicator on their extra-deep --grad-ink surfaces specifically. */
-.btn.pri:focus-visible,
+/**
+ * Indigo is a light-surface ring: 5.9:1 on the page, 6.4:1 on a card. On the
+ * navy chrome it is near-invisible, so anything sitting on --dark switches to
+ * white. The permanent version of the lesson in DECISIONS C4 — a ring tuned for
+ * one surface is not a ring on the other.
+ *
+ * The selectors are DESCENDANT selectors, and that distinction is the whole
+ * rule: `outline-offset` draws the ring *outside* the element, on whatever is
+ * behind it. So it is the container that decides, never the control. A white
+ * ring on `.btn.pri` would be drawn on the light page the button sits on — the
+ * button being dark is irrelevant, and the ring would vanish.
+ */
+.top :focus-visible,
+.lnav :focus-visible,
+.nav :focus-visible,
 .timerbar :focus-visible,
-.nav .create:focus-visible {
-  outline-color: #fff;
+.bub.me :focus-visible {
+  outline-color: var(--on-dark);
   outline-offset: 3px;
 }
 
@@ -266,32 +285,45 @@ a {
 }
 
 /* ============================ TYPOGRAPHY ============================ */
-/* Type scale — doc 05 §2 */
+/**
+ * Three faces and no fourth — DECISIONS D15.
+ *
+ *   --font-display  Instrument Serif, 400 ONLY (the face ships nothing else)
+ *   --font-serif    Lora, 400/500, NEVER 600+ — enforced by pnpm check
+ *   --font-ui       Inter, everything else including every number
+ *
+ * Instrument Serif takes the largest type precisely because it cannot render
+ * faux-bold; the hero is where that would show most. Its letterforms are
+ * high-contrast, so the tracking here is much looser than the old grotesque's
+ * -.045em — squeezing a didone closes its counters and it stops being elegant.
+ */
 
 .t-hero {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 41px;
-  line-height: .96;
-  letter-spacing: -.045em;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 1.02;
+  letter-spacing: -.015em;
   margin: 0;
 }
 
 .t-title {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 25px;
-  line-height: 1.08;
-  letter-spacing: -.035em;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.12;
+  letter-spacing: -.01em;
   margin: 0;
 }
 
+/* Lora, at 500. Sturdier than Instrument Serif at small sizes, which is the
+   whole reason there are two serifs: a didone at 17px goes thin and gritty. */
 .t-card {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
   font-size: 17px;
-  line-height: 1.15;
-  letter-spacing: -.025em;
+  line-height: 1.28;
+  letter-spacing: -.003em;
   margin: 0;
 }
 
@@ -314,19 +346,22 @@ a {
   color: var(--heat-text);
 }
 
-/* Pinned off --font-display on purpose: Lora tops out at 700, and a
-   synthetically-bolded serif logotype is worse than not following the
-   headline font here at all. */
+/* Pinned to Inter on purpose, and the only place a weight this heavy appears.
+   Neither serif can carry a logotype: Instrument Serif has no bold at all, and
+   a synthetically-bolded Lora is worse than a wordmark that simply doesn't
+   follow the headline face. */
 .wordmark {
   font-family: var(--font-ui), system-ui, sans-serif;
-  font-weight: 900;
+  font-weight: 800;
   font-size: 22px;
-  letter-spacing: -.05em;
+  letter-spacing: -.04em;
 }
 
+/* Both containers the wordmark ever appears in — .top and .lnav — are dark, so
+   the accent uses the on-dark member of the family, not the light-surface one. */
 .wordmark i {
   font-style: normal;
-  color: var(--teal-text);
+  color: var(--brand-on-dark);
 }
 
 .top .wordmark {
@@ -334,16 +369,6 @@ a {
   align-items: center;
   min-height: var(--tap);
   padding-right: var(--s-2);
-}
-
-/* Everything on the page is dark now, so .top's children inherit correctly
-   without a special case — --teal-text and --ink both already work against
-   --grad-ink, which is darker than --paper but still just another dark
-   surface. Only the badge ring needs an explicit match: it's meant to blend
-   into whatever's directly behind it, and .top's --grad-ink is a different
-   shade from the page's --paper. */
-.top .bell .dot {
-  border-color: var(--dark);
 }
 
 /* ============================ SHELL ============================ */
@@ -363,14 +388,16 @@ a {
   padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
 }
 
+/* The chrome. Dark against a light page — this contrast IS the design, so the
+   bar keeps its own colour system rather than inheriting the page's. */
 .top {
   position: sticky;
   top: 0;
   z-index: var(--z-top);
   background: var(--grad-glow), var(--grad-ink);
+  color: var(--on-dark);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255, 255, 255, .1);
   padding: 13px 16px;
   display: flex;
   align-items: center;
@@ -388,7 +415,7 @@ a {
   right: 0;
   top: 100%;
   height: 16px;
-  background: linear-gradient(rgba(17, 17, 20, .1), rgba(17, 17, 20, 0));
+  background: linear-gradient(rgba(16, 24, 40, .13), rgba(16, 24, 40, 0));
   opacity: 0;
   pointer-events: none;
 }
@@ -405,16 +432,6 @@ a {
   to { opacity: 1; }
 }
 
-.top h1,
-.top h2 {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 15px;
-  margin: 0;
-  letter-spacing: -.01em;
-  flex: 1;
-}
-
 .top .spacer {
   flex: 1;
 }
@@ -425,7 +442,7 @@ a {
   right: 0;
   bottom: 0;
   z-index: var(--z-nav);
-  border-top: 1px solid rgba(255, 255, 255, .1);
+  border-top: 1px solid rgba(255, 255, 255, .09);
   background: var(--grad-ink);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -438,7 +455,7 @@ a {
   flex: 1;
   min-height: var(--tap);
   color: var(--on-dark-dim);
-  font-size: 12px; /* 10px in the mockup; nav labels are controls, not decoration */
+  font-size: 12px; /* nav labels are controls, not decoration */
   font-weight: 600;
   letter-spacing: .02em;
   padding: 5px 0;
@@ -448,7 +465,7 @@ a {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  transition: color .18s var(--ease);
+  transition: color .18s var(--ease), background .18s var(--ease);
 }
 
 .nav a[aria-current="page"] {
@@ -462,44 +479,16 @@ a {
   height: 22px;
 }
 
+/* The raised create tile. It sits on a bar that is already dark, so it needs a
+   hairline to read as a distinct raised surface rather than a hole. */
 .nav .create .ic {
-  background: var(--grad-ink);
-  border: 1px solid rgba(255, 255, 255, .12);
-  color: #fff;
+  background: var(--brand);
+  border: 1px solid rgba(255, 255, 255, .16);
+  color: var(--on-dark);
   width: 38px;
   height: 32px;
   border-radius: 11px;
   margin-top: -4px;
-}
-
-/* >=768px: the same markup becomes a left rail. CSS only — no JS, no resize
-   listener, no duplicated tree. */
-@media (min-width: 768px) {
-  .nav {
-    top: 0;
-    right: auto;
-    bottom: 0;
-    width: var(--rail-w);
-    flex-direction: column;
-    justify-content: center;
-    gap: 6px;
-    border-top: none;
-    border-right: 1px solid rgba(255, 255, 255, .1);
-    padding: 12px 8px;
-  }
-
-  .nav a {
-    flex: 0 0 auto;
-    font-size: 12px;
-  }
-
-  .shell {
-    padding-left: var(--rail-w);
-  }
-
-  .shell-col {
-    padding-bottom: 24px;
-  }
 }
 
 /* ============================ BUTTONS ============================ */
@@ -517,31 +506,35 @@ a {
   border: none;
   cursor: pointer;
   width: 100%;
-  transition: transform .16s var(--ease), opacity .16s;
+  transition: transform .16s var(--ease), opacity .16s, box-shadow .16s var(--ease);
 }
 
 .btn:active {
   transform: scale(.975);
 }
 
+/* The primary action is one of the dark surfaces — the weight is the point. */
 .btn.pri {
   background: var(--grad-ink);
-  color: #fff;
+  color: var(--on-dark);
+  box-shadow: var(--shadow-1);
 }
 
 .btn.sec {
   background: var(--card);
   color: var(--ink);
   border: 1px solid var(--line);
+  box-shadow: var(--ring);
 }
 
-.btn.vio {
-  background: var(--teal);
-  color: #fff;
-  box-shadow: 0 6px 20px -8px var(--teal);
+/* The accent button. Named `.vio` until D15 — it was violet, then teal, then
+   this, and the class name had outlived all three. */
+.btn.accent {
+  background: var(--brand);
+  color: var(--on-dark);
+  box-shadow: 0 6px 20px -8px rgba(59, 79, 216, .7);
 }
 
-/* doc05: §4.7 says sm is 36px; prototype uses 38px. Doc 05 wins. */
 .btn.sm {
   min-height: var(--tap-sm);
   font-size: 13px;
@@ -551,7 +544,7 @@ a {
 }
 
 /* ============================ OPTION ROW ============================ */
-/* doc 05 §4.1 — the most important component. Five variants. */
+/* The most important component. Five variants. */
 
 .board {
   padding: 2px 12px 0;
@@ -561,8 +554,8 @@ a {
 }
 
 /* A <button>, not a div — it's the primary action of the whole product and
-   must be keyboard-reachable. `width:100%` and the font resets undo the UA
-   button styles. */
+   must be keyboard-reachable (DECISIONS C2). `width:100%` and the font resets
+   undo the UA button styles. */
 .opt {
   display: flex;
   align-items: center;
@@ -579,9 +572,8 @@ a {
   overflow: hidden;
   cursor: pointer;
   min-height: var(--tap);
-  /* The lit top edge, so a row reads as a raised surface rather than as a boxed
-     one. Rank 1 and .mine both add their own ring — kept first in the list so
-     those overrides replace it cleanly instead of stacking. */
+  /* Rank 1 and .mine both add their own ring — kept first in the list so those
+     overrides replace it cleanly instead of stacking. */
   box-shadow: var(--ring);
   transition: transform .34s var(--ease), border-color .2s, box-shadow .2s,
     background-color .12s;
@@ -602,7 +594,7 @@ a {
 .opt .fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: var(--teal-soft);
+  background: var(--brand-soft);
   z-index: 0;
   transition: width .5s var(--ease);
 }
@@ -613,12 +605,12 @@ a {
 }
 
 .opt .rk {
-  font-family: var(--font-num), monospace;
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 16px;
   width: 26px;
   color: var(--muted);
-  letter-spacing: -.04em;
+  letter-spacing: -.02em;
 }
 
 .opt .body {
@@ -645,24 +637,25 @@ a {
 }
 
 .opt .pct {
-  font-family: var(--font-num), monospace;
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 16px;
-  letter-spacing: -.03em;
+  letter-spacing: -.02em;
 }
 
-/* variant: rank 1 — gold, earned */
+/* variant: rank 1 — gold, earned. The border clears 3:1 against the card, so
+   rank 1 is identifiable without reading the digit. */
 .opt.g1 {
-  border-color: rgba(245, 179, 36, .45);
-  background: linear-gradient(180deg, var(--gold-soft), #fff);
+  border-color: var(--gold);
+  background: linear-gradient(180deg, var(--gold-soft), var(--card));
 }
 
 .opt.g1 .rk {
-  color: var(--gold);
+  color: var(--gold-text);
 }
 
 .opt.g1 .fill {
-  background: rgba(245, 179, 36, .14);
+  background: rgba(192, 138, 14, .14);
 }
 
 /* variant: the user's own pick */
@@ -672,8 +665,6 @@ a {
 }
 
 .tagme {
-  /* A genuinely dark fill, not --ink — --ink is the light primary-text
-     colour now, and white text on it would be invisible. */
   background: var(--dark);
   color: var(--on-dark);
   font-size: 12px;
@@ -703,7 +694,7 @@ a {
 }
 
 /* variant: locked — placeholder content only. Real names never reach the
-   client without a server-side entitlement check (doc 06 §3.6). */
+   client without a server-side entitlement check. */
 .locked {
   filter: blur(4.5px);
   opacity: .55;
@@ -713,7 +704,7 @@ a {
 
 /* movement badge */
 .mv {
-  font-family: var(--font-num), monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 700;
   padding: 2px 5px;
@@ -731,19 +722,19 @@ a {
 }
 
 .mv.new {
-  color: var(--teal-text);
-  background: var(--teal-soft);
+  color: var(--brand-text);
+  background: var(--brand-soft);
 }
 
 /* ============================ GAP LINE ============================ */
-/* doc 05 §4.2 — the growth engine. Always free, never blurred. */
+/* The growth engine. Always free, never blurred. */
 
 .gap {
   margin: 1px 12px;
   padding: 7px 12px;
   border-radius: var(--r-sm);
-  background: var(--teal-soft);
-  color: var(--teal-text);
+  background: var(--brand-soft);
+  color: var(--brand-text);
   font-size: 12px;
   font-weight: 600;
   display: flex;
@@ -752,7 +743,7 @@ a {
 }
 
 .gap b {
-  font-family: var(--font-num), monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 /**
@@ -779,13 +770,14 @@ a {
 }
 
 /* ============================ TIMER ============================ */
-/* doc 05 §4.3 — the only dark block on a paper page. */
 
 /**
- * The countdown as a deadline, not a status bar — doc 04 §5.3. Segmented digit
- * blocks (like a boarding-pass gate timer) read as urgency in a way a single
- * mono string never did; a draining track underneath makes the window's shape
- * visible at a glance, not just its number.
+ * The countdown as a deadline, not a status bar. Segmented digit blocks (like a
+ * boarding-pass gate timer) read as urgency in a way a single mono string never
+ * did; a draining track underneath makes the window's shape visible at a
+ * glance, not just its number.
+ *
+ * One of the dark surfaces on a light page — the weight is doing work here.
  */
 .timerbar {
   display: flex;
@@ -841,6 +833,7 @@ a {
 .tseg .v {
   font-size: 32px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -.02em;
   line-height: 1;
   color: var(--on-dark);
@@ -863,7 +856,7 @@ a {
 .ttrack i {
   display: block;
   height: 100%;
-  background: var(--gold);
+  background: var(--gold-on-dark);
   transition: width 1s linear;
 }
 
@@ -872,11 +865,11 @@ a {
 }
 
 .timerbar.urgent .ttrack i {
-  background: var(--heat);
+  background: var(--heat-on-dark);
 }
 
 /* Opacity only — never a transform, which would nudge layout bounds on a
-   budget Android. prefers-reduced-motion below already kills it, and the red
+   budget Android. prefers-reduced-motion above already kills it, and the red
    gradient still carries the urgency without it. */
 @keyframes tpulse {
   50% { opacity: .55; }
@@ -894,8 +887,8 @@ a {
   width: 0 !important;
 }
 
-/* The room, surfaced above the board rather than buried in the footer —
-   doc 03 chat is where the argument actually happens. */
+/* The room, surfaced above the board rather than buried in the footer — chat
+   is where the argument actually happens. */
 .chatentry {
   display: flex;
   align-items: center;
@@ -916,7 +909,9 @@ a {
 
 .chatentry .ic {
   flex: 0 0 auto;
-  font-size: 20px;
+  color: var(--brand-text);
+  display: grid;
+  place-items: center;
 }
 
 .chatentry .body {
@@ -932,8 +927,8 @@ a {
 .chatentry .chev { color: var(--muted); font-size: 20px; flex: 0 0 auto; }
 
 .anonbadge {
-  background: var(--teal-soft);
-  color: var(--teal-text);
+  background: var(--brand-soft);
+  color: var(--brand-text);
   font-size: 11px;
   font-weight: 700;
   padding: 2px 7px;
@@ -949,7 +944,7 @@ a {
 }
 
 .chip {
-  font-family: var(--font-num), monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   font-weight: 700;
   background: var(--paper);
@@ -963,13 +958,13 @@ a {
 
 .chip.hot {
   background: var(--heat-soft);
-  border-color: rgba(232, 69, 44, .25);
+  border-color: rgba(217, 59, 32, .25);
   color: var(--heat-text);
 }
 
 .chip.voted {
   background: var(--up-soft);
-  border-color: rgba(14, 138, 79, .25);
+  border-color: rgba(21, 127, 74, .25);
   color: var(--up-text);
 }
 
@@ -1022,7 +1017,7 @@ a {
 }
 
 .cardgap b {
-  font-family: var(--font-num), monospace;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -1031,7 +1026,7 @@ a {
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
-  color: var(--teal-text);
+  color: var(--brand-text);
   margin-bottom: 6px;
   display: flex;
   align-items: center;
@@ -1058,10 +1053,12 @@ a {
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .mrow .nm {
   flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1092,7 +1089,7 @@ a {
   width: 6px;
   height: 6px;
   border-radius: 99px;
-  background: var(--teal);
+  background: var(--brand);
   position: relative;
   display: inline-block;
   flex: 0 0 6px;
@@ -1103,7 +1100,7 @@ a {
   position: absolute;
   inset: -3px;
   border-radius: 99px;
-  background: var(--teal);
+  background: var(--brand);
   opacity: .28;
   animation: livepulse 1.9s infinite;
 }
@@ -1115,13 +1112,15 @@ a {
 }
 
 /* ============================ SHEET ============================ */
-/* doc 05 §4.6 — join Space, paywall, share, destructive confirm */
+/* Join Space, paywall, share, destructive confirm. Radix Dialog — the one
+   permitted dependency, because a correct focus trap is not the lazy option. */
 
 .backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-backdrop);
-  background: rgba(17, 17, 20, .45);
+  /* 50% — strong enough to isolate the sheet from a light page behind it. */
+  background: rgba(16, 24, 40, .5);
   animation: fadein .2s var(--ease);
 }
 
@@ -1139,31 +1138,23 @@ a {
   box-shadow: var(--shadow-2);
   border-top: 1px solid var(--line);
   animation: sheetup .28s var(--ease);
-  /* No cap and no scroll meant a sheet taller than the viewport just grew
-     past the top of the screen — Radix locks body scroll, so the content
-     above the fold (the admin order sheet's Expected/UTR fields, the two
-     values a moderator is specifically told to compare) became genuinely
-     unreachable on a short phone. overscroll-behavior stops the scroll from
-     chaining into the page behind it once it hits the end. */
+  /* No cap and no scroll meant a sheet taller than the viewport just grew past
+     the top of the screen — Radix locks body scroll, so the content above the
+     fold (the admin order sheet's Expected/UTR fields, the two values a
+     moderator is specifically told to compare) became genuinely unreachable on
+     a short phone. overscroll-behavior stops the scroll from chaining into the
+     page behind it once it hits the end. */
   max-height: min(88dvh, 720px);
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-
-.sheet h2,
-.sheet h3 {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 21px;
-  margin: 0 0 6px;
-  letter-spacing: -.03em;
 }
 
 .grab {
   width: 36px;
   height: 4px;
   border-radius: 99px;
-  background: var(--line);
+  background: var(--line-strong);
+  opacity: .4;
   margin: 0 auto 16px;
 }
 
@@ -1181,7 +1172,8 @@ a {
 
 /* Form controls use --line-strong: an input's boundary is what identifies it
    as an input, so WCAG 1.4.11 wants >=3:1 there. Decorative hairlines keep
-   --line — making every separator 3:1 would turn a light design heavy. */
+   --line — making every separator 3:1 would turn a light design heavy
+   (DECISIONS C1b). */
 .field {
   width: 100%;
   min-height: var(--tap);
@@ -1191,20 +1183,25 @@ a {
   font-size: 16px; /* >=16px or iOS zooms the page on focus */
   background: var(--card);
   color: var(--ink);
+  transition: border-color .15s, box-shadow .15s;
 }
 
 .field:focus {
   outline: none;
-  border-color: var(--teal-text);
-  /* A translucent glow, not a solid ring — --teal-soft is a dark chip
-     background now, too low-contrast against --card to read as a focus
-     ring on its own. */
-  box-shadow: 0 0 0 3px rgba(79, 216, 204, .35);
+  border-color: var(--brand);
+  /* A translucent halo rather than a solid ring, so the field grows a focus
+     state without the layout shifting by a pixel. */
+  box-shadow: 0 0 0 3px rgba(59, 79, 216, .18);
+}
+
+.field::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 
 /* ============================ STATES ============================ */
-/* Loading, empty and error. The mockups had none of these; all three are
-   required before any screen ships. Copy: docs/03-ux-flows.md. */
+/* Loading, empty and error. All three are required before a screen ships
+   (DECISIONS C3). Copy: docs/03-ux-flows.md — instructions, never apologies. */
 
 .skel {
   background: var(--line);
@@ -1219,7 +1216,7 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .65), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .9), transparent);
   transform: translateX(-100%);
   animation: shimmer 1.4s infinite;
 }
@@ -1267,7 +1264,7 @@ a {
 }
 
 /* ============================ DISCLOSURE ============================ */
-/* doc 05 §4.12 — load-bearing. Never smaller than 11px. */
+/* Load-bearing legal text. Never smaller than 12px. */
 
 .discl {
   font-size: 12px;
@@ -1282,8 +1279,6 @@ a {
 }
 
 /* ============================ FORMS ============================ */
-/* Labels, hints and inline errors. Built on the spacing scale (C4) — these are
-   new components, so they follow --s-*, unlike the prototype's optical padding. */
 
 .lbl {
   display: block;
@@ -1309,7 +1304,7 @@ a {
   line-height: 1.4;
 }
 
-/* Errors state what happened and what to do — never an apology (doc 04 §8). */
+/* Errors state what happened and what to do — never an apology. */
 .fielderr {
   font-size: 12px;
   font-weight: 600;
@@ -1336,6 +1331,7 @@ textarea.field {
   background: var(--card);
   padding-left: 14px;
   min-height: var(--tap);
+  transition: border-color .15s, box-shadow .15s;
 }
 
 .handlewrap > span {
@@ -1354,11 +1350,8 @@ textarea.field {
 }
 
 .handlewrap:focus-within {
-  border-color: var(--teal-text);
-  /* A translucent glow, not a solid ring — --teal-soft is a dark chip
-     background now, too low-contrast against --card to read as a focus
-     ring on its own. */
-  box-shadow: 0 0 0 3px rgba(79, 216, 204, .35);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(59, 79, 216, .18);
 }
 
 .socialgrid {
@@ -1388,12 +1381,12 @@ textarea.field {
 }
 
 /* ============================ LANDING ============================ */
-/* doc 04 §6. The hero IS the product: a working board, not a headline.
+/* The hero IS the product: a working board, not a headline.
 
-   Rebuilt for phones first. The order answers the three questions a stranger
-   actually has, in the order they have them: is this real (live polls straight
-   from the database), what do I do (four steps), what happens to me (public
-   votes, 18+, no password). Proof before claims. */
+   Phones first. The order answers the three questions a stranger actually has,
+   in the order they have them: is this real (live polls straight from the
+   database), what do I do (four steps), what happens to me (public votes, 18+,
+   no password). Proof before claims. */
 
 .lander {
   max-width: var(--col);
@@ -1402,22 +1395,32 @@ textarea.field {
   padding: 0 var(--s-4) calc(var(--tap) + var(--s-6) * 2 + env(safe-area-inset-bottom));
 }
 
+/**
+ * The landing page's own header. Structurally identical to .top, and dark for
+ * the same reason — this is chrome, and chrome is dark.
+ *
+ * It spans the full page and centres its own contents to the same column
+ * `.lander` uses, rather than living inside `.lander` and inheriting the cap.
+ * The `max()` is what does it: below the cap it is a plain 16px gutter, above
+ * it, it grows to whatever keeps the row aligned with the content below.
+ *
+ * No `100vw` anywhere on purpose — vw includes the scrollbar, and a full-bleed
+ * built on it overflows by exactly the scrollbar's width on every desktop
+ * browser that shows one.
+ */
 .lnav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
   min-height: var(--topbar-h);
-  padding: var(--s-2) 0;
-  /* Follows the scroll so "Log in" is always one tap away — landing.csv's
-     sticky-nav-CTA rule, and free here because the bar is 54px. */
+  padding-block: var(--s-2);
+  padding-inline: max(var(--s-4), calc((100% - var(--col)) / 2 + var(--s-4)));
   position: sticky;
   top: 0;
   z-index: var(--z-top);
-  /* Same dark treatment as .top — this is the landing page's own header,
-     structurally identical, and it hardcoded the old light --paper as a raw
-     rgba rather than a token, which is exactly why it was missed at first. */
   background: var(--grad-glow), var(--grad-ink);
+  color: var(--on-dark);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -1454,8 +1457,8 @@ textarea.field {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: var(--teal-soft);
-  color: var(--teal-text);
+  background: var(--brand-soft);
+  color: var(--brand-text);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: .06em;
@@ -1465,16 +1468,15 @@ textarea.field {
   margin: 0 0 var(--s-4);
 }
 
-/* 41px wrapped this headline to four lines at 360px, which is a wall rather
-   than a hook. Fluid instead: 34px on a small phone, up to 44px where there is
-   room, with no breakpoint to maintain. */
+/* Fluid rather than a breakpoint: 36px on a small phone, up to 56px where
+   there is room. Instrument Serif carries a large size well and needs one. */
 .lhero .t-hero {
-  font-size: clamp(34px, 9.4vw, 44px);
+  font-size: clamp(36px, 9.6vw, 56px);
 }
 
 .lhero .t-hero i {
-  color: var(--teal-text);
-  font-style: normal;
+  color: var(--brand-text);
+  font-style: italic; /* the face ships a real italic — use it */
 }
 
 .lsub {
@@ -1508,6 +1510,7 @@ textarea.field {
   font-size: 13px;
   font-weight: 700;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* The name wins the row. It is the only part a stranger reads. */
@@ -1521,9 +1524,9 @@ textarea.field {
   white-space: nowrap;
 }
 
-/* Was a fixed 64px stub. It is the only thing on the page that shows a *race*,
-   so it gets real width — but it yields to the name rather than truncating it,
-   which is what `flex: 1 1 96px` on both did ("Verma Ma'am" became "Verma …"). */
+/* It is the only thing on the page that shows a *race*, so it gets real width —
+   but it yields to the name rather than truncating it, which is what
+   `flex: 1 1 96px` on both did ("Verma Ma'am" became "Verma …"). */
 .drow .bar {
   flex: 0 1 104px;
   min-width: 48px;
@@ -1554,6 +1557,7 @@ textarea.field {
   font-weight: 700;
   width: 36px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .demo .gap {
@@ -1632,15 +1636,14 @@ textarea.field {
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
-  color: var(--teal-text);
+  color: var(--brand-text);
 }
 
 .lpoll .ttl {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 1.2;
-  letter-spacing: -.02em;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.28;
 }
 
 .lpoll .foot {
@@ -1676,18 +1679,17 @@ textarea.field {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--teal-soft);
-  color: var(--teal-text);
+  background: var(--brand-soft);
+  color: var(--brand-text);
   display: grid;
   place-items: center;
 }
 
 .lchatcard .ttl {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 700;
-  font-size: 17px;
-  line-height: 1.25;
-  letter-spacing: -.02em;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.28;
   margin: 0 0 4px;
 }
 
@@ -1698,7 +1700,7 @@ textarea.field {
   margin: 0;
 }
 
-/* Three equal cells split by a hairline — doc 04 §6. */
+/* Three equal cells split by a hairline. */
 .lstats {
   display: flex;
   border-top: 1px solid var(--line);
@@ -1722,7 +1724,8 @@ textarea.field {
 .lstats .v {
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: -.03em;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .lstats .k {
@@ -1738,7 +1741,7 @@ textarea.field {
 }
 
 .lhow .t-card {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .lhow ol {
@@ -1760,19 +1763,21 @@ textarea.field {
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   padding: var(--s-4);
+  box-shadow: var(--ring);
 }
 
 .lhow .s {
   flex: 0 0 32px;
   height: 32px;
   border-radius: 9px;
-  background: var(--teal);
+  background: var(--brand);
   box-shadow: var(--shadow-1);
-  color: #fff;
+  color: var(--on-dark);
   font-size: 14px;
   font-weight: 700;
   display: grid;
   place-items: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .lhow b {
@@ -1810,7 +1815,10 @@ textarea.field {
   bottom: 0;
   z-index: var(--z-nav);
   padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom));
-  background: linear-gradient(rgba(250, 250, 247, 0), var(--paper) 38%);
+  /* `transparent`, not a hardcoded page colour. The literal that used to be
+     here was the old paper white and went stale silently through two retints,
+     because a raw rgba is invisible to a token rename. */
+  background: linear-gradient(transparent, var(--paper) 38%);
 }
 
 .lsticky .btn {
@@ -1862,7 +1870,8 @@ textarea.field {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--teal-text);
+  color: var(--brand-text);
+  font-weight: 600;
   text-decoration: none;
   padding: 14px 10px;
   margin: -14px -10px;
@@ -1928,11 +1937,11 @@ textarea.field {
 .progress i {
   display: block;
   height: 100%;
-  background: var(--teal);
+  background: var(--brand);
 }
 
 /* ============================ ADD OPTION ============================ */
-/* doc 04 §5.10 — rank and count are what actually stop the duplicate. */
+/* Rank and count are what actually stop the duplicate. */
 
 .addopen {
   width: calc(100% - var(--s-6));
@@ -1950,6 +1959,7 @@ textarea.field {
   border-radius: var(--r-md);
   overflow: hidden;
   background: var(--card);
+  box-shadow: var(--ring), var(--shadow-1);
 }
 
 .sugg li + li {
@@ -1988,6 +1998,7 @@ textarea.field {
 .rankpill {
   font-size: 12px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -2003,7 +2014,7 @@ textarea.field {
 .dupewarn {
   margin-top: var(--s-2);
   background: var(--heat-soft);
-  border: 1px solid rgba(232, 69, 44, .25);
+  border: 1px solid rgba(217, 59, 32, .25);
   border-radius: var(--r-md);
   padding: var(--s-3);
   display: grid;
@@ -2028,6 +2039,7 @@ textarea.field {
 
 /* ============================ ACTIVITY BELL ============================ */
 
+/* Lives in .top and nowhere else, so it dresses for the dark chrome. */
 .bell {
   position: relative;
   display: grid;
@@ -2035,7 +2047,12 @@ textarea.field {
   width: var(--tap);
   height: var(--tap);
   margin-right: -12px;
-  color: var(--ink);
+  color: var(--on-dark-dim);
+  transition: color .18s var(--ease);
+}
+
+.bell:hover {
+  color: var(--on-dark);
 }
 
 .bell .dot {
@@ -2047,12 +2064,15 @@ textarea.field {
   padding: 0 4px;
   border-radius: 99px;
   background: var(--heat);
-  color: #fff;
+  color: var(--on-dark);
   font-size: 12px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   display: grid;
   place-items: center;
-  border: 2px solid var(--paper);
+  /* Blends into whatever is directly behind it, which is the dark bar — not
+     the page. No overflow:hidden anywhere on .bell, so "99+" grows leftward. */
+  border: 2px solid var(--dark);
 }
 
 /* ============================ UTILITIES ============================ */
@@ -2062,7 +2082,7 @@ textarea.field {
 
 .notice {
   background: var(--gold-soft);
-  border: 1px solid rgba(245, 179, 36, .45);
+  border: 1px solid rgba(192, 138, 14, .4);
   border-radius: var(--r-md);
   padding: var(--s-3);
   font-size: 13px;
@@ -2082,7 +2102,7 @@ textarea.field {
    would compete with the timer. */
 .btn.danger {
   color: var(--heat-text);
-  border: 1px solid rgba(232, 69, 44, .4);
+  border: 1px solid rgba(217, 59, 32, .4);
   background: var(--card);
 }
 
@@ -2116,6 +2136,7 @@ textarea.field {
   color: var(--on-dark);
   font-size: 12px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   display: grid;
   place-items: center;
 }
@@ -2125,7 +2146,7 @@ textarea.field {
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: var(--s-4);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--ring), var(--shadow-1);
   display: grid;
   gap: var(--s-3);
   justify-items: center;
@@ -2179,15 +2200,25 @@ textarea.field {
 }
 
 .priceline {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: -.03em;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
   margin: var(--s-4) 0;
+  /* Price plus its qualifier, side by side. Without wrap this forced the
+     viewport wider than the screen at 360px. */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2);
 }
 
 .paywall .btn { width: 100%; margin-bottom: var(--s-2); text-decoration: none; }
 .paywall .subline { margin: var(--s-4) 0 var(--s-2); }
 
+/* The "coming soon" card. Unrelated to `.pcard.soon`, which is a closing-soon
+   poll — two different meanings on one word, kept because both are in the
+   markup and renaming is a JSX change for no visual gain. */
 .soon {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -2222,7 +2253,7 @@ textarea.field {
   border-radius: var(--r-md);
   padding: var(--s-3);
   min-height: var(--tap);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--ring), var(--shadow-1);
   transition: background .16s var(--ease);
 }
 
@@ -2233,6 +2264,7 @@ textarea.field {
   align-items: center;
   gap: var(--s-2);
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 /* Truncates instead of wrapping, so a long poll title cannot push the chevron
@@ -2248,6 +2280,7 @@ textarea.field {
   grid-column: 1;
   font-size: 12px;
   color: var(--muted);
+  min-width: 0;
 }
 
 .qchev {
@@ -2258,9 +2291,9 @@ textarea.field {
   padding-left: var(--s-2);
 }
 
-.qutr { font-size: 14px; font-weight: 600; }
-.qactions { display: flex; gap: var(--s-2); margin-top: var(--s-3); }
-.qactions > form { flex: 1; }
+.qutr { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.qactions { display: flex; gap: var(--s-2); margin-top: var(--s-3); flex-wrap: wrap; }
+.qactions > form { flex: 1 1 auto; min-width: 0; }
 .qactions > .btn, .qactions > form > .btn { width: 100%; }
 .rejform { margin-top: var(--s-2); }
 
@@ -2296,15 +2329,17 @@ textarea.field {
   word-break: break-word;
 }
 
-.dvalue a { color: var(--teal-text); }
+.dvalue a { color: var(--brand-text); }
 
 /* ---- access granted ---- */
+/* Nothing to do with .growing, .growbox or @keyframes grow-bar. Four unrelated
+   things share a prefix; this one is the admin's granted-access row. */
 .grow {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   padding: var(--s-3);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--ring), var(--shadow-1);
 }
 
 .gmeta {
@@ -2313,6 +2348,7 @@ textarea.field {
   gap: var(--s-2);
   flex-wrap: wrap;
   margin-bottom: var(--s-1);
+  min-width: 0;
 }
 
 .ghandle {
@@ -2323,18 +2359,19 @@ textarea.field {
 }
 
 .gtag {
-  font-family: var(--font-num), monospace;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: .04em;
   padding: 2px 6px;
   border-radius: 5px;
+  white-space: nowrap;
 }
 
 /* Comped and paid have to be distinguishable at a glance — they are the
    difference between revenue and a favour. */
 .gtag.paid { background: var(--up-soft); color: var(--up-text); }
-.gtag.comp { background: var(--teal-soft); color: var(--teal-text); }
+.gtag.comp { background: var(--brand-soft); color: var(--brand-text); }
 .gtag.lapsed { background: var(--heat-soft); color: var(--heat-text); }
 .gtag.report { background: var(--heat-soft); color: var(--heat-text); }
 
@@ -2389,7 +2426,7 @@ textarea.field {
   height: 20px;
   margin-top: 1px;
   flex: 0 0 auto;
-  accent-color: var(--ink);
+  accent-color: var(--brand);
 }
 
 .check .hint { display: block; margin-top: 2px; }
@@ -2411,6 +2448,7 @@ textarea.field {
   font-size: 12px;
   color: var(--muted);
   text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
   min-height: var(--tap);
   padding: 0 var(--s-3);
@@ -2423,7 +2461,7 @@ textarea.field {
 .reportlink.chip {
   text-decoration: none;
   background: var(--heat-soft);
-  border: 1px solid rgba(232, 69, 44, .25);
+  border: 1px solid rgba(217, 59, 32, .25);
   border-radius: var(--r-sm);
   color: var(--heat-text);
   font-weight: 700;
@@ -2448,6 +2486,7 @@ textarea.field {
   font-weight: 600;
   cursor: pointer;
   color: var(--ink);
+  transition: border-color .15s, box-shadow .15s;
 }
 
 .segment button.on {
@@ -2509,7 +2548,7 @@ textarea.field {
   border: none;
   border-radius: var(--r-md);
   background: var(--grad-ink);
-  color: #fff;
+  color: var(--on-dark);
   font: inherit;
   font-size: 13.5px;
   font-weight: 700;
@@ -2524,7 +2563,7 @@ textarea.field {
    brighter surface says so without adding a second colour. */
 .quotacta.pri {
   background: var(--grad-heat);
-  box-shadow: 0 6px 20px -8px rgba(179, 48, 28, .5);
+  box-shadow: 0 6px 20px -8px rgba(178, 48, 24, .45);
 }
 
 /* ---- person-poll question suggestions ---- */
@@ -2546,6 +2585,7 @@ textarea.field {
   font-weight: 600;
   color: var(--ink);
   cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
 }
 
 .suggchip.on {
@@ -2566,7 +2606,7 @@ textarea.field {
 .drange {
   width: 100%;
   height: var(--tap-sm);
-  accent-color: var(--gold);
+  accent-color: var(--brand);
   cursor: pointer;
 }
 
@@ -2596,6 +2636,8 @@ textarea.field {
 
 .scard:active { transform: scale(.985); background: var(--press); }
 
+/* The monogram tile — one of the small dark surfaces that carry the chrome
+   into the content. Instrument Serif at 400, which is all it has. */
 .av {
   flex: 0 0 44px;
   width: 44px;
@@ -2603,18 +2645,18 @@ textarea.field {
   border-radius: 12px;
   display: grid;
   place-items: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -.03em;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  font-size: 19px;
   color: var(--on-dark);
-  background: var(--dark);
+  background: var(--grad-ink);
 }
 
-.av.lg { flex-basis: 52px; width: 52px; height: 52px; font-size: 18px; }
+.av.lg { flex-basis: 52px; width: 52px; height: 52px; font-size: 23px; }
 
 .sbody { flex: 1; min-width: 0; display: grid; gap: 3px; }
-.stop { display: flex; align-items: center; gap: var(--s-2); }
+/* The Space card's top row. Not a "stop" — the name is historical. */
+.stop { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
 
 .snm {
   font-size: 15px;
@@ -2631,8 +2673,8 @@ textarea.field {
 .growing {
   font-size: 12px;
   font-weight: 700;
-  color: var(--teal-text);
-  background: var(--teal-soft);
+  color: var(--brand-text);
+  background: var(--brand-soft);
   padding: 2px 7px;
   border-radius: 99px;
   white-space: nowrap;
@@ -2641,15 +2683,15 @@ textarea.field {
 /* ============================ SPACE PAGE ============================ */
 
 .spacehead { display: grid; gap: var(--s-3); }
-.shead { display: flex; gap: var(--s-3); align-items: center; }
+.shead { display: flex; gap: var(--s-3); align-items: center; min-width: 0; }
 .sdesc { font-size: 14px; line-height: 1.45; color: var(--body); }
 .growbox { display: grid; gap: var(--s-1); }
-.verified { color: var(--teal-text); margin-left: 6px; }
+.verified { color: var(--brand-text); margin-left: 6px; }
 
 /* ============================ PROFILE ============================ */
 
 .prof { display: grid; gap: var(--s-2); justify-items: center; text-align: center; }
-.phandle { color: var(--teal-text); font-size: 14px; font-weight: 600; }
+.phandle { color: var(--brand-text); font-size: 14px; font-weight: 600; }
 .pbio { font-size: 14px; line-height: 1.45; color: var(--body); max-width: 32ch; }
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--s-2); justify-content: center; }
@@ -2666,7 +2708,7 @@ textarea.field {
   background: var(--card);
 }
 
-/* Now a real <a>, so it needs a tap target and its own hover/press state. */
+/* A real <a>, so it needs a tap target and its own hover/press state. */
 .socialchip {
   min-height: var(--tap-sm);
   transition: border-color .15s, background .15s;
@@ -2677,7 +2719,7 @@ textarea.field {
 .badgechip { font-size: 12px; font-weight: 700; padding: 5px 10px; }
 
 .badgechip.gold {
-  border-color: rgba(245, 179, 36, .5);
+  border-color: rgba(192, 138, 14, .45);
   background: var(--gold-soft);
   color: var(--gold-text);
 }
@@ -2696,10 +2738,11 @@ textarea.field {
   border-right: 1px solid var(--line);
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
 .statrow > div:last-child { border-right: 0; }
-.statrow .v { font-size: 19px; font-weight: 700; letter-spacing: -.03em; }
+.statrow .v { font-size: 19px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 
 .statrow .k {
   font-size: 12px;
@@ -2720,6 +2763,7 @@ textarea.field {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
+  box-shadow: var(--ring);
   text-decoration: none;
   color: inherit;
 }
@@ -2740,15 +2784,14 @@ textarea.field {
 .atime { font-size: 12px; font-weight: 600; color: var(--muted); }
 
 /* same_as_you converts best, so it gets the only decorated row. Tokens
-   throughout this time, not hardcoded hex — the old version hardcoded a
-   raw rgba that went stale twice already (once through D11's violet->teal
-   rename, again through D14's retune of --teal itself). */
+   throughout, not raw hex — the version before this one hardcoded an rgba that
+   went stale twice, once per rebrand, because a rename cannot see it. */
 .act.same {
-  border-color: rgba(15, 122, 130, .35);
-  background: linear-gradient(180deg, var(--teal-soft), var(--card));
+  border-color: rgba(59, 79, 216, .3);
+  background: linear-gradient(180deg, var(--brand-soft), var(--card));
 }
 
-.act.same .ic { background: var(--teal-soft); }
+.act.same .ic { background: var(--brand-soft); color: var(--brand-text); }
 
 .namechips { display: flex; flex-wrap: wrap; gap: 8px; }
 
@@ -2774,7 +2817,7 @@ textarea.field {
 .chat {
   display: flex;
   flex-direction: column;
-  min-height: 60vh;
+  min-height: 60dvh; /* dvh, not vh — this was the last vh in the file */
 }
 
 .bubbles {
@@ -2804,9 +2847,9 @@ textarea.field {
   border-bottom-left-radius: 5px;
 }
 
+/* Your own messages are one of the dark surfaces — the same device the top bar
+   and the timer use, which is what makes "mine" readable at a glance. */
 .bub.me {
-  /* A genuinely dark fill, not --ink — --ink is the light primary-text
-     colour now, and white text on it would be invisible. */
   background: var(--dark);
   color: var(--on-dark);
   align-self: flex-end;
@@ -2814,11 +2857,10 @@ textarea.field {
 }
 
 .bub.me .who { color: rgba(255, 255, 255, .55); }
-/* Same token on both bubble colours — --teal-text already clears 4.5:1 on
-   --card and on --dark, so there's no need for a separate hardcoded hex
-   here (the old one, #C9BEFF, was a residual purple D11's token-only sweep
-   missed since it was never a --violet reference). */
-.bub .who.anon { color: var(--teal-text); }
+.bub .who.anon { color: var(--brand-text); }
+/* The anon handle on your own bubble sits on --dark, so it takes the on-dark
+   member of the family. --brand-text here would be indigo on navy. */
+.bub.me .who.anon { color: var(--brand-on-dark); }
 
 .composer {
   display: flex;
@@ -2831,7 +2873,7 @@ textarea.field {
   bottom: var(--nav-h);
 }
 
-.composer .field { flex: 1; }
+.composer .field { flex: 1; min-width: 0; }
 
 .chatanon {
   padding: 6px 12px 0;
@@ -2845,17 +2887,207 @@ textarea.field {
 .setlist dt { color: var(--muted); flex: 0 0 auto; }
 /* A real Google email is routinely 25-40+ chars with no spaces to wrap on —
    same fix as .dvalue's, which this row never got. Without min-width:0 the
-   flex row's automatic min-content sizing pushes it wider than the
-   viewport instead of wrapping. */
+   flex row's automatic min-content sizing pushes it wider than the viewport
+   instead of wrapping. */
 .setlist dd { font-weight: 600; text-align: right; min-width: 0; word-break: break-word; }
 .setspaces { list-style: none; display: grid; gap: var(--s-2); margin-top: var(--s-2); }
 .setspaces a { font-size: 14px; font-weight: 600; color: var(--ink); }
 .setwrap form { margin-top: var(--s-6); }
 
 .delbox {
-  border: 1px solid rgba(232, 69, 44, .4);
+  border: 1px solid rgba(217, 59, 32, .4);
   border-radius: var(--r-md);
   padding: var(--s-4);
   display: grid;
   gap: var(--s-2);
+}
+
+/* ============================ RESPONSIVE ============================ */
+/**
+ * Designed at 360px. Everything below is a step up from there — DECISIONS D15.
+ *
+ * One DOM tree and media queries only: no JS breakpoint, no resize listener, no
+ * duplicated markup to drift apart (DECISIONS B2). `BottomNav` renders the same
+ * four links at every width; only this file decides what they look like.
+ *
+ *   >= 768   nav becomes an icon rail, column widens
+ *   >= 1024  rail becomes a labelled sidebar, card lists go two-column
+ *   >= 1280  column widens again, gutters open up
+ */
+
+@media (min-width: 768px) {
+  :root {
+    --col: 600px;
+  }
+
+  /* Same markup, now a left rail. */
+  .nav {
+    top: 0;
+    right: auto;
+    bottom: 0;
+    width: var(--rail-w);
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    border-top: none;
+    border-right: 1px solid rgba(255, 255, 255, .09);
+    /* The rail is the thing that ends up under a notch in landscape, and it
+       was the one edge with no safe-area inset anywhere in the file. */
+    padding: 12px 8px 12px calc(8px + env(safe-area-inset-left));
+  }
+
+  .nav a {
+    flex: 0 0 auto;
+  }
+
+  .shell {
+    padding-left: calc(var(--rail-w) + env(safe-area-inset-left));
+  }
+
+  .shell-col {
+    padding-bottom: var(--s-6);
+  }
+
+  /* No bottom bar to clear once the nav is a rail. */
+  .composer {
+    bottom: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --col: 760px;
+    --rail-w: 232px;
+  }
+
+  /* The rail grows a label beside each icon. Top-aligned rather than centred:
+     at this width a vertically-centred nav floats in the middle of nothing. */
+  .nav {
+    justify-content: flex-start;
+    padding-top: calc(var(--topbar-h) + var(--s-6));
+    gap: var(--s-1);
+  }
+
+  .nav a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--s-3);
+    padding: 10px var(--s-3);
+    font-size: 14px;
+    border-radius: var(--r-md);
+  }
+
+  .nav a:hover {
+    background: rgba(255, 255, 255, .06);
+  }
+
+  .nav a[aria-current="page"] {
+    background: rgba(255, 255, 255, .09);
+  }
+
+  /* The create tile keeps its raised treatment, just left-aligned like the
+     rest. It renders no label by design — it is the one icon-only control. */
+  .nav .create .ic {
+    margin-top: 0;
+  }
+
+  /**
+   * Card grids reflow into two columns. Ranked and chronological lists never
+   * do — see below.
+   *
+   * Matched with `:has()` rather than on `.feed` itself, because `.feed` is the
+   * generic padded page section, not a card list: it also wraps the profile
+   * header, the poll header, the Space header, the chat header, the activity
+   * list and several single-button rows. Turning all of those into two columns
+   * put a lone "Create a Space" button in a half-width cell and split the Space
+   * header down the middle. This targets only the ones actually holding cards.
+   */
+  .feed:has(> .pcard),
+  .feed:has(> .scard),
+  .lpolls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /**
+   * Two kinds of page, and they want different widths.
+   *
+   * Card grids (the feed, the Spaces directory, a profile's polls) use the full
+   * column and reflow into two. Everything else — ranked lists, chat, the admin
+   * queue, and every form — stays narrow: rank only reads down one column, and
+   * an 880px row puts a name and its percentage too far apart to associate.
+   *
+   * Capped on the COLUMN, not on the list inside it. Capping `.board` alone left
+   * the poll's title and buttons at full width with the board centred inside
+   * them — two alignments on one page, which looks like a bug rather than a
+   * layout. One cap, one edge, everything on the page lines up.
+   */
+  .shell-col:has(.board),
+  .shell-col:has(.bubbles),
+  .shell-col:has(.acts),
+  .shell-col:has(.paywrap),
+  .shell-col:has(.createwrap),
+  .shell-col:has(.setwrap),
+  .shell-col:has(.adminwrap),
+  .shell-col:has(.paywall),
+  .shell-col:has(.onbwrap) {
+    max-width: var(--col-list);
+  }
+
+  /* A bottom sheet is a focused, one-decision surface. It follows the narrow
+     measure at every width rather than growing with the page column. */
+  .sheet {
+    max-width: var(--col-list);
+  }
+
+  /* The landing hero goes side by side: the pitch on the left, the working
+     board on the right, which is the one thing that has to be seen. */
+  .lhero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--s-6);
+    align-items: center;
+    padding: calc(var(--s-6) * 2) 0 var(--s-6);
+  }
+
+  /* Grid items stretch to their cell by default, which turns the eyebrow pill
+     and the sign-in button into full-column-width slabs. They keep their own
+     intrinsic width instead. */
+  .lhero > * {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .lhero .demo,
+  .lhero .lsub,
+  .lhero .hint {
+    justify-self: stretch;
+  }
+
+  .lhero .demo {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    align-self: center;
+    margin-bottom: 0;
+  }
+
+  .lsub {
+    max-width: 42ch;
+  }
+
+  .lhow ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --col: 880px;
+  }
+
+  .feed,
+  .lander {
+    padding-inline: var(--s-6);
+  }
 }

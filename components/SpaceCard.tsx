@@ -2,13 +2,31 @@ import { monogram, n } from "@/lib/format";
 
 const UNLOCK = 20;
 
-/** Deterministic fill from the name — same Space, same colour, every render,
- *  with no colour column and no storage. Hue only; saturation and lightness are
- *  fixed so nothing can come out clashing or illegible under white text. */
-function tint(name: string) {
+/**
+ * Deterministic fill from the name — same Space, same colour, every render, with
+ * no colour column and no storage.
+ *
+ * The hue is confined to a 50° band around the brand indigo, for two reasons
+ * that the old full-wheel version got wrong on both counts:
+ *
+ *   1. **Colour has one job each** (CLAUDE.md). A free hue wheel put an olive
+ *      tile next to a gold rank-1 badge and an indigo movement chip, and the
+ *      page stopped reading as one system.
+ *   2. It was **not** actually legible. The old comment claimed fixed
+ *      saturation and lightness made it safe under white text; at `46% 42%` the
+ *      wheel bottoms out at **2.90:1 around hue 60**, so any Space whose name
+ *      hashed into the yellows rendered white-on-yellow. Measured, not guessed.
+ *
+ * This band's worst case is 7.5:1 — see DECISIONS D15 on why every accent is a
+ * family rather than a free choice.
+ */
+const HUE_FROM = 214; // blue
+const HUE_SPAN = 50; // …through to indigo, where --brand sits
+
+export function tint(name: string) {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
-  return `hsl(${h} 46% 42%)`;
+  return `hsl(${HUE_FROM + (h % HUE_SPAN)} 45% 36%)`;
 }
 
 export function SpaceCard({

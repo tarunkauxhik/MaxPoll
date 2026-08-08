@@ -59,7 +59,7 @@ export default async function UnlockPage({
               await startOrder("poll_unlock", poll.id, poll.slug);
             }}
           >
-            <button type="submit" className="btn vio">
+            <button type="submit" className="btn accent">
               Pay ₹<span className="num">{rupees(PRICES.poll_unlock)}</span> with UPI
             </button>
           </form>

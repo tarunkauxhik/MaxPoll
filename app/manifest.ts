@@ -22,10 +22,17 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    // Matches the `themeColor` in the root viewport export. If one changes, both
-    // must: Android tints the status bar from this, the browser from that.
-    background_color: "#FAFAF7",
-    theme_color: "#FAFAF7",
+    // Two different surfaces, deliberately — DECISIONS D15. `background_color` is
+    // the splash behind a cold start, so it's the page (`--paper`).
+    // `theme_color` tints the Android status bar, which sits against the top bar,
+    // so it's the chrome (`--dark`) and must match `themeColor` in the root
+    // viewport export.
+    //
+    // These were both `#FAFAF7` against a viewport of `#0A0E1C` for two phases,
+    // under a comment insisting they matched. Nothing warns about it; the splash
+    // just flashes the wrong colour. Check both when either moves.
+    background_color: "#F4F6FA",
+    theme_color: "#121A2E",
     lang: "en-IN",
     categories: ["social", "entertainment"],
     icons: [

@@ -162,7 +162,7 @@ export default async function PayPage({
           </p>
         </div>
 
-        <a className="btn vio payintent" href={intent}>
+        <a className="btn accent payintent" href={intent}>
           Pay ₹<span className="num">{amount}</span> in your UPI app
         </a>
         <p className="hint lcenter">On a phone, this opens GPay / PhonePe / Paytm.</p>
