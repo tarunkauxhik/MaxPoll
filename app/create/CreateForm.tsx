@@ -103,7 +103,7 @@ export function CreateForm({
           <label className="lbl" htmlFor="adjective">
             Question
           </label>
-          {/* Free-text now — DECISIONS D7. Presets are one-tap suggestions
+          {/* Free-text now — DECISIONS D10. Presets are one-tap suggestions
               underneath rather than the only option. */}
           <input
             id="adjective"

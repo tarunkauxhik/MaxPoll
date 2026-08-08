@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * Home · Spaces · Create(+) · Profile — doc 05 §3.
+ * Home · Spaces · Create(+) · Profile.
  *
  * One component, one DOM tree: the bottom bar becomes a left rail at >=768px
  * through a media query in globals.css. No JS breakpoint, no resize listener,

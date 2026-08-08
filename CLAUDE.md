@@ -19,15 +19,23 @@ you which file answers which question.
 ## Non-negotiables
 
 - **Visual source of truth** is `app/globals.css`, explained by
-  [docs/04-design.md](docs/04-design.md). Do not invent UI, colours, or layouts.
-  Unspecified anywhere → ask, don't improvise.
-- **Every number** wrapped in `.num` (Space Mono, tabular figures). Live counts
-  jitter otherwise, and that is the fastest way a leaderboard looks cheap.
-- **Colour has one job each.** Gold = rank 1 only. Teal = movement only.
-  Red = time pressure only. Reaching for a colour to decorate → use `--line` or
-  `--muted`.
-- **Contrast is measured, not eyeballed.** Every text pair ≥4.5:1. Two tokens already
-  failed this once — see DECISIONS C1.
+  [docs/04-design.md](docs/04-design.md) — which explains it and does not outrank it.
+- **One theme: light page, dark chrome.** Light where you read (page, cards, forms,
+  board); `--dark` where you navigate or the design wants weight (top bar, nav,
+  primary buttons, timer, hero). No toggle, no `prefers-color-scheme`.
+- **Three typefaces, and no fourth.** Instrument Serif (400 only) for `.t-hero` /
+  `.t-title`, Lora (**400/500, never 600+**) for `.t-card` and card titles, Inter for
+  everything else. The Lora cap is enforced by `pnpm check`, not by memory.
+- **Every number** wrapped in `.num` (Inter, tabular figures). Live counts jitter
+  otherwise, and that is the fastest way a leaderboard looks cheap.
+- **Colour has one job each.** Gold = rank 1 only. Indigo = movement only. Red = time
+  pressure only. Green = rank gain only. Reaching for a colour to decorate → use
+  `--line` or `--muted`. A brand colour is a *surface* colour — use its `-text`
+  sibling when it carries type, and `-on-dark` when it sits on the chrome.
+- **Contrast is measured, not eyeballed.** `pnpm check` runs the gate over all 33
+  pairs. Adding a token that carries text means adding its pair.
+- **Mobile first.** Designed at 360px; 768 / 1024 / 1440 are steps up. Verify all four
+  before calling a screen done. Ranked lists never go multi-column.
 - **Interactive elements are real `<button>` / `<a>`.** Never a clickable div.
 - **Never `count(*)` for vote counts.** Denormalised counters, incremented in the same
   transaction as the insert.

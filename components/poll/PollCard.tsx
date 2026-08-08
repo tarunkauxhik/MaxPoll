@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 import { Emoji } from "@/components/ui/Emoji";
 
 /**
- * doc 04 §5.5. The whole card is one `<a>` — it's a single destination, so it
+ * The whole card is one `<a>` — it's a single destination, so it
  * gets a single tap target rather than a div with a click handler.
  *
  * **Unvoted polls hide the names**: `🔒 vote to reveal` with a zero-width bar.

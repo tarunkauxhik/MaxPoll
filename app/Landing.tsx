@@ -13,7 +13,7 @@ export type LivePoll = {
 };
 
 /**
- * Logged-out landing — doc 04 §6.
+ * Logged-out landing.
  *
  * **The hero IS the product**: a working leaderboard with a gap line, not a
  * headline about one. Someone who has never heard of MaxPoll should understand

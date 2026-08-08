@@ -198,7 +198,7 @@ export function Board({
     return () => window.removeEventListener(BOARD_CHANGED, onChanged);
   }, [refresh]);
 
-  // ── FLIP (doc 04 §7 — the one signature motion) ────────────────────────────
+  // ── FLIP — the one signature motion ───────────────────────────────────────
   // Measure before paint, then animate the delta. Only transform is animated;
   // animating `top` would trigger layout on every frame on a budget Android.
   useEffect(() => {
@@ -352,7 +352,7 @@ export function Board({
  * styling detail and was not: a new option starts at 0 votes, sorts to the
  * bottom, lands here, and could then never be voted for by anyone — so it could
  * never climb out. That killed the add-option loop entirely (01-product counts
- * "options added per 100 votes" as growth-loop health). 04 §5.1 defines `small`
+ * "options added per 100 votes" as growth-loop health). `.opt.sm` is the `small`
  * as padding and font sizes; only the `locked` variant is non-interactive, and
  * that one is about voter names.
  */

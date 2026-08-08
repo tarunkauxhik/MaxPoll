@@ -1,5 +1,5 @@
 /**
- * Shared chrome for every share preview — doc 04 §5.16.
+ * Shared chrome for every share preview.
  *
  * One file so a poll preview and a Space preview cannot drift apart. They are
  * seen side by side in the same WhatsApp thread, and two different-looking cards

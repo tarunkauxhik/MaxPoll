@@ -97,7 +97,7 @@ socials.
 Build in this exact order:
 
 **4.1** `/p/[slug]` server-rendered, counts hidden pre-vote
-**4.2** `<OptionRow>` per [04-design.md](04-design.md) §5.1 — a `<button>`, all five variants
+**4.2** `<OptionRow>` — a `<button>` (DECISIONS C2), all five variants
 **4.3** Vote action → `cast_vote()` RPC
 **4.4** **Vote-intent preservation** — store the intent in `localStorage` *before*
 the Google redirect, replay on return

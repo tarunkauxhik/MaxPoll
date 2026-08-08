@@ -1,6 +1,6 @@
 # State
 
-_Last updated: 2026-08-07 · **Live at [viratkohli.tech](https://viratkohli.tech).**
+_Last updated: 2026-08-08 · **Live at [viratkohli.tech](https://viratkohli.tech).**
 Google OAuth published, payments on, `CRON_SECRET` enforced, **68 gate probes and
 75 unit tests green**. Remaining: the browser checks only a human can do, a
 business VPA, and **enabling Web Analytics in the Vercel dashboard**._
@@ -28,6 +28,7 @@ business VPA, and **enabling Web Analytics in the Vercel dashboard**._
 | 16 — The screens people actually use | ✅ Timer, chat, deadline picker, quota + paywall, free-text person polls |
 | 17 — Polish, trust signals, two missing screens | ✅ Teal rebrand, dark chrome, bundled emoji, always-anonymous chat, profile edit, subscription page |
 | — Dark theme, full site + share/mobile fixes | ✅ Whole-site dark-blue redesign (D14, reverses D12), .sheet/.setlist mobile bugs fixed, plain share text, Space share button |
+| — **UI rebuilt** | ✅ Light page + dark chrome, indigo accent, Instrument Serif + Lora + Inter, four breakpoints — **DECISIONS D15**. The design spec and the superseded colour entries were deleted first |
 
 ```bash
 pnpm dev      # http://localhost:3000
@@ -70,6 +71,55 @@ ever reads `MISS` every time, the `proxy.ts` matcher is the first thing to check
 `https://maxpoll.vercel.app`. A localhost value there sends every production
 Google sign-in to your laptop. The code now ignores a localhost value when
 running on Vercel, but the variable should still be right.
+
+## UI rebuilt — light page, dark chrome (2026-08-08)
+
+Not a retint. The three passes below this one (violet→teal, chrome-dark,
+whole-site-dark) each renamed tokens inside a layout and type system ported
+verbatim from prototypes deleted in Phase 1, so the stylesheet had accumulated
+dead rules, light-theme leftovers stranded inside a dark theme, and a 480px
+column cap that left a laptop showing a ribbon. The owner asked for the whole
+thing rebuilt, mobile-first, working on a laptop, and professional.
+
+**The docs went first, by explicit instruction.** `docs/04-design.md` deleted
+and rewritten at a third the length — its per-component pixel specs are what
+rotted last time, because they duplicated CSS that then moved. `DECISIONS`
+lost A5, C1's token table, C4's mockup list, C5, and D11–D14 (~160 lines of
+superseded colour history); C1's *rule*, C1b, C2, C3, B1, B2, B3, B6, B7 and
+B8 survive because they're still true. New entry: **D15**.
+
+**One theme, light-based, dark chrome.** Light where you read — page, cards,
+forms, board. `--dark` (`#121A2E`) where you navigate or the design wants
+weight — top bar, nav, primary buttons, timer, hero. No toggle and no
+`prefers-color-scheme`: that doubles the QA surface, which is the one thing
+the deleted C5 got right.
+
+**Accent moved to indigo** (`#3B4FD8`), same family as the chrome. Teal
+against navy read as two unrelated colours sharing a page. Colour jobs are
+otherwise unchanged: gold rank-1 only, red time only, green gain only.
+
+**All 33 contrast pairs computed before any CSS was written**, not after.
+Tightest is 3.05:1 on a 3:1 floor (`--gold` as the rank-1 border, a UI
+boundary not text). `--muted` sits at 5.6:1 — it was the tightest token in
+the file under both previous themes.
+
+**Three faces: Instrument Serif, Lora, Inter.** Instrument Serif ships 400
+and 400i only, so it *cannot* go bold — which is why it takes the largest
+type, where faux-bold would be most obvious. Lora is variable 400–700 and
+therefore can, so "never bold Lora" is **a check in the gate**, not a note:
+`check-contrast.mjs` fails the build if a rule setting `--font-serif` also
+sets a weight ≥600. Space Mono is gone; `.num` keeps `tabular-nums` on Inter,
+which has real tabular figures.
+
+**Four breakpoints where there was one.** 768 swaps nav for a rail (as
+before); 1024 turns the rail into a labelled sidebar and card lists go
+two-column; 1440 caps the content and opens the gutters. Ranked and
+chronological lists — board, activity, chat, admin queue — stay single-column
+at every width.
+
+**Found on the way through:** `app/manifest.ts` had been declaring
+`theme_color: #FAFAF7` since the dark theme shipped while the viewport said
+`#0A0E1C`, directly under a comment insisting the two must match.
 
 ## Dark theme, whole site (2026-08-07)
 
@@ -205,10 +255,8 @@ real browser before trusting that script again.
 1. **Look at it in a real browser.** Nothing in this phase was
    screenshot-verified — see above. 360px and 1440px, the usual routes,
    especially the dark top bar/nav and the teal buttons together.
-2. `docs/04-design.md` still describes violet, Archivo/Space Grotesk, and a
-   few other things Phase 16/17 already changed. Not touched this phase —
-   `app/globals.css` is the enforced source of truth per CLAUDE.md — but it's
-   worth a pass if you're using that doc to onboard someone.
+2. ~~`docs/04-design.md` still describes violet, Archivo/Space Grotesk...~~
+   **Done** — the file was deleted and rewritten in the UI rebuild below.
 
 ## Phase 16 — the screens people actually use (2026-08-07)
 
@@ -682,7 +730,7 @@ the pair proves anything.
 - Fonts via `next/font/google`, self-hosted. Archivo + Space Grotesk variable,
   Space Mono 400/700 static
 - **Five colour tokens failed WCAG AA and were fixed** — [DECISIONS](DECISIONS.md) C1
-- `pnpm check:contrast` now enforces all 17 pairs, so it can't regress
+- `pnpm check:contrast` now enforces every pair, so it can't regress
 - Spacing (`--s-*`) and elevation (`--shadow-1/2`) are scales, not one-offs
 
 **Components**

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * doc 04 §4: the bell sits in the top bar on every signed-in screen. B7 left a
+ * The bell sits in the top bar on every signed-in screen. B7 left a
  * slot for it in `TopBar`; this fills it.
  *
  * There is no web push on iOS, so this badge is the retention surface — 03-ux

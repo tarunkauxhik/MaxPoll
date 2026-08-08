@@ -2,10 +2,11 @@ import { cn } from "@/lib/cn";
 import { n, unit } from "@/lib/format";
 
 /**
- * The board row — doc 04-design.md §5.1, the most important component.
+ * The board row — the most important component. Styling lives in `.opt` and its
+ * modifiers in app/globals.css.
  *
  * A <button>, not a div: it's the primary action of the whole product and has
- * to be keyboard-reachable. The mockups used a clickable div.
+ * to be keyboard-reachable. The mockups used a clickable div — DECISIONS C2.
  *
  * Pre-vote, counts are hidden — `pct` and `votes` are simply omitted, which is
  * what makes voting feel like unlocking.

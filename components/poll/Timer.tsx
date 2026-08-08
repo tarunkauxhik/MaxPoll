@@ -5,7 +5,7 @@ import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/cn";
 
 /**
- * doc 04 §5.3 — the inverted dark block, the only dark element on a paper page,
+ * The countdown block — one of the dark-chrome surfaces on a light page,
  * so it pulls the eye without adding colour noise.
  *
  * Rendered from `expiresAt` on the client because it ticks. The server sends the

@@ -7,7 +7,7 @@ import { ActivityBell } from "@/components/shell/ActivityBell";
 import { Emoji } from "@/components/ui/Emoji";
 
 /**
- * Home, signed in — doc 04 §6. Raw totals, then velocity, and — above both when
+ * Home, signed in. Raw totals, then velocity, and — above both when
  * it has anything in it — the polls closing within six hours.
  *
  * That order is deliberate: a poll whose result you can still change outranks

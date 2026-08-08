@@ -10,7 +10,7 @@ import { similarity } from "@/lib/similarity";
 import { BOARD_CHANGED } from "./Board";
 
 /**
- * doc 04 §5.10 / 03-ux-flows E.
+ * Flow in 03-ux-flows E.
  *
  * The point of the typeahead is not convenience — it's that a duplicate splits
  * the vote and makes the whole board wrong. Showing rank and count makes voting
@@ -32,7 +32,7 @@ export function AddOption({
   const [pending, start] = useTransition();
   const seq = useRef(0);
 
-  // 250ms debounce (doc 04 §5.10). The guard on `mine` keeps an early, slow
+  // 250ms debounce. The guard on `mine` keeps an early, slow
   // response from overwriting a later, faster one — without it, typing "nar" then
   // "narendra" can leave the suggestions for "nar" on screen.
   //

@@ -13,7 +13,6 @@ export type Message = {
   created_at: string;
 };
 
-/** doc 04 §5.15. */
 export function Chat({
   pollId,
   initial,

@@ -3,7 +3,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 
 /**
- * The bottom sheet — doc 04 §5.6.
+ * The bottom sheet.
  *
  * Radix, not hand-rolled: focus trap, Esc, scroll lock and focus restoration are
  * each easy to get subtly wrong, and DECISIONS B1 permits exactly this one

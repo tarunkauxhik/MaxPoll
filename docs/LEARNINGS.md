@@ -418,15 +418,20 @@ broken key returns `[]` too. Gate 2 seeds a real vote and asserts the **differen
 
 ## Design values that were wrong
 
-Measured against WCAG during the Phase 1 refresh:
+Measured against WCAG during the Phase 1 refresh. **The values below are historical** —
+none of these tokens still exist, the UI was rebuilt in DECISIONS D15. The lesson is
+what's kept.
 
-| Token | Was | Ratio | Now |
+| Token | Was | Ratio | Fixed to |
 |---|---|---|---|
 | `--muted` on `--paper` | `#8A8A94` | **3.27:1 ✗** | `#6B6B75` — 5.04:1 |
 | violet as text on `--violet-soft` | `#6B4EFF` | **4.33:1 ✗** | `--violet-text: #5B3EE8` — 5.45:1 |
 
 Both came straight from the design drafts and had been carried forward unquestioned.
-**Contrast gets checked in DevTools, never by eye.**
+**Contrast gets computed, never eyeballed.** Hand-arithmetic during that audit caught
+two of five failures; the other three only surfaced when the numbers were actually run.
+That is why `pnpm check` runs the gate rather than trusting a review — and why the
+"don't make Lora bold" constraint from D15 is also a script check, not a doc note.
 
 The prototypes also used clickable `<div>`s for option rows — the primary action of
 the whole product, unreachable by keyboard.
@@ -435,8 +440,8 @@ the whole product, unreachable by keyboard.
 `RefDocs/` (8 markdown drafts + 2 HTML prototypes) was absorbed into `docs/` and
 deleted — see DECISIONS B8. Recover with `git show 85297c2 -- RefDocs/`.
 
-Before deleting, every hex value in the HTML was diffed against `globals.css` +
-`04-design.md`. Eight were unmatched and all eight were confirmed non-app chrome
+Before deleting, every hex value in the HTML was diffed against `globals.css`. Eight
+were unmatched and all eight were confirmed non-app chrome
 (WhatsApp's own bubble colours in the preview mockup, and the mockup page's own
 scaffolding). One real gap surfaced and was captured: the OG image gradient
 `linear-gradient(135deg,#111114,#2A2145 60%,#6B4EFF)`.

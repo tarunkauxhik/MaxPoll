@@ -70,7 +70,7 @@ export async function generateMetadata({
       title: poll.title,
       description,
       // Versioned on leader change — WhatsApp caches previews hard and a stale
-      // one makes a live poll look dead (doc 04 §5.16).
+      // one makes a live poll look dead.
       images: [`/og/${poll.slug}?v=${poll.og_version}`],
     },
   };

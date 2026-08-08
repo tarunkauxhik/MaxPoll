@@ -11,7 +11,6 @@ function tint(name: string) {
   return `hsl(${h} 46% 42%)`;
 }
 
-/** doc 04 §5.13. */
 export function SpaceCard({
   space,
   showProgress = false,

@@ -69,14 +69,10 @@ user A votes, signs out, user B signs in → `ALREADY_VOTED`.
 `device_id` stays as a fraud **signal** for velocity flagging, which is what
 "flag, don't block" actually needs.
 
-### A5 · Apple Color Emoji is not shippable
-The drafts called for bundling it as an `@font-face` fallback. It is proprietary,
-licensed only for use on Apple hardware; redistributing it as a webfont is a licence
-violation. It is also ~50MB, which would end the LCP budget on its own.
-
-v1 uses the system emoji stack. If cross-platform divergence proves to matter, the
-~25 meaningful glyphs become inline **Twemoji SVG** (CC-BY 4.0) — a few KB, identical
-everywhere, and `aria-label` keeps working. Decided at Phase 4.
+### A5 · *(removed)*
+Ruled out bundling Apple Color Emoji, then reversed by D13, then made moot when the
+UI was rebuilt — see D15. Nothing here is still true; the ID is kept so A6's
+references from the migrations don't shift.
 
 ### A6 · Assorted, recorded so they aren't rediscovered
 - `cast_vote()` had no `search_path` on a `security definer` function — a
@@ -141,6 +137,10 @@ Not a style preference. Proportional digits change width as counts tick, so rows
 jitter during the count-up animation. `font-variant-numeric: tabular-nums` is the fix,
 and it's the single most common tell of a cheap live leaderboard.
 
+The face changed in D15 — `.num` is Inter now, not Space Mono — but the rule and the
+reason are untouched. Inter ships real tabular figures, so the guarantee is the same
+with one font file fewer.
+
 ### B7 · `TopBar` takes a `right` slot
 The design puts an activity bell in the top bar on every signed-in screen. There is
 no auth and no activity yet, so shipping the button now means shipping dead UI. A slot
@@ -151,11 +151,12 @@ costs one prop and Phase 7 fills it.
 `docs/`, and the directory is gone.
 
 Two sources of truth is how specs rot — the drafts already contradicted the
-corrections in §A, and a future session reading the wrong file would undo work. The
-prototypes' CSS was already ported verbatim into `app/globals.css`, so
-**`globals.css` + [04-design.md](04-design.md) are the visual source of truth.**
-Every numeric value the HTML held is recorded in `04-design.md`, and git history keeps
-the originals recoverable (`git show 85297c2 -- RefDocs/`).
+corrections in §A, and a future session reading the wrong file would undo work. Git
+history keeps the originals recoverable (`git show 85297c2 -- RefDocs/`).
+
+The prototypes' CSS was ported verbatim into `app/globals.css` and stayed there,
+through three retints, until D15 rebuilt it. **`app/globals.css` is the visual source
+of truth**; [04-design.md](04-design.md) explains it and does not outrank it.
 
 ### B9 · New Supabase API keys, not the legacy ones
 Supabase replaced `anon` / `service_role` JWT keys with `sb_publishable_…` /
@@ -192,42 +193,36 @@ Hobby's 100 deployments/day.
 
 ## C — Design corrections
 
-### C1 · Five colour tokens failed WCAG AA and were changed
+### C1 · Contrast is measured, not reasoned about
+The specific token values that lived here are gone — they were violet, then teal,
+then dark-navy, and are now none of those. **The rule that produced them survives and
+is the only part that ever mattered:**
 
-| Where | Was | Ratio | Now | Ratio |
-|---|---|---|---|---|
-| `--muted` on `--paper` | `#8A8A94` | **3.27:1 ✗** | `#6B6B75` | 5.04:1 ✓ |
-| violet as text on `--violet-soft` | `#6B4EFF` | **4.33:1 ✗** | `--violet-text: #5B3EE8` | 5.46:1 ✓ |
-| `--up` as text (▲ badge) | `#0E8A4F` | **3.94:1 ✗** | `--up-text: #0A7442` | 5.23:1 ✓ |
-| `--heat` as text (▼ badge, time chip) | `#E8452C` | **3.45:1 ✗** | `--heat-text: #C2321C` | 4.87:1 ✓ |
-| `--gold-text` on `--gold-soft` | `#9A6E05` | **4.44:1 ✗** | `#8F6605` | 5.03:1 ✓ |
+Hand-arithmetic during the original audit caught two of five failing tokens. The other
+three surfaced only when the numbers were actually computed. So `pnpm check:contrast`
+parses the shipped `globals.css`, checks every pair the design actually uses, and
+exits non-zero on failure. It is part of `pnpm check`, so a failing pair cannot reach
+a commit.
 
-All five came from the design drafts and had been carried forward unquestioned.
-`--muted` alone carries nearly all secondary text — sublines, nav labels, timestamps
-— so a failure there is a failure almost everywhere.
+Its corollary, which has caught a bug in every retint since: **a brand colour is a
+surface colour.** The same hue used as text usually fails. Every accent therefore
+ships as a family — a fill, a `-text` sibling for when it carries type, a `-soft` for
+pill backgrounds, and (since D15, which put light content on dark chrome) an
+`-on-dark` for when it sits on the chrome. Never substitute one for another.
 
-**The brand colours are unchanged.** `#6B4EFF`, `#F5B324`, `#E8452C` and `#0E8A4F`
-are still the fills, live dot, timer ring and bars, because those are *surfaces*.
-Each now has a `-text` sibling for when the same colour carries type. Never
-substitute one for the other. No colour's *job* changed: gold is still rank 1 only,
-violet movement only, red time only.
-
-**This is now enforced, not remembered.** `pnpm check:contrast` parses the shipped
-`globals.css` and checks all 17 pairs, exiting non-zero on failure. It's part of
-`pnpm check`. Hand-arithmetic during the audit caught only two of the five — the
-other three surfaced when the numbers were actually computed. Measure, don't reason.
+Current values and their measured ratios live in D15 and
+[04-design.md](04-design.md), not here.
 
 ### C1b · `--line` stays low-contrast; form controls get `--line-strong`
-`--line` (#E6E5E0) is 1.21:1 on paper, which fails WCAG 1.4.11's 3:1 for UI component
-boundaries. Kept anyway: it's a decorative separator, and cards are identified by
-their surface and shadow rather than their border.
+`--line` is a decorative separator and does not meet WCAG 1.4.11's 3:1 for UI
+component boundaries. Kept anyway: cards are identified by their surface and shadow
+rather than their border, and pushing every hairline to 3:1 turns an airy design heavy
+for no accessibility gain.
 
 Form controls are the exception — an input's border genuinely *is* what identifies it
-as an input, and `.field` sits on `--card` against `--paper` (1.02:1, invisible
-without a border). Those use `--line-strong` (#8F8E87, 3.14:1).
-
-Pushing every hairline to 3:1 would turn a deliberately light, airy design heavy for
-no accessibility gain.
+as an input, and `.field` sits on `--card` against `--paper`, which is nearly
+invisible without one. Those use `--line-strong`, and the gate checks it at 3:1
+against both surfaces.
 
 ### C2 · OptionRow is a `<button>`, not a clickable div
 The prototypes used `<div class="opt">` with `cursor:pointer`. That is unreachable by
@@ -241,29 +236,22 @@ The prototypes are fixed-height frames and have none. All three are required bef
 any screen ships. Copy comes from [03-ux-flows.md](03-ux-flows.md) — instructions,
 never apologies.
 
-### C4 · Refresh pass — what static mockups never had to survive
-Drawn at 390px as fixed frames. These only surface in a real scrolling app on a real
-phone:
+### C4 · What a static mockup never has to survive
+The originals were drawn at 390px as fixed frames. Four things only surface in a real
+scrolling app on a real phone, and all four are still true of the rebuilt UI:
 
-- **Scroll depth cue** — content slid under the blurred top bar with no shadow
-- **Pressed states** — `transform: scale()` alone is unreliable on Android; now paired
+- **Scroll depth** — content sliding under a sticky top bar needs a shadow cue
+- **Pressed states** — `transform: scale()` alone is unreliable on Android. Pair it
   with a background change, which is what actually reads as "pressed" on touch
-- **360px density** — a long name + badge + percentage crowds. Truncation rule now
-  documented and verified
-- **Elevation scale** — one `--shadow` token plus a bespoke sheet shadow became
-  `--shadow-1` / `--shadow-2`
-- **Spacing scale** — `--s-1`…`--s-6` (4/8/12/16/24) for layout rhythm and all new
-  components. **Component-internal padding stays as drawn** — those are deliberate
-  optical choices and retrofitting them is exactly the drift being avoided
-- **Focus ring on dark surfaces** — a violet ring on `--ink` is nearly invisible; dark
-  surfaces get a light variant
+- **360px density** — a long name plus a badge plus a percentage crowds. Every such
+  row needs `min-width: 0` and a truncation rule, verified at width, not assumed
+- **Focus rings need a variant per surface** — a ring tuned for the page is nearly
+  invisible on the dark chrome. D15's two-surface design makes this permanent
 
-### C5 · No dark mode in v1
-The original reasoning holds: it's a scoreboard, paper reads better than dark for
-ranked data, and light is cheaper to render on budget Android. Adding it roughly
-doubles token and QA work, and every gate after would test two themes.
-
-Revisit post-launch with real usage data, not assumptions.
+### C5 · *(removed)*
+Ruled out dark mode, then D12 revised it, then D14 reversed it, then D15 settled on
+one light-based theme with dark chrome and no toggle. The ID is kept only so C4's and
+C1b's numbering doesn't shift.
 
 ---
 
@@ -347,7 +335,10 @@ TypeScript directly and ships `node:test`, so this cost **zero dependencies** �
 `.mts` rather than `.ts` so Node treats it as ESM without `"type": "module"` in
 `package.json`, which would change how Next resolves everything else.
 
-### D6 · Profiles live at `/u/[handle]`, rewritten from `/@handle`
+### D16 · Profiles live at `/u/[handle]`, rewritten from `/@handle`
+<!-- Was a second D6. Renumbered in D15's doc pass: the VPA entry below keeps D6
+     because .env.example, STATE.md and app/pay/[ref]/page.tsx all cite it. -->
+
 The design specifies `maxpoll.vercel.app/@handle`. In the App Router a folder
 starting with `@` is the **parallel-route slot** convention, so `app/@[handle]`
 would be a named slot and would never serve a URL — silently.
@@ -355,7 +346,9 @@ would be a named slot and would never serve a URL — silently.
 The page is at `app/u/[handle]`; `next.config.ts` rewrites `/@:handle` → `/u/:handle`.
 The public URL is exactly what the design asked for.
 
-### D7 · One `buildFeedPolls()`, and the clock lives in the data layer
+### D17 · One `buildFeedPolls()`, and the clock lives in the data layer
+<!-- Was a second D7. Renumbered in D15's doc pass. -->
+
 The home feed, a Space page and a profile each turned poll rows into cards, each
 with its own copy of the enrichment and its own `Date.now()`. React 19's purity
 rule flagged the clock reads, and following it properly meant extracting the
@@ -545,163 +538,89 @@ If abuse appears, the cheapest re-hardening is a server-side blocklist in
 names on every poll (`hasEntitlement()`) and no weekly poll limit (`create_poll()`).
 Not a new grant — `/p/[slug]/unlock` already advertised "unlimited creating" as
 part of the pass; `create_poll()` just didn't enforce it yet.
+### D11–D14 · *(removed)*
+Four entries recording the colour churn: violet → teal (D11), chrome-only dark (D12),
+bundled Apple-style emoji reversing A5 (D13), whole-site dark navy reversing D12
+(D14). All four described a design that no longer exists, and D12/D14 contradicted
+each other on the page anyway. Superseded wholesale by D15. `git log docs/DECISIONS.md`
+has the text if the reasoning is ever wanted.
 
-### D11 · Violet → teal (2026-08-08)
+The bundled emoji subset from D13 **stays shipped** — `public/emoji/*.png` and
+`components/ui/Emoji.tsx` are untouched by the rebuild. Only the entry is gone.
 
-The brand accent moved from violet (`#6B4EFF`) to a deep teal (`#0B6169`), the
-owner's choice over cobalt and copper — "purple reads as AI slop." Same job as
-before — movement, plus the small set of soft-pill badge reuses it already
-had. All violet selectors in `app/globals.css` (tokens, focus rings, buttons,
-badges, the gap line, the `NEW` badge, Space/profile accents, chat's anon
-handle colour), 2 raw-rgba spots (`--grad-glow`, `.act.same`), the OG colour
-map (`app/og/shared.tsx`, `app/og/s/[slug]/route.tsx`), and the 4
-`scripts/check-contrast.mjs` pairs were renamed together, not left
-half-migrated. The new hue has more headroom than violet did (6.86:1 vs
-violet's 4.33:1 that D1/C1 already had to work around on `--paper`), which is
-what let D12's paper retint happen safely.
+### D15 · The UI was rebuilt: light page, dark chrome, three faces (2026-08-08)
 
-`docs/04-design.md` still describes violet throughout — that document already
-lagged behind several other Phase 16/17 changes (old font names, a removed
-anon toggle, removed follower counts) before this one. `app/globals.css`
-remains the enforced source of truth per CLAUDE.md; the design doc was not
-part of this rename's scope.
+The previous four entries retinted a design without ever redesigning it. Each pass
+renamed tokens inside a layout and type system ported verbatim from two HTML
+prototypes deleted in Phase 1, so the file accumulated dead rules, light-theme
+leftovers stranded inside a dark theme, and a 480px column cap that left a laptop
+showing a ribbon in a sea of empty page. The owner asked for the whole thing rebuilt,
+mobile-first, working on a laptop, and professional.
 
-### D12 · Structural chrome goes dark; "no dark mode" revised, not reversed (2026-08-08)
+**One theme, light-based, with dark chrome.** Not a toggle, not `prefers-color-scheme`
+— those double the QA surface, which is what C5 got right even though its conclusion
+didn't survive. The page and cards are light; the top bar, the nav, primary buttons,
+the timer panel and the hero are near-black navy. The mix is the design: light where
+you read, dark where you navigate.
 
-Still true: no toggle, no black cards/forms/board. What changed: the top bar
-and bottom nav — present on every signed-in screen via `AppShell` — now
-render on `--dark`/`--grad-ink` instead of a light translucent blur, and
-`--paper`/`--line`/`--line-strong` got a modest warm retint (`#FAFAF7` →
-`#F5F2EA`). Cards, forms, the board, sheets, and legal text are untouched —
-confirmed by reading each, not assumed.
+| | |
+|---|---|
+| page / card / hairline | `#F4F6FA` · `#FFFFFF` · `#E2E7F0` |
+| text: primary / body / secondary | `#101828` 16.4:1 · `#3D485C` 8.5:1 · `#59637A` 5.6:1 |
+| chrome / raised stop | `#121A2E` · `#1E2942`, 16.0:1 against the page |
+| **indigo** — movement, focus, wordmark | `#3B4FD8` fill · `#2E3DAE` text 8.1:1 · `#E9ECFC` soft · `#A9B6FF` on dark 8.9:1 |
+| **gold** — rank 1 only | `#C08A0E` fill · `#7E5C07` text 6.1:1 · `#FBF1DA` soft · `#F0BE4A` on dark 10.0:1 |
+| **red** — time pressure only | `#D93B20` fill · `#B23018` text 6.3:1 · `#FCE9E4` soft · `#FF9B80` on dark 8.5:1 |
+| **green** — rank gain only | `#157F4A` fill · `#0F6B3D` text 6.6:1 · `#E2F5EA` soft |
 
-Everything that lived inside the now-dark bars needed an explicit override,
-because "the top bar is dark" doesn't just mean the background — it means
-every child that assumed a light one: `.top .wordmark i` (teal-as-text was
-2.6:1 on `--dark`, fails — forced to `--on-dark` specifically on this
-surface, the logged-out `.lnav` wordmark on `--paper` is untouched),
-`.top .bell` and `.bell .dot`'s ring colour (`ActivityBell`, found by reading
-what `TopBar`'s `right` slot actually renders — `Feed.tsx`), `.top h1`/`h2`
-(unused today, but latent), and `.nav a`/`.nav a[aria-current]`. `.nav
-.create .ic` — already dark from Phase 16 — gained a 1px light border so it
-still reads as a raised tile now that the bar around it is dark too.
+All 33 pairs pass, computed before a line of CSS was written rather than after. The
+tightest is 3.05:1 on a 3:1 floor — `--gold` as the rank-1 card border, which is a UI
+boundary, not text. `--muted` sits at 5.6:1, where the previous two themes both had it
+as the tightest token in the file.
 
-Real contrast run: `--muted` on the new `--paper` is 4.71:1 — the tightest
-margin of any unchanged token, and the ceiling on retinting `--paper` any
-further without a matching `--muted` change.
+The accent moved to indigo specifically because it is the *same family* as the chrome.
+Teal against navy read as two unrelated colours sharing a page; indigo against navy
+reads as one system. Colour jobs are otherwise unchanged from C1: gold is rank 1 only,
+red is time only, green is gain only, and nothing gets a colour to decorate.
 
-### D13 · Bundled Apple-style emoji, reversing A5 (2026-08-08)
+**Three typefaces, and the constraint is enforced.**
 
-A5 ruled out bundling Apple Color Emoji as a webfont — proprietary, and the
-full set is large. The owner's explicit choice reverses that, knowingly:
-"only iOS emoji, regardless of Android or iOS" was worth the same legal grey
-area A5 flagged, because a Gen Z audience notices when emoji look wrong on
-Android more than they'd ever notice licensing.
+| Face | Token | Weights | Where |
+|---|---|---|---|
+| Instrument Serif | `--font-display` | **400 only** | `.t-hero`, `.t-title` |
+| Lora | `--font-serif` | **400 / 500** | `.t-card`, sheet and card titles |
+| Inter | `--font-ui` | 400–800 | everything else, including `.num` |
 
-What actually shipped is narrower than a webfont. `emoji-datasource-apple`
-(npm, MIT-licensed data/glue code — confirmed current on the registry before
-using it, not assumed from training data) ships every Apple emoji PNG,
-102MB unpacked. A fresh grep for `\p{Extended_Pictographic}` across `app/`
-and `components/` found 28 distinct characters actually used in the UI. Only
-those 28 PNGs (64px, ~188KB total) were extracted into `public/emoji/` —
-the npm package itself was never added as a project dependency, just used
-once as a source to copy from. `lib/emoji.ts` maps each character to its
-filename; `<Emoji char="🔥" />` renders the PNG, falling back to the system
-glyph if a character is ever used without a matching entry.
+Instrument Serif ships `400` and `400i` and nothing else — it *cannot* go bold, which
+is why it takes the largest type, where a faux-bold serif would have been most
+obvious. Lora is variable 400–700 and therefore *can*, so the owner's "don't make Lora
+bold" is a check in `scripts/check-contrast.mjs`, not a note in a doc: the script
+fails the build if any rule setting `--font-serif` also sets a weight of 600 or more.
+Every constraint that has survived in this codebase survived by being executable.
 
-The system emoji stack (`"Apple Color Emoji", "Segoe UI Emoji", "Noto Color
-Emoji"`) stays as a fallback for emoji inside *user content* — poll titles,
-chat messages — which `<Emoji>` doesn't touch and isn't meant to: rendering
-someone's typed text through a curated 28-glyph map would silently drop any
-emoji outside that set. `app/og/**` also stays on the system stack — Satori
-can't render `<Emoji>`'s `<img>` the same way OG images already avoid custom
-fonts by design (see `app/og/shared.tsx`).
+Space Mono is gone. `.num` keeps `font-variant-numeric: tabular-nums` and moves to
+Inter, which has real tabular figures — B6's guarantee intact, one font file fewer,
+and numbers that look part of the UI instead of bolted onto it. `.wordmark` stays
+pinned to Inter 800; a synthetically-bolded serif logotype is worse than a logotype
+that doesn't follow the headline face.
 
-### D14 · Dark is the base theme now, reversing D12; brand hue retuned blue-first — 2026-08-07
+**Four breakpoints, not one.** 768px still swaps the bottom nav for a rail (B2 and B3
+both still stand — one DOM tree, one media query, no JS). New: at 1024px the rail
+becomes a labelled sidebar and card lists go two-column; at 1440px the content caps
+and the gutters open. The board, the activity list, the chat and the admin queue stay
+single-column at every width — they are ranked or chronological lists, and rank only
+reads down one column.
 
-D12 (Phase 17) kept light as the base and made structural chrome dark. That
-undersold what "redesign to a dark theme" meant — the owner's words: "you
-just made upper and lower navbar to a very dark green tone," asking instead
-for "a little dark bluish gradient with shaders" across the *whole* site.
-Asked directly rather than guessing twice: rich layered CSS gradients (no
-WebGL — cheap on battery, no new rendering dependency, fits a Vercel-Hobby
-budget) and full-site scope, both the owner's explicit picks. This entry is
-that doc update, written first, per instruction, before the CSS changed.
+**What this cost, and the lesson that keeps repeating.** Two hardcoded colours had
+already survived one retint each by not being `var()` — `.opt.g1`'s gradient ending in
+`#fff` and `.lsticky`'s starting from the old paper white — and would have survived
+this one too. `app/manifest.ts` had been declaring `#FAFAF7` since the dark theme
+shipped, contradicting the viewport's `#0A0E1C` directly under a comment insisting the
+two must match. A token rename is never exhaustive: grep raw hex as well, and check
+the files that can't read CSS at all (`app/og/**`, `public/icon.svg`,
+`app/global-error.tsx`, `app/manifest.ts`).
 
-**Every base token flipped.** `--paper`/`--card`/`--line`/`--line-strong`
-went from light to a deep navy scale; `--ink`/`--body`/`--muted` went from
-dark to light. This is a full theme inversion, not a retint — every place
-that assumed "text is dark, fills are light" needed re-checking, not just
-the tokens themselves:
-
-| Token | Was (D12/light) | Now (dark base) |
-|---|---|---|
-| `--paper` | `#F5F2EA` | `#0A0E1C` |
-| `--card` | `#FFFFFF` | `#131B30` |
-| `--line` / `--line-strong` | `#E6E1D2` / `#86857B` | `#232C48` / `#5B6892` |
-| `--ink` / `--body` / `--muted` | `#111114` / `#55555F` / `#6B6B75` | `#F1F4FC` / `#B7C0DE` / `#8B94B6` |
-| `--teal` (brand, fills) | `#0B6169` | `#0F7A82` |
-| `--teal-text` (brand, as text) | `#084F55` | `#4FD8CC` — now the bright one, not the dark one |
-
-Real contrast run against the new base, all 24 pairs: `--ink` on `--paper`
-17.47:1, `--muted` on `--paper` 6.42:1 (was the tightest margin under D12 at
-4.71 — the dark base has more headroom, not less, a well-known WCAG
-asymmetry), `--teal-text` on `--paper` 11.01:1, `--line-strong` on `--card`
-3.13:1 (UI-component floor, unchanged margin from before).
-
-**A systemic bug the flip itself created, caught by grepping rather than
-trusting the token rename alone:** seven places did `background:
-var(--ink); color: #fff;` as a "solid dark tag" idiom — `.tagme`
-("Your pick"), `.paysteps .s`, `.av` (profile monogram), `.bub.me` (own chat
-bubble). Once `--ink` became the *light* text colour, white text on it went
-invisible. Fixed by pointing these at `--dark` (still genuinely dark, kept
-as the deep-panel token) instead of `--ink`. Three more `background:
-var(--ink)` uses — the mini-board bar fill, the under-list bar fill, the
-quota usage bar — turned out fine as-is: a light fill on a now-dark `--line`
-track still reads correctly as "filled vs unfilled," no change needed.
-
-**`--teal` used as literal text colour, not just as a fill, in ~9 places**
-(`.wordmark i`, `.pcard .space`, `.verified`, `.phandle`, `.spacelink`, the
-landing hero's accent word, `.lhero .t-hero i`) — all switched to
-`--teal-text`. The base `--teal` stayed a mid-tone (`#0F7A82`) so it still
-works as a button fill with white text (5.09:1) and clears 3:1 as a focus
-outline against every surface in the new palette; only the *text* role
-needed the brighter variant, same D2b-style split the token pair always had,
-just with the light/dark roles reversed from the old light theme.
-
-**Two hardcoded (non-token) colours were caught only by grepping raw hex,
-not by following the token rename:** `.lnav`'s header (the landing page's
-own top bar, separate from `.top`) hardcoded `rgba(250,250,247,.88)` — the
-old paper colour as a raw value, invisible to a `--paper` search. Fixed to
-match `.top`'s treatment. `.act.same`'s background was a hardcoded light
-gradient (`#F2FAF9`→`#fff`); its border was already a raw teal rgba that had
-gone stale once before (through D11's violet→teal rename) and had gone
-stale *again* here, since D14 retuned `--teal` itself. Both replaced with
-token references (`var(--teal-soft)`, `var(--card)`) specifically so this
-can't recur a third time. A leftover hardcoded `#C9BEFF` on the chat "me"
-bubble's anon-handle colour — a residual purple D11's token-only sweep
-missed because it was never a `--violet` reference — was folded into
-`--teal-text` at the same time.
-
-**The shader itself** is `--grad-page`: three layered radial gradients (a
-blue wash top-left, a small teal one top-right — the brand accent, kept
-minor so blue stays dominant, not green — and a deep indigo one from the
-bottom), painted on a `body::before` fixed pseudo-element rather than
-`background-attachment: fixed` — iOS Safari's long history of repaint bugs
-with fixed backgrounds on scroll made the pseudo-element the safer choice.
-Negative `z-index` with no positioned ancestor paints behind every
-normal-flow element, so every card/form/board keeps its own opaque
-background and sits on top untouched.
-
-**Also brought current while touching this:** `app/og/shared.tsx`'s `C.ink`
-(`#111114` → `#05070E`) and its raw teal rgba, `public/icon.svg`'s
-background rect (now the same `#05070E` OG uses, kept in sync per
-CLAUDE.md), `layout.tsx`'s `themeColor` (the mobile browser-chrome tint),
-and `global-error.tsx`'s hardcoded fallback palette — that file deliberately
-never reads `globals.css` tokens (it must render even if the CSS build
-itself is broken), so its colours needed updating by hand, separately, to
-stay visually consistent with the rest of the site.
-
-`docs/04-design.md` was already stale before this (D11's violet, old font
-names) and stays out of scope here too — `app/globals.css` remains the
-enforced source of truth per CLAUDE.md.
+`docs/04-design.md` was deleted and rewritten at a third the length. Its component
+section — per-component pixel specs — is what rotted last time, because it duplicated
+the CSS and the CSS moved. The new one records tokens, scale, breakpoints and the
+quality floor, and stops there. **`app/globals.css` is the visual source of truth.**

@@ -6,7 +6,7 @@ import { keyFilter } from "@/lib/short-code";
 import { C, OG, HEADERS, shell, row, col, Eyebrow, Hook, clip } from "../shared";
 
 /**
- * WhatsApp preview for a poll — doc 04 §5.16.
+ * WhatsApp preview for a poll.
  *
  * It shows the **actual leaderboard**, not a headline about one. A card that
  * says "Vote in this poll" is an advertisement; a card that shows Kohli ahead of
