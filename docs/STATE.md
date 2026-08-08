@@ -117,9 +117,30 @@ two-column; 1440 caps the content and opens the gutters. Ranked and
 chronological lists — board, activity, chat, admin queue — stay single-column
 at every width.
 
-**Found on the way through:** `app/manifest.ts` had been declaring
-`theme_color: #FAFAF7` since the dark theme shipped while the viewport said
-`#0A0E1C`, directly under a comment insisting the two must match.
+**Found on the way through:**
+
+- `SpaceCard`'s `tint()` walked the full hue wheel at `46% 42%` under a comment
+  claiming that could not come out illegible on white text. It bottoms out at
+  **2.90:1 around hue 60**, so any Space whose name hashed into the yellows
+  rendered white-on-yellow. Now a 50° band around the brand indigo, worst case
+  7.5:1 — which also stops it putting an olive tile beside a gold rank-1 badge.
+- `app/manifest.ts` had been declaring `theme_color: #FAFAF7` since the dark
+  theme shipped while the viewport said `#0A0E1C`, directly under a comment
+  insisting the two must match.
+- The Space page's avatar carried no tint at all, so a Space was one colour in
+  the directory and another on its own page.
+- Focus rings have to switch by **container**, not by control: `outline-offset`
+  draws outside the element, so a white ring on `.btn.pri` lands on the light
+  page behind it, not on the dark button.
+
+**Verified, not assumed.** 33/33 contrast pairs and the Lora cap (proved by
+making it fail), 75 unit tests, 68 gate probes, and every route driven through
+CDP at 360/768/1024/1440 — no horizontal scroll anywhere. The signed-in screens
+(`/admin`, `/settings`, `/u/[handle]`, `/activity`, feed) were checked with a
+real minted session rather than skipped, since they redirect when logged out and
+were the ones reported broken last time. The admin order sheet was opened on a
+360×640 phone and measured: capped at 88dvh, scrollable, nothing clipped above
+the fold. Seeded order and throwaway users deleted afterwards.
 
 ## Dark theme, whole site (2026-08-07)
 
