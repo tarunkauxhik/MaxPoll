@@ -91,27 +91,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="t-label">Where it is stored</h2>
-          <p>
-            In India. The database is hosted by Supabase in AWS Mumbai
-            (<code>ap-south-1</code>), and the app runs on Vercel&apos;s Mumbai region.
-            Both companies act as our processors and neither uses your data for their
-            own purposes.
-          </p>
-          <p>
-            Signing in sets a session cookie so you stay signed in. That is the only
-            cookie MaxPoll sets, and it is not used for tracking.
-          </p>
-        </section>
-
-        <section>
           <h2 className="t-label">Analytics</h2>
-          <p>
-            We use <strong>Vercel Web Analytics</strong> to count page views. It sets{" "}
-            <strong>no cookies</strong> and builds no profile of you: visitors are
-            counted using a hash of the incoming request that is discarded after 24
-            hours, and it cannot follow you to any other website.
-          </p>
           <p>
             What it records per view: the page URL, the referring site, your country
             and city, your device type, and your browser and operating system version.
