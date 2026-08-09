@@ -1718,7 +1718,14 @@ textarea.field {
 
 .demo .gap {
   margin: var(--s-3) 0 0;
-  align-items: flex-start;
+}
+
+/* The landing copy splits the arrow into its own `aria-hidden` span, so the
+   space between it and the sentence was coming from the flex `gap` that `.gap`
+   no longer has. Stated here rather than as a text node, which a JSX reformat
+   would eat again. */
+.gap > [aria-hidden] {
+  margin-right: 6px;
 }
 
 /**
