@@ -48,7 +48,7 @@ export function OnboardingForm({
         />
       </div>
       <p className="hint" id="handle-hint">
-        Your profile lives at maxpoll.vercel.app/@handle
+        Your profile lives at viratkohli.tech/@handle
       </p>
       {err("handle")}
 
