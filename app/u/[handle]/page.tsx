@@ -3,6 +3,7 @@ import AppShell from "@/components/shell/AppShell";
 import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
 import { Emoji } from "@/components/ui/Emoji";
+import { SocialIcon, type SocialKey } from "@/components/ui/SocialIcon";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, POLL_SELECT, type PollRow, type RankInput } from "@/lib/poll-queries";
 import { tint } from "@/components/SpaceCard";
@@ -76,9 +77,9 @@ export default async function ProfilePage({
     profile.instagram && { k: "Instagram", v: profile.instagram },
     profile.x_handle && { k: "X", v: profile.x_handle },
     profile.snapchat && { k: "Snapchat", v: profile.snapchat },
-  ].filter(Boolean) as { k: string; v: string }[];
+  ].filter(Boolean) as { k: SocialKey; v: string }[];
 
-  const SOCIAL_URL: Record<string, (v: string) => string> = {
+  const SOCIAL_URL: Record<SocialKey, (v: string) => string> = {
     Instagram: (v) => `https://instagram.com/${v.replace(/^@/, "")}`,
     X: (v) => `https://x.com/${v.replace(/^@/, "")}`,
     Snapchat: (v) => `https://snapchat.com/add/${v.replace(/^@/, "")}`,
@@ -102,14 +103,21 @@ export default async function ProfilePage({
         {socials.length > 0 && (
           <div className="chips">
             {socials.map((s) => (
+              /* Logo, then the handle. The platform's name used to be spelled
+                 out next to its own handle — "Instagram · @foo" — which is the
+                 one thing the logo already says, and it made three chips wrap
+                 to two rows on a 360px screen. The name survives as the
+                 accessible name, which is where it was actually needed. */
               <a
                 key={s.k}
                 className="socialchip"
                 href={SOCIAL_URL[s.k](s.v)}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
+                aria-label={`${s.k}: ${s.v}`}
               >
-                {s.k} · {s.v}
+                <SocialIcon platform={s.k} />
+                {s.v.replace(/^@?/, "@")}
               </a>
             ))}
           </div>

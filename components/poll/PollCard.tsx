@@ -86,10 +86,21 @@ export function PollCard({ poll }: { poll: FeedPoll }) {
         </div>
       )}
 
+      {/* A tie reads as its own thing. `race.lead` is 0 when the top two are
+          level, which rendered as "0 votes between Dog and horse". */}
       {race && race.lead <= 5 && (
         <p className="cardgap">
-          <Emoji char="🔥" /> <b className="num">{plural(race.lead, "vote")}</b> between{" "}
-          {race.leader} and {race.runnerUp}
+          <Emoji char="🔥" />{" "}
+          {race.lead === 0 ? (
+            <>
+              {race.leader} and {race.runnerUp} are level
+            </>
+          ) : (
+            <>
+              <b className="num">{plural(race.lead, "vote")}</b> between {race.leader} and{" "}
+              {race.runnerUp}
+            </>
+          )}
         </p>
       )}
     </a>

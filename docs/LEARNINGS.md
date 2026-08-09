@@ -905,3 +905,56 @@ binary when a real browser might be running — every invocation is a launch
 attempt, not a read-only query, on this platform. If a headless-Chrome script
 needs debugging, add logging inside the script's own spawned process rather than
 probing the executable directly from the shell.
+
+### "Uneven spacing" was three UA defaults, not taste
+
+The owner reported "very uneven" spacing across the app, pointing at a poll card
+where the title sat welded to its chip row while everything below had air.
+Measuring every vertical container with CDP — gap between each adjacent pair of
+visible children — turned one complaint into a list, and the list had three root
+causes rather than a hundred screens needing a nudge.
+
+**A margin on a component does not replace its container's `gap`, it stacks on
+top of it.** Every layout in `globals.css` spaces children with `gap`, so a child
+that also carries a margin renders `gap + margin` — but only that child. One
+container with one `gap: 8px` rendered 8px between two spans and 36px around a
+paragraph, on the same screen. That is the whole mechanism.
+
+The three sources, all invisible in the CSS because nobody wrote the numbers:
+
+1. **`<p>` ships `margin-block: 1em`.** `.t-hero`/`.t-title`/`.t-card` each set
+   `margin: 0`, which is exactly why headings looked right and body copy did not,
+   and why the cause never showed up in a diff.
+2. **`<ul>`/`<ol>` ship `padding-inline-start: 40px`.** Every list in the product
+   sets `list-style: none` and draws its own ✓ or numbered tile, but only
+   `.lhow ol` also zeroed the padding. The perks list, the payment steps, the
+   admin queue, the Space list and the suggestion dropdown were all indented 40px
+   inside the page gutter while their heading sat on it.
+3. **Form controls are `inline-block`.** They sit on the text baseline, so the
+   line box reserves ~6px of descender space *under* the control. It belongs to
+   no rule, appears in no inspector panel, and showed as 22px where every
+   sibling step was 16. `display: block` on `.field` removes it.
+
+**Generalise:** when spacing "looks off" in many places at once, do not tune the
+places. Measure rendered gaps, then look for a default that applies to *some*
+children of a container and not others — that asymmetry is the bug.
+
+### Two unrelated components sharing a class name is a live bug, not a smell
+
+`.soon` meant both "this poll closes within 6h" (`.pcard.soon`) and "payments
+aren't live yet" (a bare `.soon` card on the paywall). It had been noted as a
+naming collision to clean up some day.
+
+It was not cosmetic. Both rules are specificity `(0,1,0)`, and the paywall one
+sits ~1,300 lines later in the file, so **it won**. Every closing-soon poll card
+in the feed was rendering with the paywall card's `background`, `padding` and
+`margin-bottom`: grey instead of white, 16px instead of 18, and a phantom 12px
+below it that made one card in a `gap: 12px` list sit 24px from the next.
+
+The audit found it as a spacing anomaly, not as a colour one — the grey card had
+presumably been visible for weeks.
+
+**Generalise:** two rules with the same specificity are decided by source order,
+so a duplicated class name in a single stylesheet silently applies the *later*
+component's declarations to the earlier one. Grep for a class name before reusing
+it, and treat "these two names collide" as a bug to reproduce, not a tidy-up.

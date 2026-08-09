@@ -29,7 +29,7 @@ export default async function SubscriptionPage() {
         <h1 className="t-title">Subscription</h1>
 
         {pass ? (
-          <div className="soon">
+          <div className="comingsoon">
             <p>
               <Emoji char="✅" /> 30-day pass active
               {pass.expires_at
@@ -61,7 +61,7 @@ export default async function SubscriptionPage() {
             ) : (
               /* Fails closed. With no VPA configured, paymentMode() returns
                  coming_soon on its own — lib/payments.ts. */
-              <div className="soon">
+              <div className="comingsoon">
                 <p>
                   <Emoji char="🔒" /> Unlocking soon
                 </p>

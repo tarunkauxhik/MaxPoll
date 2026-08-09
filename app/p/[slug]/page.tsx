@@ -67,6 +67,11 @@ export async function generateMetadata({
      */
     alternates: { canonical: `/p/${poll.slug}` },
     openGraph: {
+      // Restated because a child `openGraph` replaces the root's outright — it
+      // does not merge. Without these the poll card shipped with no og:type and
+      // no og:site_name. Same on the Space page.
+      type: "website",
+      siteName: "MaxPoll",
       title: poll.title,
       description,
       // Versioned on leader change — WhatsApp caches previews hard and a stale

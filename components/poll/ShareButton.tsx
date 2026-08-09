@@ -22,7 +22,11 @@ export function ShareButton({
 }: {
   /** Site-relative, e.g. `/p/j6ev26t` or `/s/dtu-8x2f`. */
   path: string;
-  /** Everything before the " : ", e.g. "your pov matters". */
+  /**
+   * Everything before the " : ". Two values in the product, and they are not
+   * interchangeable: a poll shares as "your pov matters", a Space as "get into
+   * this space".
+   */
   text: string;
 }) {
   const [copied, setCopied] = useState(false);

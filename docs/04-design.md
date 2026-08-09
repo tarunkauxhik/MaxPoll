@@ -158,6 +158,38 @@ reflow.
 Safe areas on all four sides — the rail needs `env(safe-area-inset-left)` in landscape
 on a notched phone. `dvh`, never `vh`.
 
+### Vertical rhythm: the container spaces its children
+
+**A component never carries its own margin.** The container it sits in spaces it, with
+`gap` or with `> * + *`. This is the vertical equivalent of the one-gutter rule and it
+went wrong the same way.
+
+A margin on a component does not *replace* the container's gap, it **stacks on top of
+it** — and only for the children that happen to carry one. That is what uneven spacing
+actually is on screen, and it is invisible in the CSS because the numbers live in
+different rules. Measured before the sweep: a poll card ran 6 · **0** · 11 · 12 down its
+own body, and a profile ran 12 · 22 · **36** · 22 · 20.
+
+Three things caused nearly all of it, all now fixed at the source:
+
+1. **UA margins on flow content.** `<p>` and friends ship `margin-block: 1em`. The
+   display classes zeroed their own, which is why headings looked right and body copy
+   didn't. Reset globally.
+2. **The UA marker indent on lists.** Every list in the product sets `list-style: none`
+   and draws its own affordance, but only one of them dropped
+   `padding-inline-start: 40px`. The rest sat 40px inside the page gutter.
+3. **`display: inline-block` on form controls.** An inline-block sits on the text
+   baseline, so its line box reserves ~6px of descender space underneath that belongs to
+   no rule at all. `.field` is `display: block`.
+
+Two steps, not five numbers: **8px inside a group, 12–16px between groups, 24px before a
+submit.** Where a stack genuinely needs an exception — a label tucked under its title —
+state it once as a `+` rule, not as a margin on the component.
+
+`scripts/` has no gate for this; it is checked by measuring the rendered page. The probe
+is: for every vertical container, take the gap between each adjacent pair of visible
+children and flag any container whose gaps disagree by more than 3px.
+
 ## 7 · Copy
 
 Sentence case everywhere except `.t-label`, which is uppercase and tracked. Buttons name

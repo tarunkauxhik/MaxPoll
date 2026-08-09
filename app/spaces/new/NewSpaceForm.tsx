@@ -6,8 +6,11 @@ import { createSpace, type SpaceState } from "./actions";
 export function NewSpaceForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<SpaceState, FormData>(createSpace, {});
 
+  // `.onb` is the stacked-form shape — label, field, label, field, one primary
+  // action lifted off the last row. This form was the only one without it, so
+  // its Create button sat flush against the hint above it.
   return (
-    <form action={action}>
+    <form className="onb" action={action}>
       {next && <input type="hidden" name="next" value={next} />}
 
       <label className="lbl" htmlFor="name">

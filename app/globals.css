@@ -162,6 +162,49 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/**
+ * Flow content carries no margin of its own. **This is a spacing rule, not a
+ * tidiness one**, and it was the single largest source of uneven gaps in the
+ * product.
+ *
+ * Every layout in this file spaces its children with `gap`. A UA default
+ * `margin-block: 1em` on a `<p>` does not replace that gap — it *stacks on top
+ * of it*, and only for the children that happen to be paragraphs. So one
+ * container with one `gap: 8px` rendered 8px between two spans and 36px around
+ * a paragraph, on the same screen. Measured on /u/[handle]: 12 · 22 · 36 · 22 ·
+ * 20 down a single column.
+ *
+ * `.t-hero`, `.t-title` and `.t-card` each zeroed their own margin already,
+ * which is exactly why headings looked fine and body copy did not, and why the
+ * cause was invisible in the CSS — nobody wrote the 14px.
+ *
+ * Prose that genuinely needs paragraphs separated says so with a `gap` like
+ * everything else: see `.setwrap section`.
+ *
+ */
+h1, h2, h3, h4, h5, h6,
+p, figure, blockquote, pre,
+ul, ol, dl, dd {
+  margin: 0;
+}
+
+/**
+ * No markers, and therefore no marker indent.
+ *
+ * Every list in this product already sets `list-style: none` and draws its own
+ * affordance — a ✓, a numbered tile, a whole card. Only one of them
+ * (`.lhow ol`) also remembered to drop the UA's 40px `padding-inline-start`, so
+ * the perks list, the payment steps, the admin queue, the Space list and the
+ * suggestion dropdown were all sitting 40px inside the page gutter while the
+ * heading above them sat on it. That is the misalignment, not a taste call.
+ *
+ * A list that wants real bullets opts back in; none currently does.
+ */
+ul, ol {
+  padding: 0;
+  list-style: none;
+}
+
 /* Kills the legacy 300ms click delay on touch without disabling pinch-zoom,
    which `touch-action: none` would. Every tap in the product feels ~300ms
    faster for one line. */
@@ -343,6 +386,15 @@ a {
 .t-sec {
   font-size: 13px;
   color: var(--muted);
+}
+
+/* A page title's subtitle. It used to be spaced by the UA's paragraph margin,
+   which is now gone everywhere, so the relationship is stated instead of
+   inherited — /spaces/new had its title and subtitle touching. */
+.t-title + .t-sec,
+.t-title + .hint,
+.t-hero + .t-sec {
+  margin-top: var(--s-2);
 }
 
 .t-label {
@@ -689,7 +741,12 @@ a {
   box-shadow: var(--ring), 0 0 0 1px var(--ink);
 }
 
+/* Sits inline inside `.nm`, right after the label text, so it needs its own
+   left gap — it was rendering as "horseYOUR PICK". Not a flex gap: `.nm` has to
+   stay a block for `text-overflow: ellipsis` to truncate a long name. */
 .tagme {
+  margin-left: var(--s-2);
+  white-space: nowrap;
   background: var(--dark);
   color: var(--on-dark);
   font-size: 12px;
@@ -1012,6 +1069,22 @@ a {
   cursor: pointer;
 }
 
+/**
+ * One rhythm down the card, declared in one place.
+ *
+ * Every row used to bring its own margin — the Space eyebrow 6px, the title
+ * none at all, the mini board 11px, the race line 12px — so the rendered stack
+ * was 6 · **0** · 11 · 12. The title sat welded to the chip row while
+ * everything below it had air, which is the gap the owner reported between
+ * "Best Guy" and its 2 votes / 4 options / 1d left.
+ *
+ * `> * + *` rather than a flex `gap` because the eyebrow is a label *for* the
+ * title and belongs closer to it than the sections belong to each other. That
+ * is one exception to one rule, not four independent margins.
+ */
+.pcard > * + * { margin-top: var(--s-3); }
+.pcard > .space + * { margin-top: var(--s-2); }
+
 .pcard:active {
   transform: scale(.985);
   box-shadow: var(--ring), var(--shadow-lift);
@@ -1031,7 +1104,6 @@ a {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin: var(--s-3) 0 0;
   padding: 8px 12px;
   border-radius: var(--r-sm);
   background: var(--heat-soft);
@@ -1052,7 +1124,6 @@ a {
   letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--brand-text);
-  margin-bottom: 6px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1062,7 +1133,6 @@ a {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  margin: 11px 0;
 }
 
 .mrow {
@@ -1201,6 +1271,14 @@ a {
    (DECISIONS C1b). */
 .field {
   width: 100%;
+  /**
+   * Block, not the UA's inline-block. An inline-block sits on the text baseline,
+   * so the line box it lives in reserves descender space *under* it — about 6px
+   * of invisible gap that belongs to no rule and shows up in no inspector panel.
+   * Measured on /settings/profile: 22px between the bio textarea and the next
+   * label where every other field-to-label step was 16.
+   */
+  display: block;
   min-height: var(--tap);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
@@ -1478,6 +1556,22 @@ textarea.field {
   padding: var(--s-6) 0 var(--s-4);
 }
 
+/**
+ * Two steps, not five numbers: 12px inside a group, 24px between groups.
+ *
+ * The pitch, the demo board and the call to action are three things, and the
+ * hero has to say so with space. It used to run 16 · 12 · 24 · 24 · 12 because
+ * every child brought a margin of its own, which grouped nothing and just read
+ * as drift.
+ *
+ * Not a flex `gap`: the eyebrow pill and the CTA are intrinsically-sized and a
+ * flex column would stretch them to the full measure.
+ */
+.lhero > * + * { margin-top: var(--s-3); }
+
+.lhero > .demo,
+.lhero > .btn { margin-top: var(--s-6); }
+
 /* Carries a REAL aggregate, or falls back to a claim that needs no number. */
 .eyebrow {
   display: inline-flex;
@@ -1491,7 +1585,6 @@ textarea.field {
   text-transform: uppercase;
   border-radius: 99px;
   padding: 6px 12px;
-  margin: 0 0 var(--s-4);
 }
 
 /* Fluid rather than a breakpoint: 33px on a small phone, up to 50px where there
@@ -1510,7 +1603,6 @@ textarea.field {
   font-size: 16px;
   line-height: 1.5;
   color: var(--body);
-  margin: var(--s-3) 0 var(--s-6);
   /* 35–60 characters is the readable measure on a phone. */
   max-width: 34ch;
 }
@@ -1522,7 +1614,6 @@ textarea.field {
   border-radius: var(--r-lg);
   padding: var(--s-4);
   box-shadow: var(--ring), var(--shadow-1);
-  margin-bottom: var(--s-6);
 }
 
 /* The question. Three names and three bars is a chart; the question is what
@@ -1917,9 +2008,9 @@ textarea.field {
 
 /* ============================ POLL PAGE ============================ */
 
-.pollhead .t-title {
-  margin: var(--s-2) 0 var(--s-3);
-}
+/* No margin: `.pollhead` is a `.feed`, so its 12px gap already spaces the title
+   from the chip row below it. The 12px that used to be here landed on top of
+   that gap and rendered 24 — the same title-to-chips break the poll card had. */
 
 /**
  * The Space name above a poll title. It was a 16px-tall link — a real navigation
@@ -1935,7 +2026,11 @@ textarea.field {
   font-weight: 600;
   text-decoration: none;
   padding: 14px 10px;
-  margin: -14px -10px;
+  /* Cancels the padding so the link's hit area does not push the title down —
+     except at the bottom, where it cancels 12 of the 14 and leaves the parent's
+     own 12px gap to net out at zero. Cancelling all 14 pulled the title 2px
+     *over* the link and quietly ate 2px of a 44px tap target. */
+  margin: -14px -10px -12px;
   border-radius: var(--r-sm);
   transition: transform .16s var(--ease), background .16s var(--ease);
 }
@@ -1960,10 +2055,24 @@ textarea.field {
   text-align: center;
 }
 
+/**
+ * The last three rows of the poll page stack straight into the page column
+ * rather than into a padded wrapper, so they carry `--gut` themselves. They
+ * didn't: measured at 360px the column ran 16 · 16 · 16 · **0** · 24 · 16 · **0**
+ * · 16, which put the disclosure box and the "results firm up" line hard against
+ * both screen edges under a share button that sat inside the gutter.
+ *
+ * One gutter, and one 12px step between them — CLAUDE.md.
+ */
+.shell-col > .discl,
+.shell-col > .hint {
+  margin: var(--s-3) var(--gut);
+}
+
 .pollfoot {
   display: grid;
   gap: var(--s-2);
-  padding: var(--s-6) var(--gut) var(--s-4);
+  padding: var(--s-6) var(--gut) 0;
 }
 
 .pollfoot .btn {
@@ -1984,13 +2093,17 @@ textarea.field {
   width: 100%;
 }
 
-/* Progress bar — Space gate and the Growing rail. */
+/* Progress bar — Space gate and the Growing rail.
+   No margin of its own: it appears in four different stacks (.growbox, .sbody,
+   .state, the Space gate) and a 7px margin on the component fought each of
+   their gaps, which is how one bar sat 3px under its label in a Space card and
+   19px under it in an empty state. The container spaces it, like everything
+   else. */
 .progress {
   height: 4px;
   border-radius: 99px;
   background: var(--line);
   overflow: hidden;
-  margin-top: 7px;
   width: 100%;
   max-width: 220px;
 }
@@ -2282,15 +2395,28 @@ textarea.field {
 /* The "coming soon" card. Unrelated to `.pcard.soon`, which is a closing-soon
    poll — two different meanings on one word, kept because both are in the
    markup and renaming is a JSX change for no visual gain. */
-.soon {
+/**
+ * The "payments aren't live yet" card. Renamed from `.soon`, which it shared
+ * with `.pcard.soon` — the closing-soon poll card — despite having nothing to do
+ * with it.
+ *
+ * That was not a naming smell, it was a live bug: same specificity, and this
+ * rule sits later in the file, so **every urgent poll card in the feed was
+ * taking this card's `background`, `padding` and `margin-bottom`**. They
+ * rendered on `--paper` instead of white, at 16px padding instead of 18, and
+ * with a phantom 12px below them — which is why one card in a 12px-gap list sat
+ * 24px from the next.
+ */
+.comingsoon {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   padding: var(--s-4);
-  margin-bottom: var(--s-3);
+  display: grid;
+  gap: var(--s-2);
 }
 
-.soon p:first-child { font-weight: 700; }
+.comingsoon p:first-child { font-weight: 700; }
 
 /* ============================ ADMIN ============================ */
 
@@ -2635,6 +2761,10 @@ textarea.field {
 
 .createform .btn.pri { width: 100%; margin-top: var(--s-6); }
 
+/* "+ Add another" sat flush against the last option input, reading as part of
+   the field rather than as an action on it. */
+.createform .btn.sm { margin-top: var(--s-3); }
+
 /* ---- quota + paywall ---- */
 .quota {
   background: var(--card);
@@ -2643,7 +2773,15 @@ textarea.field {
   padding: var(--s-4);
   margin-bottom: var(--s-6);
   box-shadow: var(--ring), var(--shadow-1);
+  /* One rhythm inside the card. Its four rows each brought their own margin and
+     rendered 8 · 4 · 12. */
+  display: grid;
+  gap: var(--s-2);
 }
+
+/* `.hint`'s 4px is for a hint under a form field; inside this card the grid gap
+   is the spacing. */
+.quota .hint { margin-top: 0; }
 
 .quota-line {
   font-size: 17px;
@@ -2662,7 +2800,6 @@ textarea.field {
   border-radius: 99px;
   background: var(--line);
   overflow: hidden;
-  margin-top: var(--s-2);
 }
 
 .quotabar i {
@@ -2682,7 +2819,6 @@ textarea.field {
   gap: var(--s-2);
   width: 100%;
   min-height: var(--tap);
-  margin-top: var(--s-3);
   padding: 11px var(--s-3);
   border: none;
   border-radius: var(--r-md);
@@ -2794,7 +2930,7 @@ textarea.field {
 
 .av.lg { flex-basis: 56px; width: 56px; height: 56px; border-radius: 18px; font-size: 20px; }
 
-.sbody { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.sbody { flex: 1; min-width: 0; display: grid; gap: var(--s-1); }
 /* The Space card's top row. Not a "stop" — the name is historical. */
 .stop { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
 
@@ -2825,7 +2961,7 @@ textarea.field {
 .spacehead { display: grid; gap: var(--s-3); }
 .shead { display: flex; gap: var(--s-3); align-items: center; min-width: 0; }
 .sdesc { font-size: 14px; line-height: 1.45; color: var(--body); }
-.growbox { display: grid; gap: var(--s-1); }
+.growbox { display: grid; gap: var(--s-2); }
 .verified { color: var(--brand-text); margin-left: 6px; }
 
 /* ============================ PROFILE ============================ */
@@ -2879,9 +3015,10 @@ textarea.field {
   width: 100%;
 }
 
-.ownerrow {
-  margin-top: var(--s-3);
-}
+/* No margin of its own — `.statrow` above it already ends with 12px, and
+   `.prof`'s own gap adds 8. Stacking a third value made the button row sit 32px
+   below the stats where the stats sat 20px below the chips. */
+
 
 .ownerrow > .btn {
   flex: 1 1 calc(50% - var(--s-2) / 2);
@@ -3114,7 +3251,15 @@ a.act:active { transform: scale(.99); background: var(--press); }
 
 /* ============================ SETTINGS ============================ */
 
-.setwrap section { margin-top: var(--s-6); }
+/* The legal pages are the one place with real prose — several paragraphs under
+   one heading. They spaced themselves on the UA's paragraph margin, which is now
+   gone, so they say what they want explicitly. Same mechanism as every other
+   stack in the file. */
+.setwrap section {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-6);
+}
 
 /**
  * A settings hub row: title, one line of current state, chevron. The state line
@@ -3124,7 +3269,6 @@ a.act:active { transform: scale(.99); background: var(--press); }
 .setnav {
   display: grid;
   gap: var(--s-2);
-  margin-top: var(--s-3);
 }
 
 .setrow {
@@ -3165,7 +3309,10 @@ a.act:active { transform: scale(.99); background: var(--press); }
 }
 
 .backlink:hover { color: var(--ink); background: var(--press); }
-.setlist { display: grid; gap: var(--s-2); margin-top: var(--s-2); }
+/* No margin-top on any of these three: they live inside `.setwrap section`,
+   which now spaces its children with a gap. The margins used to stack on top of
+   it, so one section read 20px under its heading and the next read 24. */
+.setlist { display: grid; gap: var(--s-2); }
 .setlist > div { display: flex; justify-content: space-between; gap: var(--s-3); font-size: 14px; }
 .setlist dt { color: var(--muted); flex: 0 0 auto; }
 /* A real Google email is routinely 25-40+ chars with no spaces to wrap on —
@@ -3173,9 +3320,11 @@ a.act:active { transform: scale(.99); background: var(--press); }
    flex row's automatic min-content sizing pushes it wider than the viewport
    instead of wrapping. */
 .setlist dd { font-weight: 600; text-align: right; min-width: 0; word-break: break-word; }
-.setspaces { list-style: none; display: grid; gap: var(--s-2); margin-top: var(--s-2); }
+.setspaces { list-style: none; display: grid; gap: var(--s-2); }
 .setspaces a { font-size: 14px; font-weight: 600; color: var(--ink); }
-.setwrap form { margin-top: var(--s-6); }
+/* No margin here: forms live inside `.setwrap section`, which spaces its
+   children. The 24 used to stack on the section's 12 and then on the first
+   label's own 16, so "Your details" sat 52px above its first field. */
 
 .delbox {
   border: 1px solid rgba(217, 59, 32, .4);
@@ -3351,11 +3500,13 @@ a.act:active { transform: scale(.99); background: var(--press); }
     justify-self: stretch;
   }
 
-  .lhero .demo {
+  /* Out of the vertical flow entirely — it sits beside the pitch, so the
+     rhythm rule that stacks the left column must not offset it. */
+  .lhero > .demo {
     grid-column: 2;
     grid-row: 1 / span 6;
     align-self: center;
-    margin-bottom: 0;
+    margin-top: 0;
   }
 
   .lsub {

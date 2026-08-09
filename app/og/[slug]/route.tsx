@@ -54,17 +54,25 @@ export async function GET(
   const closed = poll.status !== "live" || (endsAt !== null && endsAt <= Date.now());
 
   const race = raceGap(board);
-  // Order matters: the tightest true statement wins. "2 votes apart" beats
-  // "47 votes" beats "be the first", and an empty board must never claim a race.
+  /**
+   * Order matters: the tightest true statement wins. "2 votes apart" beats
+   * "47 votes" beats "be the first", and an empty board must never claim a race.
+   *
+   * A tie gets its own line. `race.lead` is 0 when the top two are level, which
+   * is a real and common state on a young poll, and it rendered as the sentence
+   * "Only 0 votes apart" on every share card of one.
+   */
   const hook = closed
     ? board[0]
       ? `${clip(board[0].label, 26)} won`
       : "Voting closed"
-    : race && race.lead <= 5
-      ? `Only ${plural(race.lead, "vote")} apart`
-      : poll.vote_count > 0
-        ? `${plural(poll.vote_count, "vote")} so far · tap to add yours`
-        : "Be the first to vote";
+    : race && race.lead === 0
+      ? "Dead heat at the top"
+      : race && race.lead <= 5
+        ? `Only ${plural(race.lead, "vote")} apart`
+        : poll.vote_count > 0
+          ? `${plural(poll.vote_count, "vote")} so far · tap to add yours`
+          : "Be the first to vote";
 
   const accent = closed ? C.dim : race && race.lead <= 5 ? C.heat : C.gold;
 

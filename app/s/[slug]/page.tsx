@@ -26,9 +26,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     // this the preview was a bare title and no image.
     alternates: { canonical: `/s/${space.slug}` },
     openGraph: {
+      // A child `openGraph` REPLACES the root's rather than merging into it, so
+      // these two have to be restated here or the Space card ships with no
+      // og:type and no og:site_name. Same on the poll page.
+      type: "website",
+      siteName: "MaxPoll",
       title: space.name,
       description,
-      images: [`/og/s/${space.slug}`],
+      // Versioned like the poll card, for the same reason: WhatsApp caches a
+      // preview hard, and this card names a member count. Member count is the
+      // only thing on it that a stale copy gets visibly wrong.
+      images: [`/og/s/${space.slug}?v=${space.member_count}`],
     },
   };
 }
@@ -137,7 +145,9 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
         )}
 
         <div className="btnrow">
-          <ShareButton path={`/s/${space.slug}`} text="your pov matters" />
+          {/* A Space link is an invitation, not a ballot — "your pov matters"
+              belongs on a poll and read as a mis-paste here. */}
+          <ShareButton path={`/s/${space.slug}`} text="get into this space" />
           {user && (
             <JoinButton spaceId={space.id} slug={space.slug} joined={!!membership} />
           )}

@@ -67,7 +67,7 @@ export default async function UnlockPage({
           /* Fails closed. With no VPA configured, paymentMode() returns
              coming_soon on its own — lib/payments.ts. The sheet still renders
              identically, which is what measures real intent. */
-          <div className="soon">
+          <div className="comingsoon">
             <p>
               <Emoji char="🔒" /> Unlocking soon
             </p>
