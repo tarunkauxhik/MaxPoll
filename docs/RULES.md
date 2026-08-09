@@ -64,6 +64,11 @@ browser. So a check in TypeScript is an error message, never a control.
   pageview). This is the single most expensive mistake available.
 - **Never `count(*)` for vote counts.** Denormalised counters, incremented in the
   same transaction as the insert.
+- **A share card is cached by its URL, so the URL carries a version.**
+  `polls.og_version` is bumped by a trigger whenever the title, deadline, status
+  or options change — not by app code, because four writers change what the card
+  says and a bump in one leaves the other three stale. Votes deliberately do not
+  bump it; `s-maxage=60` covers those.
 - **Ranks are computed live inside the cached board route.** No cron for this,
   ever. One cron in `vercel.json` at most, once daily — any sub-daily schedule
   fails the deploy on Hobby.

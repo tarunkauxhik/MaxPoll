@@ -74,8 +74,9 @@ export async function generateMetadata({
       siteName: "MaxPoll",
       title: poll.title,
       description,
-      // Versioned on leader change — WhatsApp caches previews hard and a stale
-      // one makes a live poll look dead.
+      // Versioned by a trigger on every edit to the title, deadline, status or
+      // options — WhatsApp caches previews hard, and an edited poll that keeps
+      // sharing its day-one card is the same bug as a stale one.
       images: [`/og/${poll.slug}?v=${poll.og_version}`],
     },
   };

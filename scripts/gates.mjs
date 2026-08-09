@@ -837,6 +837,67 @@ try {
   const anonDob = await api("/rest/v1/rpc/my_dob", PUB, { method: "POST", body: "{}" });
   ok(anonDob.status >= 400 || !anonDob.body, `…and nothing at all to anon (${anonDob.status})`);
 
+  // ══════════════════════════════════════════════ GATE G — the share card ages
+  //
+  // `og_version` sat at 1 for every poll ever created, so an edited poll kept
+  // sharing the card it was built with. The counter is only useful if something
+  // moves it, and four different writers change what the card says.
+  head("Gate G — the share card follows the poll");
+
+  const ogOf = async (id) =>
+    (await api(`/rest/v1/polls?select=og_version&id=eq.${id}`, SEC)).body?.[0]?.og_version;
+
+  const ogPoll = (await ins("polls", {
+    slug: `gate-og-${Date.now()}`,
+    created_by: alice.id,
+    title: "Share card probe",
+    subject_type: "thing",
+    category: "things",
+    expires_at: new Date(Date.now() + 3600_000).toISOString(),
+  })).body?.[0];
+  cleanup.polls.push(ogPoll.id);
+
+  const bumps = async (label, fn) => {
+    const before = await ogOf(ogPoll.id);
+    await fn();
+    const after = await ogOf(ogPoll.id);
+    ok(after > before, `${label} (${before} → ${after})`);
+  };
+  const holds = async (label, fn) => {
+    const before = await ogOf(ogPoll.id);
+    await fn();
+    const after = await ogOf(ogPoll.id);
+    ok(after === before, `${label} (stays ${after})`);
+  };
+  const patchPoll = (row) =>
+    api(`/rest/v1/polls?id=eq.${ogPoll.id}`, SEC, { method: "PATCH", body: JSON.stringify(row) });
+
+  let ogOpt;
+  await bumps("adding an option bumps it", async () => {
+    ogOpt = (await ins("options", { poll_id: ogPoll.id, label: "First", added_by: alice.id })).body?.[0];
+  });
+  await bumps("a new title bumps it", () => patchPoll({ title: "Share card probe, edited" }));
+  await bumps("a new deadline bumps it", () =>
+    patchPoll({ expires_at: new Date(Date.now() + 7200_000).toISOString() }));
+  await bumps("closing bumps it", () => patchPoll({ status: "closed" }));
+  await bumps("renaming an option bumps it", () =>
+    api(`/rest/v1/options?id=eq.${ogOpt.id}`, SEC, {
+      method: "PATCH", body: JSON.stringify({ label: "First, renamed" }),
+    }));
+  await bumps("hiding an option bumps it", () =>
+    api(`/rest/v1/options?id=eq.${ogOpt.id}`, SEC, {
+      method: "PATCH", body: JSON.stringify({ hidden: true }),
+    }));
+
+  // The counter is in a URL the CDN caches. If a vote moved it, every share
+  // would pay for a fresh Satori render.
+  await holds("a vote does not — the card is cached per URL", () =>
+    api(`/rest/v1/options?id=eq.${ogOpt.id}`, SEC, {
+      method: "PATCH", body: JSON.stringify({ vote_count: 7 }),
+    }));
+  await holds("nor does re-writing a value to what it already was", () =>
+    patchPoll({ title: "Share card probe, edited" }));
+
   console.log(`\n(poll for manual checks: /p/${pollSlug})`);
 } catch (err) {
   console.error("\nPROBE ERROR:", err.message);

@@ -17,7 +17,10 @@ import { C, OG, HEADERS, shell, row, col, Eyebrow, Hook, clip } from "../shared"
  * client, so the response carries no `Set-Cookie` and stays CDN-cacheable.
  *
  * The URL is versioned by `og_version` at the call site, because WhatsApp caches
- * previews hard and a stale one makes a live poll look dead.
+ * previews hard and a stale one makes a live poll look dead. That counter is
+ * bumped by a database trigger, not by app code — four different writers change
+ * what this card says (`update_poll`, `add_option`, admin hide, the close cron)
+ * and a bump in one of them would leave the other three stale.
  */
 export const runtime = "nodejs";
 
