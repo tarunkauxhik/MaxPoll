@@ -119,7 +119,7 @@ export function Chat({
       ) : (
         <>
           <p className="hint chatanon">
-            You&apos;re anonymous here — everyone sees your poll handle, never your name.
+            You&apos;re anonymous here.
           </p>
           <form className="composer" onSubmit={send}>
             <input
