@@ -228,7 +228,7 @@ export default async function PollPage({
 
       <p className="discl">
         <Emoji char="🔓" />
-        <span>Votes on MaxPoll are public. Your name is visible on this poll.</span>
+        <span>Vote on MaxPoll & Share it.</span>
       </p>
 
       <div className="pollmeta">

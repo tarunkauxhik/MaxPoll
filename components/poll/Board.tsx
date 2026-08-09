@@ -370,7 +370,7 @@ export function Board({
       >
         <p className="discl sheetdiscl">
           <Emoji char="🔓" />
-          <span>Votes on MaxPoll are public. Your name will be visible on this poll.</span>
+          <span>Vote on MaxPole 7 Share it.</span>
         </p>
         <button
           type="button"

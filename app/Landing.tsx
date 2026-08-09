@@ -216,8 +216,7 @@ export function Landing({
         <p className="discl">
           <Emoji char="🔓" />
           <span>
-            Votes on MaxPoll are public. Your name will be visible on polls you vote
-            in.
+            Vote on MaxPoll & Share it.
           </span>
         </p>
         {/* Google's OAuth Branding step needs these to resolve, and the landing

@@ -47,7 +47,7 @@ export default async function OnboardingPage({
       <p className="discl">
         <Emoji char="🔓" />
         <span>
-          Votes on MaxPoll are public. Your name will be visible on polls you vote in.
+          Vote on MaxPoll & Share it.
         </span>
       </p>
     </main>
