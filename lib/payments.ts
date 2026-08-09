@@ -1,10 +1,9 @@
 /**
  * The one payment switch. Everything payment-shaped reads from here.
  *
- * Phase 1 collects money over manual UPI (docs/RULES.md); Razorpay is the
- * later rail and its modes are reserved but unimplemented. Both write to the
- * same `entitlements` table, so nothing downstream of the money cares which
- * rail was used.
+ * Two rails: manual UPI (a human reads a UTR off the merchant app) and Razorpay
+ * (a signature off a webhook). Both write to the same `entitlements` table, so
+ * nothing downstream of the money cares which one was used.
  *
  * Every read goes through `clean()`: a value pasted into Vercel with quotes round
  * it would otherwise fail closed *silently* here, which looks identical to "not
@@ -30,9 +29,9 @@ export type OrderKind = keyof typeof PRICES;
 
 /**
  * Fails closed. An unset, misspelt, or half-deployed env var must never land on
- * a mode that takes money — and manual UPI additionally needs a payee to send
- * it to, so a missing VPA degrades to coming_soon rather than rendering a
- * payment screen that quietly points nowhere.
+ * a mode that takes money — and each rail additionally needs its own credential,
+ * so a missing one degrades to coming_soon rather than rendering a payment
+ * screen that quietly points nowhere.
  */
 export function paymentMode(): PaymentMode {
   const raw = clean("NEXT_PUBLIC_PAYMENTS_MODE", process.env.NEXT_PUBLIC_PAYMENTS_MODE);
@@ -41,17 +40,44 @@ export function paymentMode(): PaymentMode {
     : "coming_soon";
 
   if (mode === "manual_upi" && !vpa()) return "coming_soon";
-  // ponytail: Razorpay modes are reserved, not built. Drop this when §5 lands.
-  if (mode === "razorpay_test" || mode === "razorpay_live") return "coming_soon";
+
+  /**
+   * The key id carries its own environment in its prefix, so a test key
+   * deployed under `razorpay_live` is detectable — and worth detecting. That
+   * pairing takes real money against a test account (or the reverse, which
+   * charges a real card from a staging branch), and Razorpay's own error for it
+   * arrives in the browser after the payer has already committed.
+   *
+   * Checked here rather than in the checkout code because this is the function
+   * every screen asks "are payments on?", and "on with the wrong keys" has to
+   * answer no.
+   */
+  if (mode === "razorpay_test" || mode === "razorpay_live") {
+    const prefix = mode === "razorpay_live" ? "rzp_live_" : "rzp_test_";
+    if (!razorpayKeyId().startsWith(prefix)) return "coming_soon";
+  }
 
   return mode;
 }
 
 export const paymentsEnabled = () => paymentMode() !== "coming_soon";
 
+/** True when the checkout modal is the rail, rather than a UTR typed by hand. */
+export const isRazorpay = (mode: PaymentMode) =>
+  mode === "razorpay_test" || mode === "razorpay_live";
+
 // NEXT_PUBLIC_UPI_VPA looks like an email but is a UPI payment handle, not a
 // contact address — do not confuse it with app/legal.ts CONTACT_EMAIL.
 const vpa = () => clean("NEXT_PUBLIC_UPI_VPA", process.env.NEXT_PUBLIC_UPI_VPA);
+
+/**
+ * Public by design — Razorpay's checkout script takes it as an option, so it is
+ * in the page source of every merchant using them. The half that must never
+ * leave the server is RAZORPAY_KEY_SECRET, which lives in lib/razorpay.ts behind
+ * `server-only`.
+ */
+export const razorpayKeyId = () =>
+  clean("NEXT_PUBLIC_RAZORPAY_KEY_ID", process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
 
 /** Rupees for display. Every rendered amount goes through `.num` — RULES.md. */
 export const rupees = (paise: number) =>

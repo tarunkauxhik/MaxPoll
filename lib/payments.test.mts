@@ -28,9 +28,27 @@ test("manual_upi without a VPA degrades to coming_soon", () => {
   );
 });
 
-test("razorpay modes stay closed until the rail is built", () => {
-  for (const m of ["razorpay_test", "razorpay_live"]) {
-    withEnv({ NEXT_PUBLIC_PAYMENTS_MODE: m }, () => assert.equal(paymentMode(), "coming_soon"));
+test("a razorpay mode needs a key id from the same environment", () => {
+  const cases: [string, string | undefined, string][] = [
+    // mode                  key id                  expected
+    ["razorpay_test", undefined, "coming_soon"],
+    ["razorpay_test", "", "coming_soon"],
+    ["razorpay_test", "rzp_test_TLhSxuj7oJouKS", "razorpay_test"],
+    ["razorpay_live", "rzp_live_abc123", "razorpay_live"],
+    // The pairing that costs money: test keys under a live switch takes real
+    // intent to a sandbox, and live keys under a test switch charges real cards
+    // from a staging branch.
+    ["razorpay_live", "rzp_test_TLhSxuj7oJouKS", "coming_soon"],
+    ["razorpay_test", "rzp_live_abc123", "coming_soon"],
+    // Same paste bug as the UPI one — quotes must not silently kill the rail.
+    ["razorpay_test", '"rzp_test_TLhSxuj7oJouKS"', "razorpay_test"],
+  ];
+
+  for (const [mode, key, expected] of cases) {
+    withEnv(
+      { NEXT_PUBLIC_PAYMENTS_MODE: mode, NEXT_PUBLIC_RAZORPAY_KEY_ID: key },
+      () => assert.equal(paymentMode(), expected, `${mode} + ${JSON.stringify(key)}`)
+    );
   }
 });
 

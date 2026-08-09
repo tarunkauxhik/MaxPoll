@@ -21,7 +21,10 @@ browser. So a check in TypeScript is an error message, never a control.
   so every argument is attacker-controlled. Use `auth.uid()`. `cast_vote` once
   took a `p_user` and let anyone vote as anyone.
 - **RLS picks rows, not columns.** Any client-writable table with a status or
-  price column also needs `revoke`/`grant` at column level.
+  price column also needs `revoke`/`grant` at column level — and any *readable*
+  table with a private column needs it too. `profiles_read` is `using (true)`, so
+  `dob` was readable by anyone holding the publishable key until it got its own
+  grant; `my_dob()` is the one legitimate read.
 - **Voter names are gated server-side by entitlement.** Never sent to the client
   and blurred in CSS — anyone can open DevTools.
 - **Admin is an env allowlist** (`ADMIN_USER_IDS`), not a column. Admin routes
@@ -33,12 +36,23 @@ browser. So a check in TypeScript is an error message, never a control.
 ## Money
 
 - **`orders` is the ledger; `entitlements` is the grant.** Never merged. Access
-  is granted *only* through `verify_order()`, and a UTR unlocks exactly once —
-  the unique index enforces it, not app code.
+  is granted *only* through `verify_order()` (manual UPI) or
+  `verify_razorpay_order()` — both `security definer`, both revoked from every
+  client role. A UTR, and a Razorpay payment id, unlock exactly once: the unique
+  indexes enforce it, not app code.
 - **Payments read `NEXT_PUBLIC_PAYMENTS_MODE` and fail closed to
   `coming_soon`.** Four values: `coming_soon` · `manual_upi` · `razorpay_test` ·
-  `razorpay_live`. All logic in `lib/payments.ts`. Razorpay is reserved and
-  unbuilt.
+  `razorpay_live`. All logic in `lib/payments.ts`. Each rail needs its own
+  credential to stay open, and a key id whose `rzp_test_`/`rzp_live_` prefix
+  disagrees with the mode closes it — that pairing takes real intent to a sandbox
+  or charges real cards from a branch.
+- **Nothing from a browser is believed about money.** The Razorpay callback
+  carries an HMAC keyed with the secret; an unsigned "I paid" grants nothing.
+  `/api/razorpay/webhook` is the same check over the raw body with a *different*
+  secret, and it rejects when that secret is unset.
+- **Both the callback and the webhook fire for one successful payment.**
+  `verify_razorpay_order()` is idempotent for that reason; the webhook is the
+  only thing that saves a payer who closed the tab.
 - `orders.amount_paise` is a generated column — an insert must omit it. The
   admin queue filters `status='submitted'`, not `'pending'`.
 

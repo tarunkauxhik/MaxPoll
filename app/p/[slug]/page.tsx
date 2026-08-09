@@ -146,7 +146,7 @@ export default async function PollPage({
       </div>
 
       {poll.expires_at && (
-        <Timer expiresAt={poll.expires_at} startedAt={poll.created_at} />
+        <Timer expiresAt={poll.expires_at} startedAt={poll.created_at} closed={expired} />
       )}
 
       <a className="chatentry" href={`/p/${poll.slug}/chat`}>

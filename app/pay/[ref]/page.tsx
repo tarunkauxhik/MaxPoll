@@ -1,8 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
-import { createClient } from "@/lib/supabase/server";
-import { paymentMode, upiIntentUrl, rupees } from "@/lib/payments";
+import { createClient, getProfile } from "@/lib/supabase/server";
+import { isRazorpay, paymentMode, razorpayKeyId, upiIntentUrl, rupees } from "@/lib/payments";
 import { UtrForm } from "./UtrForm";
+import { RazorpayCheckout } from "./RazorpayCheckout";
 import { Emoji } from "@/components/ui/Emoji";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -99,6 +100,67 @@ export default async function PayPage({
 
   // ── pending ────────────────────────────────────────────────────────────────
   const mode = paymentMode();
+
+  if (isRazorpay(mode)) {
+    const profile = await getProfile();
+    return (
+      <AppShell>
+        <div className="paywrap">
+          <h1 className="t-title">
+            Pay ₹<span className="num">{amount}</span>
+          </h1>
+          <p className="t-sec">Unlocks {what}.</p>
+
+          <ol className="paysteps">
+            <li>
+              <span className="s num">1</span>
+              <span>Tap the button — UPI, card, netbanking or a wallet, whatever you use.</span>
+            </li>
+            <li>
+              <span className="s num">2</span>
+              <span>Finish in the window that opens. Stay on this page while it does.</span>
+            </li>
+            <li>
+              <span className="s num">3</span>
+              <span>
+                Access unlocks the second it clears. No reference number to copy.
+              </span>
+            </li>
+          </ol>
+
+          <RazorpayCheckout
+            orderRef={order.ref}
+            keyId={razorpayKeyId()}
+            amountPaise={order.amount_paise}
+            amountLabel={amount}
+            description={order.kind === "pass_30d" ? "MaxPoll 30-day pass" : "MaxPoll poll unlock"}
+            name={profile?.display_name ?? ""}
+            email={user.email ?? ""}
+          />
+
+          <p className="hint lcenter">
+            Reference <span className="num">{order.ref}</span>
+          </p>
+
+          {mode === "razorpay_test" && (
+            <p className="notice">
+              <b>Test mode.</b> No real money moves. Use Razorpay&apos;s test card{" "}
+              <span className="num">4111 1111 1111 1111</span>, any future expiry, any CVV.
+            </p>
+          )}
+
+          <p className="discl">
+            <Emoji char="🔓" />
+            <span>
+              Payments are handled by Razorpay — MaxPoll never sees your card or UPI
+              details. Non-refundable.
+            </span>
+          </p>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (mode !== "manual_upi") {
     return (
       <AppShell>

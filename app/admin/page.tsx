@@ -1,5 +1,5 @@
 import AppShell from "@/components/shell/AppShell";
-import { paymentMode } from "@/lib/payments";
+import { paymentsEnabled } from "@/lib/payments";
 import { requireAdmin, loadCounts } from "./data";
 
 export const metadata = { title: "Admin · MaxPoll" };
@@ -78,7 +78,7 @@ const AREAS: {
 export default async function AdminPage() {
   const supabase = await requireAdmin();
   const counts = await loadCounts(supabase);
-  const live = paymentMode() === "manual_upi";
+  const live = paymentsEnabled();
 
   return (
     <AppShell>
@@ -87,7 +87,7 @@ export default async function AdminPage() {
 
         {!live && (
           <p className="notice">
-            Payments are <b>off</b> — no VPA is configured, so no UPI orders can
+            Payments are <b>off</b> — neither rail is configured, so no orders can
             arrive. Grant access by hand instead.
           </p>
         )}

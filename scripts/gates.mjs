@@ -753,6 +753,90 @@ try {
     `a user sees only their own orders (${bobOrders.body?.length})`
   );
 
+  // ── the Razorpay rail ───────────────────────────────────────────────────
+  // Same shape as verify_order above, one difference that matters: this one is
+  // reached by a webhook as well as a callback, so BOTH fire for one payment and
+  // the second must be a no-op rather than a second entitlement.
+  const rzpOrder = await ins("orders", {
+    user_id: bob.id,
+    poll_id: pollId,
+    kind: "poll_unlock",
+    razorpay_order_id: `order_gate${Date.now()}`,
+  });
+  const rzpId = rzpOrder.body?.[0]?.razorpay_order_id;
+  const payId = `pay_gate${Date.now()}`;
+
+  const rzpClient = await api(`/rest/v1/orders?id=eq.${rzpOrder.body?.[0]?.id}`, PUB, {
+    method: "PATCH",
+    body: JSON.stringify({ razorpay_order_id: "order_stolen" }),
+  }, bob.token);
+  ok(rzpClient.status >= 400, `payer cannot point their order at another payment (${rzpClient.status})`);
+
+  const rzpDenied = await api("/rest/v1/rpc/verify_razorpay_order", PUB, {
+    method: "POST",
+    body: JSON.stringify({ p_rzp_order: rzpId, p_payment_id: payId }),
+  }, bob.token);
+  ok(rzpDenied.status >= 400, `verify_razorpay_order unreachable by a signed-in user (${rzpDenied.status})`);
+
+  const rzpOk = await api("/rest/v1/rpc/verify_razorpay_order", SEC, {
+    method: "POST",
+    body: JSON.stringify({ p_rzp_order: rzpId, p_payment_id: payId }),
+  });
+  ok(rzpOk.status < 300, `service role grants on a razorpay payment (${rzpOk.status})`);
+
+  const rzpAgain = await api("/rest/v1/rpc/verify_razorpay_order", SEC, {
+    method: "POST",
+    body: JSON.stringify({ p_rzp_order: rzpId, p_payment_id: payId }),
+  });
+  const rzpGrants = await api(
+    `/rest/v1/entitlements?select=id,source&user_id=eq.${bob.id}&source=eq.razorpay`,
+    SEC
+  );
+  ok(
+    rzpAgain.status < 300 && rzpGrants.body?.length === 1,
+    `callback and webhook both landing grants once (${rzpGrants.body?.length})`
+  );
+
+  const rzpUnknown = await api("/rest/v1/rpc/verify_razorpay_order", SEC, {
+    method: "POST",
+    body: JSON.stringify({ p_rzp_order: "order_nothere", p_payment_id: "pay_x" }),
+  });
+  ok(
+    rzpUnknown.status >= 400 && JSON.stringify(rzpUnknown.body).includes("NO_ORDER"),
+    "an unknown razorpay order raises NO_ORDER rather than granting"
+  );
+
+  // ── dob is not readable ─────────────────────────────────────────────────
+  // The column is commented "NEVER exposed publicly" and profiles_read is
+  // `using (true)`, so before the column grant this returned every user's date
+  // of birth to anyone holding the publishable key.
+  head("Gate D — date of birth");
+
+  const dobAnon = await api("/rest/v1/profiles?select=dob", PUB);
+  ok(dobAnon.status >= 400, `anon cannot select dob (${dobAnon.status})`);
+
+  const dobUser = await api(`/rest/v1/profiles?select=dob&id=eq.${alice.id}`, PUB, {}, alice.token);
+  ok(dobUser.status >= 400, `nor can a signed-in user, on their own row (${dobUser.status})`);
+
+  // `*` expands to every column, so it now fails outright rather than quietly
+  // dropping dob. No app code selects `*` from profiles — this is here so that
+  // if someone adds one, the gate says why it 403s instead of leaving them to
+  // guess at an RLS problem that isn't one.
+  const dobStar = await api(`/rest/v1/profiles?select=*&id=eq.${alice.id}`, PUB, {}, alice.token);
+  ok(dobStar.status >= 400, `select=* on profiles is refused, not filtered (${dobStar.status})`);
+
+  const dobNamed = await api(
+    `/rest/v1/profiles?select=handle,display_name&id=eq.${alice.id}`,
+    PUB, {}, alice.token
+  );
+  ok(dobNamed.body?.[0]?.handle, "…and every column the app names still reads");
+
+  const myDob = await api("/rest/v1/rpc/my_dob", PUB, { method: "POST", body: "{}" }, alice.token);
+  ok(/^\d{4}-\d{2}-\d{2}$/.test(myDob.body ?? ""), `my_dob() returns your own (${myDob.body})`);
+
+  const anonDob = await api("/rest/v1/rpc/my_dob", PUB, { method: "POST", body: "{}" });
+  ok(anonDob.status >= 400 || !anonDob.body, `…and nothing at all to anon (${anonDob.status})`);
+
   console.log(`\n(poll for manual checks: /p/${pollSlug})`);
 } catch (err) {
   console.error("\nPROBE ERROR:", err.message);

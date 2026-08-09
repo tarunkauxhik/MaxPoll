@@ -38,6 +38,9 @@ whole `.env` file):
 | `SUPABASE_DB_URL` | migrations only, session pooler on 5432 |
 | `NEXT_PUBLIC_PAYMENTS_MODE` | fails closed to `coming_soon` |
 | `NEXT_PUBLIC_UPI_VPA`, `NEXT_PUBLIC_UPI_PAYEE_NAME` | empty VPA forces `coming_soon` |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | public by design; its prefix must match the mode |
+| `RAZORPAY_KEY_SECRET` | server only — it *is* the payment signature scheme |
+| `RAZORPAY_WEBHOOK_SECRET` | you choose it in the dashboard; unset ⇒ the webhook rejects |
 | `ADMIN_USER_IDS` | comma-separated profile UUIDs; empty means nobody |
 | `NEXT_PUBLIC_SITE_URL` | pinned, not inferred — `lib/site.ts` |
 
@@ -54,6 +57,13 @@ a migration lands everywhere at once — read it twice before `db push`.
   every push to `main` deploys.
 - **PhonePe for Business** — manual UPI collection. A *business* VPA, not a
   personal one, once real volume exists.
+- **Razorpay** — the automatic rail. Two things to set up beyond the keys:
+  1. Dashboard → Settings → **Webhooks**, URL `https://<origin>/api/razorpay/webhook`,
+     event `payment.captured`, and put the secret you type there into
+     `RAZORPAY_WEBHOOK_SECRET`. Without it a payer who closes the tab mid-payment
+     has paid and got nothing, and nothing anywhere reports it.
+  2. Going live is a **three-value** change: the mode, the key id and the key
+     secret. Swap one and `paymentMode()` falls back to `coming_soon` on purpose.
 
 ## After a deploy
 

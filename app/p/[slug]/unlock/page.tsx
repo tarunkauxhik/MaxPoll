@@ -3,7 +3,7 @@ import AppShell from "@/components/shell/AppShell";
 import { getPollBySlug, hasEntitlement } from "@/lib/poll-queries";
 import { getUser } from "@/lib/supabase/server";
 import { resultsLocked } from "@/lib/space";
-import { paymentMode, PRICES, rupees } from "@/lib/payments";
+import { paymentsEnabled, PRICES, rupees } from "@/lib/payments";
 import { startOrder } from "@/app/pay/actions";
 import { Emoji } from "@/components/ui/Emoji";
 
@@ -32,7 +32,7 @@ export default async function UnlockPage({
   // this is the guard, because a URL is typeable and links go stale.
   if (resultsLocked(poll)) redirect(`/p/${slug}`);
 
-  const live = paymentMode() === "manual_upi";
+  const live = paymentsEnabled();
 
   return (
     <AppShell>
@@ -59,14 +59,16 @@ export default async function UnlockPage({
               await startOrder("poll_unlock", poll.id, poll.slug);
             }}
           >
+            {/* No rail in the label. Which one runs is a deploy-time switch,
+                and "with UPI" was wrong the moment Razorpay took cards too. */}
             <button type="submit" className="btn accent">
-              Pay ₹<span className="num">{rupees(PRICES.poll_unlock)}</span> with UPI
+              Pay ₹<span className="num">{rupees(PRICES.poll_unlock)}</span>
             </button>
           </form>
         ) : (
-          /* Fails closed. With no VPA configured, paymentMode() returns
-             coming_soon on its own — lib/payments.ts. The sheet still renders
-             identically, which is what measures real intent. */
+          /* Fails closed. With no VPA (or no matching Razorpay key) configured,
+             paymentMode() returns coming_soon on its own — lib/payments.ts. The
+             sheet still renders identically, which is what measures real intent. */
           <div className="comingsoon">
             <p>
               <Emoji char="🔒" /> Unlocking soon

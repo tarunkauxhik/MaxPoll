@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import AppShell from "@/components/shell/AppShell";
 import { getUser } from "@/lib/supabase/server";
 import { myAccess } from "@/lib/poll-queries";
-import { paymentMode, PRICES, rupees } from "@/lib/payments";
+import { isRazorpay, paymentMode, PRICES, rupees } from "@/lib/payments";
 import { startOrder } from "@/app/pay/actions";
 import { Emoji } from "@/components/ui/Emoji";
 
@@ -31,7 +31,8 @@ export default async function SubscriptionPage() {
   if (!user) redirect("/");
 
   const { pass, unlocks } = await myAccess(user.id);
-  const live = paymentMode() === "manual_upi";
+  const mode = paymentMode();
+  const live = mode !== "coming_soon";
 
   return (
     <AppShell>
@@ -110,15 +111,20 @@ export default async function SubscriptionPage() {
                     Get the 30-day pass
                   </button>
                 </form>
-                <form action={startOrder.bind(null, "pass_30d", null, undefined)}>
-                  <button type="submit" className="btn sec">
-                    Already paid?
-                  </button>
-                </form>
+                {/* Manual UPI only: it reopens the order so a UTR can be typed
+                    in. Razorpay verifies itself, so there is no "already paid"
+                    state a human has to resolve. */}
+                {!isRazorpay(mode) && (
+                  <form action={startOrder.bind(null, "pass_30d", null, undefined)}>
+                    <button type="submit" className="btn sec">
+                      Already paid?
+                    </button>
+                  </form>
+                )}
               </>
             ) : (
-              /* Fails closed. With no VPA configured, paymentMode() returns
-                 coming_soon on its own — lib/payments.ts. */
+              /* Fails closed. With no VPA (or no matching Razorpay key)
+                 configured, paymentMode() returns coming_soon — lib/payments.ts. */
               <div className="comingsoon">
                 <p>
                   <Emoji char="🔒" /> Unlocking soon

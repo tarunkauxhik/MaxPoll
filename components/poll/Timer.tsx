@@ -15,9 +15,17 @@ import { cn } from "@/lib/cn";
 export function Timer({
   expiresAt,
   startedAt,
+  closed = false,
 }: {
   expiresAt: string;
   startedAt: string;
+  /**
+   * The server's verdict, from `isExpired()` — which reads `status` as well as
+   * the clock. Without it this panel only knew about `expires_at`, so "Stop
+   * voting now" (which sets `status = 'closed'` and deliberately leaves the
+   * deadline alone) left a closed poll counting down "VOTING CLOSES IN 2d".
+   */
+  closed?: boolean;
 }) {
   const end = new Date(expiresAt).getTime();
   const start = new Date(startedAt).getTime();
@@ -26,8 +34,14 @@ export function Timer({
   // then ticks once mounted.
   const now = useNow(start);
 
-  const { urgent, expired, elapsed } = countdown(end, now, start);
-  const segs = segments(end, now);
+  const tick = countdown(end, now, start);
+  const expired = closed || tick.expired;
+  const urgent = tick.urgent && !expired;
+  const elapsed = tick.elapsed;
+  // Closed early: the clock still has time on it, so feed `segments` an instant
+  // that has already passed rather than showing a running deadline nobody can
+  // vote against.
+  const segs = segments(expired ? now : end, now);
   const pctLeft = Math.max(0, Math.min(100, Math.round((1 - elapsed) * 100)));
 
   return (
