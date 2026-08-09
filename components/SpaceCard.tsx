@@ -1,6 +1,5 @@
 import { monogram, n } from "@/lib/format";
-
-const UNLOCK = 20;
+import { SPACE_UNLOCK_MEMBERS as UNLOCK } from "@/lib/space";
 
 /**
  * Deterministic fill from the name — same Space, same colour, every render, with
