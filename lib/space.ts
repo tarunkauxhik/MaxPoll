@@ -1,5 +1,5 @@
 /**
- * The Space results gate — 03-ux-flows §C.
+ * The Space results gate — RULES.md.
  *
  * Its own module, not `poll-queries.ts`, for two reasons: that file is
  * `server-only` and so cannot be unit tested, and this rule now guards a

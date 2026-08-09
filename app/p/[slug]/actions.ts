@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 
 export type VoteResult =
   | { ok: true }
-  | { ok: false; code: "SIGNED_OUT" | "ALREADY_VOTED" | "CLOSED" | "ERROR"; message: string };
+  | {
+      ok: false;
+      code: "SIGNED_OUT" | "ALREADY_VOTED" | "CLOSED" | "NO_VOTE" | "ERROR";
+      message: string;
+    };
 
 /**
  * Cast a vote through `cast_vote()`.
@@ -44,7 +48,7 @@ export async function castVote(
     return { ok: false, code: "CLOSED", message: "Voting has closed on this poll." };
   }
 
-  // Voting auto-joins the Space — 03-ux-flows B: "Voting auto-joins. No separate
+  // Voting auto-joins the Space — RULES.md: "Voting auto-joins. No separate
   // join step after the sheet." Ignore a conflict; already a member is fine.
   if (poll.space_id) {
     await supabase
@@ -71,6 +75,52 @@ export async function castVote(
       return { ok: false, code: "CLOSED", message: "Voting has closed on this poll." };
     }
     return { ok: false, code: "ERROR", message: "Couldn't save your vote. Try again." };
+  }
+
+  revalidatePath(`/p/${slug}`);
+  return { ok: true };
+}
+
+/**
+ * Move an existing vote to a different option.
+ *
+ * Separate from `castVote` because it is a different database operation, not a
+ * different code path to the same one: `votes_poll_user_uniq` allows exactly one
+ * row per person per poll, so this UPDATEs that row and shifts the two option
+ * counters. `polls.vote_count` deliberately does not move — it is still one
+ * vote, and counting a change as a new one would inflate every total on the
+ * site.
+ *
+ * No ownership argument: `change_vote()` reads `auth.uid()`. Passing a user id
+ * into a `security definer` function is what let anyone vote as anyone once —
+ * RULES.md, security.
+ */
+export async function changeVote(
+  pollId: string,
+  optionId: string,
+  slug: string
+): Promise<VoteResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { ok: false, code: "SIGNED_OUT", message: "Sign in to vote." };
+
+  const { error } = await supabase.rpc("change_vote", {
+    p_poll: pollId,
+    p_option: optionId,
+  });
+
+  if (error) {
+    if (error.message?.includes("CLOSED")) {
+      return { ok: false, code: "CLOSED", message: "Voting has closed on this poll." };
+    }
+    if (error.message?.includes("NO_VOTE")) {
+      // They have no vote to move. The caller falls back to casting one.
+      return { ok: false, code: "NO_VOTE", message: "You haven't voted here yet." };
+    }
+    return { ok: false, code: "ERROR", message: "Couldn't change your vote. Try again." };
   }
 
   revalidatePath(`/p/${slug}`);

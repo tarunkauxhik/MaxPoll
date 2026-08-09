@@ -6,7 +6,7 @@ import * as Dialog from "@radix-ui/react-dialog";
  * The bottom sheet.
  *
  * Radix, not hand-rolled: focus trap, Esc, scroll lock and focus restoration are
- * each easy to get subtly wrong, and DECISIONS B1 permits exactly this one
+ * each easy to get subtly wrong, and this is the one permitted
  * dependency for exactly this reason. Everything else here is plain CSS.
  */
 export function Sheet({

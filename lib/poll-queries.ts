@@ -120,6 +120,8 @@ export type SpaceRow = {
   description: string | null;
   member_count: number;
   is_verified: boolean;
+  /** Who may delete it — the Space page renders its control off this. */
+  created_by: string | null;
 };
 
 /**
@@ -133,7 +135,7 @@ export const getSpaceByKey = cache(async (key: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("spaces")
-    .select("id, slug, code, name, description, member_count, is_verified")
+    .select("id, slug, code, name, description, member_count, is_verified, created_by")
     .or(filter)
     .maybeSingle();
   return (data as SpaceRow | null) ?? null;
@@ -191,6 +193,49 @@ export async function activePass(userId: string) {
       (e.expires_at === null || new Date(e.expires_at).getTime() > now)
   );
   return { pass: pass ?? null, total: (data ?? []).length };
+}
+
+/**
+ * Everything the user currently has access to, for the Subscription screen.
+ *
+ * `activePass` answers "is there a pass?" and that is all the paywall needs.
+ * This answers "what have I actually bought?", which is a different question and
+ * the one Settings is opened to ask — a per-poll unlock is a purchase too, and
+ * the screen used to show no trace of one.
+ *
+ * Joined to `polls` so each unlock can name and link its poll. A deleted poll
+ * cascades its entitlement away, so there is no dangling-row case to handle.
+ */
+export async function myAccess(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("entitlements")
+    .select("kind, poll_id, expires_at, source, created_at, poll:polls(slug, title)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  const now = Date.now();
+  const live = (e: { expires_at: string | null }) =>
+    e.expires_at === null || new Date(e.expires_at).getTime() > now;
+
+  const rows = (data ?? []) as unknown as {
+    kind: string;
+    poll_id: string | null;
+    expires_at: string | null;
+    source: string;
+    created_at: string;
+    poll: { slug: string; title: string } | { slug: string; title: string }[] | null;
+  }[];
+
+  return {
+    pass: rows.find((e) => e.kind === "sub_monthly" && live(e)) ?? null,
+    unlocks: rows
+      .filter((e) => e.kind === "poll_unlock" && live(e))
+      .map((e) => ({
+        ...e,
+        poll: Array.isArray(e.poll) ? (e.poll[0] ?? null) : e.poll,
+      })),
+  };
 }
 
 export async function isSpaceMember(spaceId: string, userId: string | undefined) {

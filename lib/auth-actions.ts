@@ -11,7 +11,7 @@ import { clean } from "@/lib/env";
  * Google returns the account if it exists and creates it if not, so "Log in" and
  * "Sign up" are the same button pointing at the same handler. There are no
  * passwords anywhere in this product, therefore no forgot/reset flow exists or
- * should ever be built — docs/03-ux-flows.md.
+ * should ever be built — RULES.md.
  */
 export async function signInWithGoogle(next?: string) {
   const supabase = await createClient();

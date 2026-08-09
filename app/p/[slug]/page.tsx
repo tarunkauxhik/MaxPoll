@@ -90,7 +90,7 @@ export default async function PollPage({
   const poll = await getPollBySlug(slug);
 
   // RLS deliberately still returns removed polls so this page can tell
-  // "was removed" apart from "never existed" — DECISIONS, polls_read.
+  // "was removed" apart from "never existed" — RULES.md, polls_read.
   if (!poll) notFound();
   if (poll.status === "removed") {
     return (
@@ -245,7 +245,7 @@ export default async function PollPage({
 }
 
 /**
- * Under 20 members the Space can't show results yet — 03-ux-flows C.
+ * Under 20 members the Space can't show results yet — RULES.md.
  *
  * Voting still works; this only explains the missing numbers. The copy says so,
  * because a lock icon next to a board with no counts otherwise reads as "you

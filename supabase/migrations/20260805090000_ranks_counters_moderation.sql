@@ -1,6 +1,6 @@
 -- Phase 5/6: rank snapshots, the denormalised counters nothing was maintaining,
 -- moderation, and the server-side poll limit.
--- Reference: docs/02-architecture.md, DECISIONS A3 / A6.
+-- Reference: docs/RULES.md, RULES.md / A6.
 
 -- ============================================================ rank snapshots
 
@@ -90,7 +90,7 @@ create trigger options_count
 
 -- ============================================================ moderation
 
--- Merge, not delete — 03-ux-flows F. Deleting an option with votes silently
+-- Merge, not delete — RULES.md. Deleting an option with votes silently
 -- changes every percentage on the board; merging preserves the total.
 create or replace function merge_options(p_from uuid, p_into uuid)
 returns void

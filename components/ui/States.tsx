@@ -1,6 +1,6 @@
 /**
  * Loading, empty and error. All three are required before a screen ships —
- * DECISIONS C3. Copy is fixed in docs/03-ux-flows.md: instructions, never apologies.
+ * DESIGN.md. Copy is fixed in RULES.md: instructions, never apologies.
  */
 import { Emoji } from "./Emoji";
 

@@ -1,4 +1,4 @@
--- DECISIONS D2b said RLS picks rows, not columns, and applied column grants to
+-- RULES.md — security said RLS picks rows, not columns, and applied column grants to
 -- `orders`. It applies to four more tables, and all four were verified live before
 -- this was written — as the poll's own creator, with a real session:
 --

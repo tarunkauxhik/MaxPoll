@@ -6,7 +6,7 @@ import "./globals.css";
 
 /**
  * Two faces. Inter for the interface, Lora for anything that reads as a
- * headline — DECISIONS D15, revised.
+ * headline — docs/DESIGN.md.
  *
  * Both are variable, so one file each covers every weight they may use. Lora
  * *can* reach 700 and must not: the cap of 500 is enforced in
@@ -90,7 +90,7 @@ export default function RootLayout({
          * ⚠️ It injects routes under `/_vercel/insights/*`, which is why the
          * `proxy.ts` matcher now excludes `_vercel`. Without that exclusion every
          * pageview beacon would run the proxy — an `auth.getUser()` round trip to
-         * Supabase per view. Same failure shape as DECISIONS A2: nothing errors,
+         * Supabase per view. Same failure shape as RULES.md, caching: nothing errors,
          * the bill just scales with traffic.
          *
          * Does nothing until Web Analytics is enabled in the Vercel dashboard.

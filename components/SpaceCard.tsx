@@ -16,7 +16,7 @@ import { SPACE_UNLOCK_MEMBERS as UNLOCK } from "@/lib/space";
  *      wheel bottoms out at **2.90:1 around hue 60**, so any Space whose name
  *      hashed into the yellows rendered white-on-yellow. Measured, not guessed.
  *
- * This band's worst case is 7.5:1 — see DECISIONS D15 on why every accent is a
+ * This band's worst case is 7.5:1 — see RULES.md on why every accent is a
  * family rather than a free choice.
  */
 const HUE_FROM = 214; // blue

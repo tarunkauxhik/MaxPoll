@@ -12,7 +12,7 @@ import { C, OG, shell, row, col } from "./og/shared";
  * **Static, and deliberately so.** Next renders this at build time as long as it
  * touches no request data. Reading live stats would make it dynamic, cost a
  * database round trip per unfurl, and publish a number that goes stale between
- * deploys anyway — 01-product is explicit that a number on this surface has to
+ * deploys anyway — RULES.md is explicit that a number on this surface has to
  * be real or absent. The demo board is unmistakably a sample, exactly as it is
  * on the landing page it mirrors.
  */

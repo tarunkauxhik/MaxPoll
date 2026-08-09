@@ -10,7 +10,7 @@ import { ago } from "@/lib/format";
  *
  * Split out of the old single page so each area can own a route. There is
  * deliberately no admin RLS policy on `orders`, `entitlements` or `reports`
- * (DECISIONS D3), so the service-role client is the only path that can read
+ * (RULES.md, admin), so the service-role client is the only path that can read
  * them — which is exactly why this file is `server-only`.
  */
 
@@ -185,6 +185,53 @@ export async function loadGranted(supabase: Admin) {
       expiresAt: g.expires_at,
     };
   });
+}
+
+/**
+ * Search polls and Spaces by title/name/slug, for the admin delete screen.
+ *
+ * A search box rather than a list: this is the one unbounded delete in the
+ * product, and a paginated list of everything invites scrolling to something and
+ * removing it. You have to go looking for the thing you came to remove.
+ *
+ * `q` is escaped for PostgREST's `or` filter — a comma or a paren in the query
+ * would otherwise be read as filter syntax. Same class of hole `keyFilter`
+ * closes for slugs.
+ */
+export async function adminSearch(supabase: Admin, q: string) {
+  const term = q.trim();
+  if (term.length < 2) return { polls: [], spaces: [] };
+
+  const safe = term.replace(/[(),*:"\\]/g, " ").trim();
+  if (!safe) return { polls: [], spaces: [] };
+  const like = `%${safe}%`;
+
+  const [polls, spaces] = await Promise.all([
+    supabase
+      .from("polls")
+      .select("id, slug, title, status, vote_count, created_at, spaces:space_id(name)")
+      .or(`title.ilike.${like},slug.ilike.${like}`)
+      .order("created_at", { ascending: false })
+      .limit(25),
+    supabase
+      .from("spaces")
+      .select("id, slug, name, member_count, created_at")
+      .or(`name.ilike.${like},slug.ilike.${like}`)
+      .order("created_at", { ascending: false })
+      .limit(25),
+  ]);
+
+  const one = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
+
+  return {
+    polls: ((polls.data ?? []) as unknown as {
+      id: string; slug: string; title: string; status: string; vote_count: number;
+      spaces: { name: string } | { name: string }[] | null;
+    }[]).map((p) => ({ ...p, spaceName: one(p.spaces)?.name ?? null })),
+    spaces: (spaces.data ?? []) as {
+      id: string; slug: string; name: string; member_count: number;
+    }[],
+  };
 }
 
 /** Counts for the hub, in one round trip each. `head: true` fetches no rows. */

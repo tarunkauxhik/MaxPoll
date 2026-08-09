@@ -8,6 +8,7 @@ import {
   rejectOrder,
   revokeAccess,
   moderate,
+  adminDelete,
   type AdminState,
 } from "./actions";
 
@@ -326,7 +327,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 /** Who currently has access. `entitlements` is the access grant; `orders` is the
- *  ledger — revoking here never rewrites what was paid (DECISIONS D2). */
+ *  ledger — revoking here never rewrites what was paid (RULES.md, money). */
 export function GrantedList({ rows }: { rows: GrantRow[] }) {
   if (rows.length === 0) {
     return <p className="t-sec">Nobody has access yet.</p>;
@@ -390,6 +391,92 @@ function GrantedRow({ row }: { row: GrantRow }) {
             Revoke
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * One search result, with its own confirmation.
+ *
+ * The name has to be typed to enable the button. That is heavier than the
+ * creator's own delete on purpose: this path ignores ownership, and a Space row
+ * here takes every poll inside it — including other people's. Typing the name is
+ * the difference between deciding to remove something and mis-tapping a list.
+ *
+ * `adminDelete` re-checks the typed value server-side; this is the affordance,
+ * not the guard.
+ */
+export function DeleteRow({
+  kind,
+  id,
+  name,
+  href,
+  meta,
+}: {
+  kind: "poll" | "space";
+  id: string;
+  name: string;
+  href: string;
+  meta: string;
+}) {
+  const [state, action, pending] = useActionState<AdminState, FormData>(adminDelete, {});
+  const [typed, setTyped] = useState("");
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="qrow-b">
+      <div className="delhead">
+        <a className="delname" href={href} target="_blank" rel="noreferrer">
+          {name}
+        </a>
+        <span className="t-sec">{meta}</span>
+      </div>
+
+      {open ? (
+        <form action={action} className="delform">
+          <input type="hidden" name="kind" value={kind} />
+          <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="name" value={name} />
+          <label className="lbl" htmlFor={`c-${id}`}>
+            Type “{name}” to confirm
+          </label>
+          <input
+            id={`c-${id}`}
+            name="confirm"
+            className="field"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            autoComplete="off"
+          />
+          <div className="qactions">
+            <button
+              type="submit"
+              className="btn danger"
+              disabled={pending || typed !== name}
+            >
+              {pending ? "Deleting…" : `Delete ${kind}`}
+            </button>
+            <button type="button" className="btn sec" onClick={() => setOpen(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button type="button" className="btn danger sm" onClick={() => setOpen(true)}>
+          Delete
+        </button>
+      )}
+
+      {state.error && (
+        <p className="fielderr" role="alert">
+          {state.error}
+        </p>
+      )}
+      {state.ok && (
+        <p className="okmsg" role="status">
+          {state.ok}
+        </p>
       )}
     </div>
   );

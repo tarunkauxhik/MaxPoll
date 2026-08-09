@@ -11,7 +11,7 @@ import { requireEnv, supabaseUrl } from "@/lib/env";
  *
  * Only three things may use it:
  *   1. `/admin` — reading the order queue and granting access. There is
- *      deliberately no admin RLS policy, so this is the only path (DECISIONS D3).
+ *      deliberately no admin RLS policy, so this is the only path (RULES.md, admin).
  *   2. `verify_order()` — execute is revoked from every client role.
  *   3. Account deletion, which must null `user_id` on votes the user can't reach.
  *

@@ -9,7 +9,7 @@ file had seventeen of them, they duplicated the CSS, the CSS moved, and the spec
 into a document that confidently described a design that had not existed for three
 phases. If you want to know what `.opt` looks like, read `.opt`.
 
-Rationale for anything below lives in [DECISIONS.md](DECISIONS.md) D15, which wins.
+Rationale that outlived its argument lives in [RULES.md](RULES.md).
 
 ---
 

@@ -33,7 +33,7 @@ export async function completeOnboarding(
   }
 
   // The 18+ gate. Checked server-side because the client one is a convenience,
-  // not a control — docs/03-ux-flows.md, and it is a hard stop, never a soft gate.
+  // not a control — RULES.md, and it is a hard stop, never a soft gate.
   if (!isAdult(dob)) {
     if (dob && /^\d{4}-\d{2}-\d{2}$/.test(dob)) redirect("/onboarding/under-18");
     return { field: "dob", error: "Enter your date of birth." };

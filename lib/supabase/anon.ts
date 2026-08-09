@@ -5,7 +5,7 @@ import { supabaseKey, supabaseUrl } from "@/lib/env";
  * Cookie-free client for the **edge-cached** routes only:
  * `/api/poll/[id]/board`, `/api/poll/[id]/messages`, `/og/[slug]`.
  *
- * DECISIONS A2 — the single most dangerous item in this project. Vercel's CDN
+ * RULES.md, caching: the single most dangerous item in this project. Vercel's CDN
  * refuses to cache ANY response carrying `Set-Cookie`. `@supabase/ssr` sets auth
  * cookies on every response it touches, so routing the board through the session
  * client makes `s-maxage=4` decorative: every viewer invokes a function, and the

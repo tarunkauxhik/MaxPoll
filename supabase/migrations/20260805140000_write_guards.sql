@@ -10,7 +10,7 @@
 --
 -- A signed-in user holding the publishable key — which ships to every browser by
 -- design — could POST straight to /rest/v1/messages with a 10MB body, at any
--- rate, or add options to a locked poll. DECISIONS D2b said the same thing about
+-- rate, or add options to a locked poll. RULES.md — security said the same thing about
 -- `orders` and column grants; this is that lesson on two more tables.
 --
 -- Pattern is the one cast_vote / create_poll / verify_order already use: a

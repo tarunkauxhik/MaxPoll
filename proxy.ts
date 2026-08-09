@@ -8,7 +8,7 @@ import { supabaseKey, supabaseUrl } from "@/lib/env";
  * ⚠️ THIS FILE IS `proxy.ts`, NOT `middleware.ts`.
  * Next 16 renamed Middleware to Proxy. Supabase's SSR quickstart still says
  * `middleware.ts`, and Next 16 does not invoke that filename — no error, no
- * warning, sessions simply never refresh. See docs/LEARNINGS.md.
+ * warning, sessions simply never refresh. See docs/RULES.md.
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
 }
 
 /**
- * ⚠️ DECISIONS A2 — the exclusions below are load-bearing, not an optimisation.
+ * ⚠️ RULES.md, caching: the exclusions below are load-bearing, not an optimisation.
  *
  * This proxy sets auth cookies on every response it touches, and **Vercel's CDN
  * refuses to cache any response carrying `Set-Cookie`**. Route the board through

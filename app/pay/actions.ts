@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 /**
  * Start an order. The client sends `kind` and `pollId` and nothing else —
  * `ref` is defaulted by the database and `amount_paise` is a generated column,
- * so neither is client-authored (DECISIONS D2b).
+ * so neither is client-authored (RULES.md, security).
  */
 export async function startOrder(
   kind: OrderKind,

@@ -1,5 +1,5 @@
 -- MaxPoll initial schema.
--- Reference: docs/02-architecture.md. Corrections applied: docs/DECISIONS.md A3, A4, A6.
+-- Reference: docs/RULES.md. Corrections applied: docs/RULES.md A3, A4, A6.
 
 create extension if not exists pg_trgm;
 
@@ -66,7 +66,7 @@ create table options (
   ) stored,
   added_by uuid references profiles,
   vote_count int default 0,             -- denormalised — never count(*)
-  -- DECISIONS A3: no `rank` column. Rank is row_number() at read time, always
+  -- RULES.md: no `rank` column. Rank is row_number() at read time, always
   -- correct and never drifts. Only the movement snapshot persists.
   rank_snapshot int,
   snapshot_at timestamptz,
@@ -87,7 +87,7 @@ create table votes (
 );
 -- The real guard: one vote per person per poll.
 create unique index votes_poll_user_uniq on votes (poll_id, user_id) where user_id is not null;
--- DECISIONS A4: device_id is a velocity SIGNAL, not a constraint. A unique index
+-- RULES.md: device_id is a velocity SIGNAL, not a constraint. A unique index
 -- here would block two people sharing a laptop, which is common on a campus.
 create index on votes (poll_id, device_id);
 create index on votes (option_id);
@@ -100,7 +100,7 @@ create table entitlements (
   poll_id uuid references polls on delete cascade,      -- null = subscription
   kind text not null check (kind in ('poll_unlock','sub_monthly')),
   expires_at timestamptz,
-  -- DECISIONS D2. 'comp' hand-grants access (a friend, a bug apology) without
+  -- RULES.md — money. 'comp' hand-grants access (a friend, a bug apology) without
   -- inventing a fake payment.
   source text not null check (source in ('manual_upi','razorpay','comp')),
   payment_ref text,                     -- UTR for manual_upi, payment id for razorpay
@@ -112,7 +112,7 @@ create unique index entitlements_payment_uniq
   on entitlements (source, payment_ref) where payment_ref is not null;
 create index on entitlements (user_id, poll_id);
 
--- The manual UPI ledger — DECISIONS D1. orders records the payment, entitlements
+-- The manual UPI ledger — RULES.md — money. orders records the payment, entitlements
 -- records the access; verify_order() is the only bridge between them.
 create table orders (
   id uuid primary key default gen_random_uuid(),
@@ -204,7 +204,7 @@ create index on reports (target_type, target_id);
 
 -- Vote and increment the denormalised counters in one transaction.
 -- security definer so it can write past RLS; search_path pinned because a
--- definer function without it is a privilege-escalation hole (DECISIONS A6).
+-- definer function without it is a privilege-escalation hole (RULES.md).
 create or replace function cast_vote(p_poll uuid, p_option uuid, p_device text, p_user uuid)
 returns void
 language plpgsql
@@ -259,7 +259,7 @@ grant  execute on function search_options(uuid, text) to anon, authenticated;
 -- getting in without a ledger row. Both are worse than failing outright.
 --
 -- security definer with a pinned search_path, same reasoning as cast_vote
--- (DECISIONS A6). Execute is revoked from every client role — only service_role
+-- (RULES.md). Execute is revoked from every client role — only service_role
 -- reaches this, from the admin panel. There is deliberately no client path.
 create or replace function verify_order(p_order uuid, p_admin uuid)
 returns void
@@ -281,7 +281,7 @@ begin
     case o.kind when 'pass_30d' then 'sub_monthly' else 'poll_unlock' end,
     'manual_upi',
     upper(btrim(o.utr)),
-    -- DECISIONS D4: the ₹99 tier is a 30-day pass, not a subscription. No
+    -- RULES.md — money: the ₹99 tier is a 30-day pass, not a subscription. No
     -- mandate, no auto-renew, and votes_read_entitled already expires it.
     case o.kind when 'pass_30d' then now() + interval '30 days' end
   );
@@ -326,7 +326,7 @@ create policy space_members_join  on space_members for insert with check (auth.u
 create policy space_members_leave on space_members for delete using (auth.uid() = user_id);
 
 -- polls: private polls are creator-only. Removed polls stay readable on purpose —
--- the UI has to distinguish "was removed" from "never existed" (docs/03-ux-flows.md),
+-- the UI has to distinguish "was removed" from "never existed" (RULES.md),
 -- and it can't do that if RLS returns zero rows for both. Feeds filter on status.
 create policy polls_read on polls
   for select using (is_private = false or auth.uid() = created_by);

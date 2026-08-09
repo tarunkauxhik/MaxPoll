@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
  * The live board. Polled every 4s by every viewer, so this route is the one that
  * decides whether the free tier survives launch.
  *
- * ⚠️ DECISIONS A2 — this handler must NEVER read or write a cookie. It uses the
+ * ⚠️ RULES.md, caching: this handler must NEVER read or write a cookie. It uses the
  * anonymous client for exactly that reason, and `proxy.ts` excludes this path
  * from its matcher. Break either half and every viewer invokes a function
  * instead of hitting the CDN — silently, with no error anywhere.
@@ -42,7 +42,7 @@ export async function GET(
 
   const options = rankOptions(rows ?? [], poll.vote_count ?? 0);
 
-  // Movement snapshot — DECISIONS A3. The 60s guard lives inside the function,
+  // Movement snapshot — RULES.md. The 60s guard lives inside the function,
   // so a ▲2 badge persists across cache windows instead of flickering every 4s.
   // No cron: the response is cached at s-maxage=4, so this runs at most once per
   // 4s per poll no matter how many people are watching. CLAUDE.md forbids a cron

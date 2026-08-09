@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/site";
 
 /**
- * 01-product names search discovery as a core differentiator over a WhatsApp
+ * RULES.md names search discovery as a core differentiator over a WhatsApp
  * poll, and there was no robots.txt at all — so every crawler was guessing,
  * including about the routes below.
  *

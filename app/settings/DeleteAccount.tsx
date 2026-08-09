@@ -18,7 +18,7 @@ export function DeleteAccount({ handle }: { handle: string }) {
   return (
     <form action={action} className="delbox">
       <h2 className="t-card">Delete your account</h2>
-      {/* States the vote behaviour explicitly — 03-ux-flows K. */}
+      {/* States the vote behaviour explicitly — RULES.md. */}
       <p className="t-sec">
         Your profile, memberships and unlocks are deleted. <b>Your votes stay, anonymised</b> —
         removing them would silently change the counts on every poll you voted in.

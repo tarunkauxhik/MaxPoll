@@ -10,7 +10,7 @@ import QRCode from "qrcode";
 export const metadata = { title: "Pay · MaxPoll" };
 
 /**
- * The payment page — a page, not a modal (03-ux-flows G). The payer leaves to
+ * The payment page — a page, not a modal (RULES.md). The payer leaves to
  * their UPI app and comes back, so they need a URL they can return to.
  */
 export default async function PayPage({
@@ -172,7 +172,7 @@ export default async function PayPage({
         {/* MaxPoll collects on an individual UPI account, so the payer's app shows
             a person's name and not "MaxPoll". Saying so here is the cheapest fix
             for the "wait, who am I paying?" moment that otherwise abandons the
-            payment. Remove this line the day the business VPA lands — DECISIONS D6. */}
+            payment. Remove this line the day the business VPA lands — RULES.md. */}
         <p className="discl">
           <Emoji char="🔓" />
           <span>

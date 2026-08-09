@@ -2,7 +2,7 @@ import { EMOJI_MAP } from "@/lib/emoji";
 
 /**
  * Renders a bundled Apple-style glyph instead of the system emoji font, so
- * the same character looks the same on Android and iOS — DECISIONS D13.
+ * the same character looks the same on Android and iOS — RULES.md.
  *
  * `label` is the accessible name when the emoji carries meaning on its own
  * (a status icon with no adjacent text); omit it when the surrounding text

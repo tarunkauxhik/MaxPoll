@@ -65,6 +65,14 @@ const AREAS: {
     foot: (c) =>
       c.granted === 0 ? "Nobody yet" : `${c.granted} ${c.granted === 1 ? "person" : "people"}`,
   },
+  {
+    href: "/admin/remove",
+    title: "Remove a poll or Space",
+    blurb:
+      "Search, then delete, whoever made it. This ignores the ownership rules a creator's own delete follows — deleting a Space deletes every poll in it.",
+    count: () => null,
+    foot: () => "Search",
+  },
 ];
 
 export default async function AdminPage() {

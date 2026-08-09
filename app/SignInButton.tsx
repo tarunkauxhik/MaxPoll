@@ -6,7 +6,7 @@ import { signInWithGoogle } from "@/lib/auth-actions";
 /**
  * "Log in" and "Sign up" are the same button pointing at the same handler —
  * Google returns the account if it exists and creates it if not. There are no
- * passwords in this product, so no forgot/reset flow exists (03-ux-flows).
+ * passwords in this product, so no forgot/reset flow exists (RULES.md).
  *
  * `next` survives the round trip so a vote intent lands back on its poll.
  */

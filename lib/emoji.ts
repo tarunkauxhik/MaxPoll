@@ -4,7 +4,7 @@
  * Only the ~28 emoji actually used in the app — not the full emoji-datasource
  * package (102MB unpacked). Extracted once from `emoji-datasource-apple`
  * (MIT-licensed data/glue code; the artwork itself is Apple's — see
- * docs/DECISIONS.md D13) and committed as static files, so the package itself
+ * docs/RULES.md) and committed as static files, so the package itself
  * is never a project dependency. Re-derive this list with a fresh grep for
  * `\p{Extended_Pictographic}` across app/ and components/ before trusting it —
  * a new emoji added to the UI needs its PNG added here too.

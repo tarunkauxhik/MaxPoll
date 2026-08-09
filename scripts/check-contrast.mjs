@@ -5,10 +5,10 @@
  *   1. Contrast — every text/background pair the design actually uses, against
  *      WCAG 2.1 AA. Hand-arithmetic during the original audit caught two of five
  *      failing tokens; the other three surfaced only when the numbers were run.
- *      Measure, don't reason — DECISIONS C1.
+ *      Measure, don't reason — DESIGN.md.
  *
  *   2. Lora's weight cap — Lora is variable 400-700 and must never render at 600
- *      or above (DECISIONS D15). Nothing in the bundler can see a CSS weight, so
+ *      or above (RULES.md). Nothing in the bundler can see a CSS weight, so
  *      the rule is checked here or it is not checked at all.
  *
  * Run: pnpm check:contrast   ·   also runs inside pnpm check
@@ -117,7 +117,7 @@ console.log(
 );
 
 /**
- * Lora must never render at 600 or above — DECISIONS D15.
+ * Lora must never render at 600 or above — RULES.md.
  *
  * Split the stylesheet on `}` to get one chunk per declaration block, then flag
  * any block that both selects `--font-serif` and sets a weight of 600+. This
@@ -155,7 +155,7 @@ if (serifBlocks.length === 0) {
     const weight = block.match(/font-weight:\s*(\d{3})/)[1];
     console.error(
       `\nFAIL  Lora at ${weight} — "${selector}". ` +
-        `Lora is capped at 500 (DECISIONS D15) — drop the weight, or use Inter.`
+        `Lora is capped at 500 (RULES.md) — drop the weight, or use Inter.`
     );
   }
 }

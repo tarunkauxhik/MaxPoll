@@ -2,7 +2,7 @@
 --
 -- Additive only. Nothing here revokes a grant or drops a policy, so it is safe
 -- to apply before the UI that uses it ships — unlike the write-guard migrations,
--- which broke chat for two minutes by landing before their code (LEARNINGS).
+-- which broke chat for two minutes by landing before their code (RULES.md).
 
 -- ============================================================ update_poll
 
@@ -14,7 +14,7 @@
 --
 -- This is the door: security definer, so it runs past RLS, but it takes identity
 -- from auth.uid() and touches exactly four columns. Never accept a p_user here —
--- cast_vote did, and let anyone vote as anyone (DECISIONS D2c).
+-- cast_vote did, and let anyone vote as anyone (RULES.md, security).
 create or replace function update_poll(
   p_poll uuid,
   p_title text default null,          -- null = leave alone

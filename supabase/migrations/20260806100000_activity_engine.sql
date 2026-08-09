@@ -9,7 +9,7 @@
 --
 -- ⚠️ That request answers 403 *if* you send `Prefer: return=representation`, because
 -- the read-back trips `activity_read`. The write still lands. A probe that trusts
--- the status code reports "safe" while the row is in the table — see LEARNINGS.
+-- the status code reports "safe" while the row is in the table — see RULES.md.
 --
 -- Everything here is additive. Applying it changes no existing behaviour, so it is
 -- safe to run against production before the new application code ships.
@@ -48,7 +48,7 @@ declare
 begin
   -- The session wins wherever there is one. p_user survives only for the paths
   -- that legitimately have no session — supabase/seed.sql and the admin scripts,
-  -- which connect as the owner. See DECISIONS D2c.
+  -- which connect as the owner. See RULES.md, security.
   v_user := coalesce(auth.uid(), p_user);
   if v_user is null then raise exception 'SIGNED_OUT'; end if;
 

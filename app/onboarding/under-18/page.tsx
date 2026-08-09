@@ -4,7 +4,7 @@ import { Emoji } from "@/components/ui/Emoji";
 export const metadata = { title: "MaxPoll is 18+" };
 
 /**
- * Hard stop. docs/03-ux-flows.md: "Do not soft-gate this."
+ * Hard stop. RULES.md: "Do not soft-gate this."
  *
  * No profile row was created, so there is nothing to delete — the account simply
  * cannot proceed. Friendly, not punitive: they may genuinely come back.

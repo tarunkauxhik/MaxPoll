@@ -3,6 +3,7 @@ import AppShell from "@/components/shell/AppShell";
 import { PollCard } from "@/components/poll/PollCard";
 import { EmptyState } from "@/components/ui/States";
 import { JoinButton } from "./JoinButton";
+import { ManageSpace } from "./ManageSpace";
 import { ShareButton } from "@/components/poll/ShareButton";
 import { tint } from "@/components/SpaceCard";
 import { createClient, getUser } from "@/lib/supabase/server";
@@ -88,6 +89,29 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
   ]);
 
   const votedOn = new Set((myVotes ?? []).map((v: { poll_id: string }) => v.poll_id));
+
+  /**
+   * Counted, not derived from `rows` — that list is capped at 30, and the delete
+   * rule has to be right for a Space with more polls than fit on the page. Two
+   * `head` counts, and only for the owner, so nobody else pays for them.
+   */
+  const owner = !!user && user.id === space.created_by;
+  const [own, others] = owner
+    ? await Promise.all([
+        supabase
+          .from("polls")
+          .select("id", { count: "exact", head: true })
+          .eq("space_id", space.id)
+          .eq("created_by", user.id)
+          .neq("status", "removed"),
+        supabase
+          .from("polls")
+          .select("id", { count: "exact", head: true })
+          .eq("space_id", space.id)
+          .neq("created_by", user.id)
+          .neq("status", "removed"),
+      ])
+    : [{ count: 0 }, { count: 0 }];
   const spaceRef = {
     id: space.id,
     slug: space.slug,
@@ -152,6 +176,16 @@ export default async function SpacePage({ params }: { params: Promise<{ slug: st
             <JoinButton spaceId={space.id} slug={space.slug} joined={!!membership} />
           )}
         </div>
+
+        {owner && (
+          <ManageSpace
+            spaceId={space.id}
+            name={space.name}
+            ownPolls={own.count ?? 0}
+            otherPolls={others.count ?? 0}
+            members={space.member_count}
+          />
+        )}
       </div>
 
       {feed.length === 0 ? (

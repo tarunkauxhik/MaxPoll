@@ -1,27 +1,23 @@
 /**
- * One-tap suggestions for person-poll questions — DECISIONS D10 (2026-08-07).
+ * One-tap suggestions for person-poll questions.
  *
- * No longer a guardrail: the question is a free-text field now, and these are
- * presets underneath it. The preventive control this list used to be is gone;
- * what remains is reactive — the report button, the 3-report auto-hide, and
- * the `/admin` moderation queue. See DECISIONS D10 for the trade-off as stated
- * when the owner made this call.
+ * Not a guardrail — the question is a free-text field, and these are presets
+ * underneath it. The preventive control this list used to be is gone; what
+ * remains is reactive: the report button, the 3-report auto-hide, and the
+ * `/admin` moderation queue.
+ *
+ * **Six, not thirteen.** Thirteen wrapped to four rows and pushed the actual
+ * question box off a 360px screen — a menu where a nudge was wanted. Keep it
+ * short; if a seventh feels essential, one of these is weaker than it.
  *
  * Lives in its own module because a `"use server"` file may only export async
  * functions — a const array there is a build error.
  */
 export const ADJECTIVES = [
   "Best",
-  "Most helpful",
-  "Most underrated",
   "Funniest",
-  "Most reliable",
-  "Most improved",
+  "Most underrated",
+  "Most helpful",
   "Hardest working",
-  "Most chill",
   "Best dressed",
-  "Kindest",
-  "Most creative",
-  "Best mentor",
-  "Most punctual",
 ] as const;

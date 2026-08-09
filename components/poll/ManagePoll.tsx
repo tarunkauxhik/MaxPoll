@@ -12,7 +12,7 @@ import { DeadlinePicker } from "./DeadlinePicker";
 import { Emoji } from "@/components/ui/Emoji";
 
 /**
- * The creator's controls — doc 06 shipped none, so a poll was permanently
+ * The creator's controls — the build plan shipped none, so a poll was permanently
  * immutable to the person who made it.
  *
  * Only rendered for the owner, but that is presentation: `update_poll()` and
@@ -145,37 +145,69 @@ export function ManagePoll({
         </form>
 
         <div className="managdanger">
-          {/* Deleting is refused server-side once anyone has voted: at that point
-              the board is their record too, and closing is the honest action. */}
-          {hasVotes ? (
-            <p className="hint">
-              People have voted, so this poll can&apos;t be deleted. Stop voting instead —
-              the result stays on the record.
-            </p>
-          ) : confirmDelete ? (
-            <form action={delAction}>
-              <input type="hidden" name="poll_id" value={pollId} />
-              <p className="hint">This removes the poll and its options. It can&apos;t be undone.</p>
-              <div className="qactions">
-                <button type="submit" className="btn danger" disabled={delPending}>
-                  {delPending ? "Deleting…" : "Delete for good"}
-                </button>
-                <button type="button" className="btn sec" onClick={() => setConfirmDelete(false)}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button type="button" className="btn danger" onClick={() => setConfirmDelete(true)}>
-              Delete poll
-            </button>
-          )}
-          {delState.error && (
-            <p className="fielderr" role="alert">
-              {delState.error}
-            </p>
-          )}
+          {/* Closes this sheet as it opens the other. Two stacked dialogs fight
+              over the focus trap, and the confirmation is a different question,
+              not a step inside this one. */}
+          <button
+            type="button"
+            className="btn danger"
+            onClick={() => {
+              setOpen(false);
+              setConfirmDelete(true);
+            }}
+          >
+            Delete poll
+          </button>
         </div>
+      </Sheet>
+
+      {/**
+       * The consent screen. Its own sheet rather than an inline reveal inside
+       * Manage poll: this is now allowed even after people have voted, so it is
+       * the one destructive action in the product a creator can reach, and it
+       * gets a screen that says what disappears rather than a button that grows
+       * a second button.
+       *
+       * The vote count is in the sentence for the same reason — "4 people have
+       * voted" is the cost, and a confirmation that does not name the cost is
+       * just a speed bump.
+       */}
+      <Sheet
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete this poll?"
+        description={title}
+      >
+        <p className="hint">
+          {hasVotes
+            ? "This removes the poll, its options and every vote on it. The people who voted lose it too."
+            : "This removes the poll and its options."}{" "}
+          It can&apos;t be undone.
+        </p>
+
+        <form action={delAction}>
+          <input type="hidden" name="poll_id" value={pollId} />
+          <button type="submit" className="btn danger sheetcta" disabled={delPending}>
+            {delPending ? "Deleting…" : "Delete poll"}
+          </button>
+        </form>
+
+        <button type="button" className="btn sec" onClick={() => setConfirmDelete(false)}>
+          Keep it
+        </button>
+
+        {delState.error && (
+          <p className="fielderr" role="alert">
+            {delState.error}
+          </p>
+        )}
+
+        {!closed && (
+          <p className="hint">
+            Only want to stop the voting? Close it from Manage poll instead — the result
+            stays on the record.
+          </p>
+        )}
       </Sheet>
     </>
   );

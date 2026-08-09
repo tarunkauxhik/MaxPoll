@@ -34,7 +34,7 @@ export default async function Page() {
 }
 
 /**
- * Real aggregates only — 01-product.md. Returns null below a floor rather than
+ * Real aggregates only — RULES.md. Returns null below a floor rather than
  * publishing a number that makes the product look dead, because the alternative
  * (inventing one) is the fastest way to lose trust in a public voting product.
  */

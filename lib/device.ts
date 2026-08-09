@@ -1,7 +1,7 @@
 /**
  * A stable per-browser id.
  *
- * DECISIONS A4: `device_id` is a fraud **signal**, not a constraint. It is
+ * RULES.md: `device_id` is a fraud **signal**, not a constraint. It is
  * indexed, never unique — a unique index would break the shared-laptop case that
  * is common on an Indian campus (A votes, signs out, B signs in → ALREADY_VOTED).
  * The real guard is `unique(poll_id, user_id)`.

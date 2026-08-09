@@ -22,7 +22,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    // Two different surfaces, deliberately — DECISIONS D15. `background_color` is
+    // Two different surfaces, deliberately — RULES.md. `background_color` is
     // the splash behind a cold start, so it's the page (`--paper`).
     // `theme_color` tints the Android status bar, which sits against the top
     // bar, so it's the top bar's colour and must match `themeColor` in the root

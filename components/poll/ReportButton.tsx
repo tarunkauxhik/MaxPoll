@@ -7,7 +7,7 @@ import { signInWithGoogle } from "@/lib/auth-actions";
 import { Emoji } from "@/components/ui/Emoji";
 
 /**
- * doc 03 §K / 01-product's "person-poll defamation → report, auto-hide at 3".
+ * RULES.md's "person-poll defamation → report, auto-hide at 3".
  *
  * The RPC has existed since Phase 6 and nothing ever called it, while `/terms`
  * told every user they could report a poll, an option or a message. This is that

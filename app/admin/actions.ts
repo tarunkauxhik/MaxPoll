@@ -222,3 +222,55 @@ export async function grantAccess(_prev: AdminState, form: FormData): Promise<Ad
   revalidatePath("/admin", "layout");
   return { ok: `Granted to @${handle} (${profile.display_name}).` };
 }
+
+/**
+ * Delete any poll or Space, as an admin.
+ *
+ * **The only unbounded delete in the product.** A creator's own delete goes
+ * through `delete_poll()` / `delete_space()`, which check `auth.uid()` and, for
+ * a Space, refuse once somebody else has posted in it. This bypasses both: the
+ * admin client is the service role, so RLS and those functions are not in the
+ * path at all.
+ *
+ * That is deliberate — moderation has to be able to remove a poll about a named
+ * real person no matter who made it — and it is why `requireAdmin()` above is
+ * the entire safety of this function. It re-checks rather than trusting the page
+ * that rendered the button, because a Server Action is a public HTTP endpoint.
+ *
+ * Deleting a Space cascades to every poll inside it. The screen says so and asks
+ * for the name to be typed; `confirm` is checked here as well, so a crafted
+ * request cannot skip it.
+ */
+export async function adminDelete(_prev: AdminState, form: FormData): Promise<AdminState> {
+  try {
+    await requireAdmin();
+  } catch {
+    return { error: "Not authorised." };
+  }
+
+  const kind = String(form.get("kind") ?? "");
+  const id = String(form.get("id") ?? "");
+  const name = String(form.get("name") ?? "");
+  const confirm = String(form.get("confirm") ?? "").trim();
+
+  if (kind !== "poll" && kind !== "space") return { error: "Nothing to delete." };
+  if (confirm !== name) {
+    return { error: `Type ${kind === "poll" ? "the poll title" : "the Space name"} exactly to confirm.` };
+  }
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from(kind === "poll" ? "polls" : "spaces")
+    .delete()
+    .eq("id", id);
+
+  if (error) return { error: "Couldn't delete. Try again." };
+
+  revalidatePath("/admin", "layout");
+  return {
+    ok:
+      kind === "poll"
+        ? `Deleted the poll "${name}".`
+        : `Deleted the Space "${name}" and every poll in it.`,
+  };
+}

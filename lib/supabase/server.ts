@@ -9,7 +9,7 @@ import { supabaseKey, supabaseUrl } from "@/lib/env";
  * session, so the database enforces what they may see.
  *
  * Do NOT use this in the edge-cached routes (`/api/poll/*​/board`, `/og/*`).
- * Reading cookies opts the response out of the CDN — DECISIONS A2. Those use
+ * Reading cookies opts the response out of the CDN — RULES.md — caching. Those use
  * `anon.ts` instead.
  */
 export async function createClient() {

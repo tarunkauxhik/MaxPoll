@@ -7,7 +7,7 @@
  * design tokens, or anything from globals.css: none of it has loaded. Hence the
  * inline styles, which is the one place in this codebase they are correct — and
  * hence the hardcoded hex, which has to be updated by hand when the palette
- * moves. It mirrors `:root` as of DECISIONS D15: page, ink, body, brand, muted.
+ * moves. It mirrors `:root`: page, ink, body, brand, muted.
  *
  * It should essentially never render. If it does, the deploy is broken, not the
  * page — so the copy says so rather than offering a retry that will fail again.

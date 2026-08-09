@@ -21,7 +21,7 @@ export type BoardOption = {
 };
 
 /**
- * Ranks options at read time — DECISIONS A3. There is deliberately no `rank`
+ * Ranks options at read time — RULES.md. There is deliberately no `rank`
  * column: a stored rank drifts the moment two votes race, and recomputing it on
  * write would touch every row of a poll on every vote.
  *

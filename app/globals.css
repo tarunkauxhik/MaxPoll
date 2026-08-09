@@ -811,6 +811,14 @@ a {
 /* ============================ GAP LINE ============================ */
 /* The growth engine. Always free, never blurred. */
 
+/**
+ * A sentence, so it is laid out as one.
+ *
+ * It was `display: flex`, which turns each text fragment around the bold count
+ * into its own flex item — so "↑ 1 vote behind paneer roll" rendered as a narrow
+ * column containing "↑ 1 vote" beside a second column containing the rest. Flex
+ * is for arranging boxes, and running text is not boxes.
+ */
 .gap {
   margin: 1px var(--gut);
   padding: 7px 12px;
@@ -819,9 +827,7 @@ a {
   color: var(--brand-text);
   font-size: 12px;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  line-height: 1.45;
 }
 
 .gap b {
@@ -1100,10 +1106,8 @@ a {
 
 /* The race, on the card. Same job as .gap on the board, but it names the top
    two rather than your own pick, because the feed does not know which is yours. */
+/* Running text, not boxes — same reason as `.gap` above. */
 .cardgap {
-  display: flex;
-  align-items: center;
-  gap: 7px;
   padding: 8px 12px;
   border-radius: var(--r-sm);
   background: var(--heat-soft);
@@ -2047,11 +2051,20 @@ textarea.field {
   padding: var(--s-4) var(--gut) var(--s-2);
 }
 
+/**
+ * `.btn` is `width: 100%`, so a horizontal margin on top of it puts the button
+ * 2 × `--gut` wider than its column — 392px inside a 360px screen, which is the
+ * whole page scrolling sideways. `.addopen` right below already knew this; this
+ * one didn't.
+ *
+ * The `calc()` is the fix, not the margin. Anything given `--gut` as a margin
+ * has to take it back out of its width.
+ */
 .unlockcta {
+  width: calc(100% - var(--gut) * 2);
   margin: var(--s-3) var(--gut) 0;
+  padding-inline: var(--s-3);
   text-decoration: none;
-  display: flex;
-  flex-wrap: wrap;
   text-align: center;
 }
 
@@ -2375,6 +2388,57 @@ textarea.field {
   font-weight: 700;
 }
 
+/* What you have already bought, above what is for sale. A per-poll unlock is a
+   purchase and this is the only screen that admits one exists. */
+.accessbox {
+  /* `.paywall` is a block whose rows carry their own margins and settle at 16px;
+     this is the one that arrives without one. */
+  margin-block: var(--s-4);
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--ring), var(--shadow-1);
+}
+
+.accessrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  min-height: var(--tap-sm);
+  font-size: 14px;
+  color: inherit;
+}
+
+/* The unlock rows go to their poll, so they are real links at a real tap size. */
+.accessrow.link { border-radius: var(--r-sm); }
+.accessrow.link:active { background: var(--press); }
+
+.accessk {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accessv {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.accesschev { font-size: 18px; line-height: 1; }
+
 .priceline {
   font-size: 26px;
   font-weight: 800;
@@ -2558,6 +2622,12 @@ textarea.field {
 
 .qutr { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .qactions { display: flex; gap: var(--s-2); margin-top: var(--s-3); flex-wrap: wrap; }
+.qactions .btn { width: auto; flex: 1 1 auto; min-width: 8rem; }
+
+/* ---- admin remove ---- */
+.delhead { display: grid; gap: 2px; }
+.delname { font-weight: 700; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.delform { display: grid; gap: var(--s-2); margin-top: var(--s-3); }
 .qactions > form { flex: 1 1 auto; min-width: 0; }
 .qactions > .btn, .qactions > form > .btn { width: 100%; }
 .rejform { margin-top: var(--s-2); }

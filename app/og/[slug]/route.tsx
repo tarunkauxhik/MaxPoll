@@ -13,7 +13,7 @@ import { C, OG, HEADERS, shell, row, col, Eyebrow, Hook, clip } from "../shared"
  * Tendulkar by four votes with three hours left is an argument, and an argument
  * is what travels between groups.
  *
- * ⚠️ DECISIONS A2: excluded from the proxy matcher and built on the anonymous
+ * ⚠️ RULES.md, caching: excluded from the proxy matcher and built on the anonymous
  * client, so the response carries no `Set-Cookie` and stays CDN-cacheable.
  *
  * The URL is versioned by `og_version` at the call site, because WhatsApp caches

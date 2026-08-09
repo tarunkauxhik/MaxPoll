@@ -19,7 +19,7 @@ export async function createSpace(_prev: SpaceState, form: FormData): Promise<Sp
 
   if (name.length < 3) return { error: "Give the Space a name people will recognise." };
 
-  // Description is required on purpose — 03-ux-flows I: "thin descriptions are
+  // Description is required on purpose — RULES.md: "thin descriptions are
   // how fakes get through". A one-word Space is indistinguishable from a squat.
   if (description.length < 15) {
     return { error: "Describe the Space in a sentence — it's how people tell real ones from fakes." };
@@ -28,7 +28,7 @@ export async function createSpace(_prev: SpaceState, form: FormData): Promise<Sp
   const slug = slugify(name, 30, 4);
 
   // Through the RPC, not a direct insert. A direct insert let the client choose
-  // `is_verified` — the tick that 03-ux-flows I calls the mark of a real
+  // `is_verified` — the tick that RULES.md calls the mark of a real
   // institution — and had no limit on how many Spaces one account could create.
   // The function forces is_verified false, caps it at 3 a week, and joins the
   // creator as first member in the same transaction.

@@ -10,7 +10,7 @@ import { similarity } from "@/lib/similarity";
 import { BOARD_CHANGED } from "./Board";
 
 /**
- * Flow in 03-ux-flows E.
+ * Flow in RULES.md.
  *
  * The point of the typeahead is not convenience — it's that a duplicate splits
  * the vote and makes the whole board wrong. Showing rank and count makes voting

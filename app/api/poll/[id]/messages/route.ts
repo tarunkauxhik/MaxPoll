@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 /**
  * Poll chat, polled every 3s.
  *
- * ⚠️ DECISIONS A2 — like the board, this route is edge-cached and must never
+ * ⚠️ RULES.md, caching: like the board, this route is edge-cached and must never
  * touch a cookie. `proxy.ts` excludes it from the matcher; this uses the
  * anonymous client. Both halves are required.
  *

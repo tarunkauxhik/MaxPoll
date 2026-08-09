@@ -4,7 +4,7 @@
  *   node scripts/launch.mjs supabase/launch.json            # dry run — writes nothing
  *   node scripts/launch.mjs supabase/launch.json --apply
  *
- * **Why this exists.** docs/01-product.md Week 0 is "seed 1 Space + 20-30 polls",
+ * **Why this exists.** RULES.md Week 0 is "seed 1 Space + 20-30 polls",
  * and `create_poll()` caps every account at 3 polls a week. That cap is an
  * anti-spam control enforced inside the transaction, so it does not move and gets
  * no admin bypass — admin identity lives in an env var, not the database, and
@@ -54,7 +54,7 @@ const dedupe = (labels) => {
 
 if (!str(plan.owner_handle)) problems.push("owner_handle is required");
 if (!str(plan.space?.name)) problems.push("space.name is required");
-// Same 15-char floor the UI enforces (app/spaces/new/actions.ts) — 03-ux-flows I,
+// Same 15-char floor the UI enforces (app/spaces/new/actions.ts) — RULES.md,
 // "thin descriptions are how fakes get through".
 if (str(plan.space?.description).length < 15) {
   problems.push("space.description must be at least 15 characters");

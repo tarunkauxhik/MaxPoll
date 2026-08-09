@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 export type ManageState = { error?: string; ok?: string };
 
 /**
- * Poll owner controls — doc 06 had none, and `polls` is not client-updatable at
+ * Poll owner controls — the build plan had none, and `polls` is not client-updatable at
  * all (20260806110000 revoked `update` and dropped `polls_update`, because RLS
  * picks rows and not columns and a creator could otherwise rewrite vote_count).
  *
@@ -25,7 +25,6 @@ const MESSAGES: Record<string, string> = {
   TITLE_TOO_SHORT: "Give the poll a title people will recognise.",
   EXPIRY_IN_PAST: "Pick a deadline in the future.",
   EXPIRY_TOO_FAR: "A poll can run for 7 days at most.",
-  HAS_VOTES: "People have voted, so this can't be deleted. Close it instead.",
 };
 
 function explain(message: string | undefined) {

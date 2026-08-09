@@ -11,7 +11,7 @@ export const metadata = { title: "Not found · MaxPoll" };
  * arriving from a group chat could not get anywhere from here.
  *
  * Rendered inside `AppShell`, so the nav is present and the dead end isn't one.
- * Copy is an instruction, not an apology — 03-ux-flows.
+ * Copy is an instruction, not an apology — RULES.md.
  */
 export default function NotFound() {
   return (

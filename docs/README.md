@@ -1,49 +1,18 @@
-# MaxPoll docs
+# Docs
 
-Everything about this project lives here. **Start with [STATE.md](STATE.md)** — it
-says where we are and what's next.
+Three files. That is the whole set.
 
-## Which file answers which question
-
-| I want to know… | Read |
+| File | What's in it |
 |---|---|
-| Where are we right now? What's blocked? | **[STATE.md](STATE.md)** |
-| Why was it built this way? Why does this contradict what I expected? | **[DECISIONS.md](DECISIONS.md)** |
-| Has this bitten us before? What are the real free-tier numbers? | **[LEARNINGS.md](LEARNINGS.md)** |
-| What is MaxPoll, who's it for, how does it make money? | [01-product.md](01-product.md) |
-| What's the stack, the schema, the performance rules? | [02-architecture.md](02-architecture.md) |
-| What happens on this screen? What does an empty state say? | [03-ux-flows.md](03-ux-flows.md) |
-| What colour, what size, what spacing? | [04-design.md](04-design.md) |
-| How does the ₹9 payment work? | [05-payments.md](05-payments.md) |
-| What am I building next, and how do I know it's done? | [06-build-plan.md](06-build-plan.md) |
-| How do I set up Supabase / Google / Vercel / PhonePe? | [07-setup.md](07-setup.md) |
-| How do I run it, test it, deploy it, delete it? | [08-runbook.md](08-runbook.md) |
+| [RULES.md](RULES.md) | The things that cost money, leak data, or break silently. Plus how to work here. |
+| [DESIGN.md](DESIGN.md) | The tokens, the type scale, the breakpoints, the quality floor. `app/globals.css` is the source of truth; this explains it. |
+| [RUNBOOK.md](RUNBOOK.md) | Run · migrate · deploy · the external services. |
 
-## How these files work
+There used to be eleven files here, including a 47KB status log and a 36KB
+decision history that had to be read before touching anything. They are all in
+git history. What survived is the part that is still *true and load-bearing* —
+a rule you can break expensively, not a record of how we got here.
 
-**CAPS files are living** — they change constantly, and they're the ones to read first
-and update last in every session.
-
-**Numbered files are reference** — they change only by decision, and the decision gets
-recorded in `DECISIONS.md`.
-
-**`DECISIONS.md` overrides everything.** When a numbered file and a decision conflict,
-the decision is current and the numbered file needs fixing.
-
-## Source of truth
-
-| Thing | Truth lives in |
-|---|---|
-| Visual design | `app/globals.css`, explained by [04-design.md](04-design.md) |
-| Database schema | `supabase/migrations/`, explained by [02-architecture.md](02-architecture.md) |
-| Everything else | These docs |
-
-Where code and docs disagree, **the code is what ships** — fix the code if it's
-wrong, then fix the doc. Never leave them disagreeing.
-
-## Conventions
-
-- Every claim about a provider's free tier carries the date it was verified.
-  Providers move these numbers; re-check before launch.
-- Exact values (hex, px, ms) are quoted exactly. "About 12px" is not a spec.
-- Copy that users see is quoted verbatim so it can be grepped.
+**Don't grow this back.** A new document needs to answer a question the code
+cannot. Anything explaining *why this code is like this* belongs in a comment
+next to the code, where it cannot rot separately.

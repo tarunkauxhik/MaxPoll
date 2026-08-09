@@ -1,14 +1,14 @@
 /**
  * The one payment switch. Everything payment-shaped reads from here.
  *
- * Phase 1 collects money over manual UPI (docs/05-payments.md); Razorpay is the
+ * Phase 1 collects money over manual UPI (docs/RULES.md); Razorpay is the
  * later rail and its modes are reserved but unimplemented. Both write to the
  * same `entitlements` table, so nothing downstream of the money cares which
  * rail was used.
  *
  * Every read goes through `clean()`: a value pasted into Vercel with quotes round
  * it would otherwise fail closed *silently* here, which looks identical to "not
- * launched yet" — see docs/LEARNINGS.md.
+ * launched yet" — see docs/RULES.md.
  */
 // Relative + explicit extension: this module is loaded raw by `node --test`,
 // which does not know the `@/` alias. Same reason as lib/rank.ts.
@@ -53,7 +53,7 @@ export const paymentsEnabled = () => paymentMode() !== "coming_soon";
 // contact address — do not confuse it with app/legal.ts CONTACT_EMAIL.
 const vpa = () => clean("NEXT_PUBLIC_UPI_VPA", process.env.NEXT_PUBLIC_UPI_VPA);
 
-/** Rupees for display. Every rendered amount goes through `.num` — DECISIONS B6. */
+/** Rupees for display. Every rendered amount goes through `.num` — RULES.md. */
 export const rupees = (paise: number) =>
   (paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
@@ -64,7 +64,7 @@ export const rupees = (paise: number) =>
  *
  * The amount here is a *hint* — several UPI apps let the payer change it, and a
  * static QR carries none. The real amount check is a human comparing
- * `orders.amount_paise` against the merchant app. See docs/05-payments.md §3.
+ * `orders.amount_paise` against the merchant app. See docs/RULES.md.
  */
 export function upiIntentUrl(ref: string, paise: number) {
   const pa = vpa();

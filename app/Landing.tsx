@@ -49,7 +49,7 @@ export function Landing({
       <div className="lander">
 
       <section className="lhero">
-        {/* Only shown when the number is real. 01-product: real aggregates only —
+        {/* Only shown when the number is real. RULES.md: real aggregates only —
             an invented "12,400 votes" is the fastest way to lose the one thing
             a public voting product has to have. */}
         <p className="eyebrow">

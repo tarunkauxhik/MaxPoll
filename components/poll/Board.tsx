@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition, useCallback } from "react";
 import OptionRow from "@/components/ui/OptionRow";
 import { Sheet } from "./Sheet";
-import { castVote, joinSpace } from "@/app/p/[slug]/actions";
+import { castVote, changeVote, joinSpace } from "@/app/p/[slug]/actions";
 import { signInWithGoogle } from "@/lib/auth-actions";
 import { saveIntent, takeIntent } from "@/lib/vote-intent";
 import { getDeviceId } from "@/lib/device";
@@ -56,6 +56,12 @@ export function Board({
   const [total, setTotal] = useState(voteCount);
   const [mine, setMine] = useState(myOptionId);
   const [pendingOption, setPendingOption] = useState<string | null>(null);
+  /**
+   * The option a voter has tapped *after* already voting. Holding it here rather
+   * than switching immediately is the whole feature: one stray thumb on a list
+   * of names should not silently rewrite someone's vote.
+   */
+  const [switchTo, setSwitchTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   /**
    * Votes that have landed since this page opened — the "something is happening
@@ -92,7 +98,7 @@ export function Board({
   /**
    * `bust` forces past the CDN. The polling path must NOT use it — the response
    * is cached at s-maxage=4 and that cache is the entire free-tier model
-   * (DECISIONS A2). A unique query string is a new cache key, so it always
+   * (RULES.md — caching). A unique query string is a new cache key, so it always
    * reaches the origin: fine once per *mutation*, ruinous once per view.
    */
   const refresh = useCallback(
@@ -161,6 +167,44 @@ export function Board({
     [pollId, slug, total]
   );
 
+  /**
+   * Move an existing vote. Same optimistic shape as `submit`, with one
+   * difference that matters: the poll total does not change, because it is still
+   * one vote. Only the two options move, −1 and +1.
+   */
+  const move = useCallback(
+    (optionId: string) => {
+      const from = mine;
+      if (!from || from === optionId) return;
+
+      startTransition(async () => {
+        const res = await changeVote(pollId, optionId, slug);
+        if (res.ok) {
+          setMine(optionId);
+          setError(null);
+          setBoard((b) =>
+            rankOptions(
+              b.map((o, i) => ({
+                ...o,
+                vote_count:
+                  o.votes + (o.id === optionId ? 1 : o.id === from ? -1 : 0),
+                rank_snapshot: o.movement === "new" ? null : o.rank + (o.movement ?? 0),
+                created_at: String(i).padStart(6, "0"),
+              })),
+              total
+            )
+          );
+        } else if (res.code === "NO_VOTE") {
+          // The vote was never there — cast one instead of reporting an error.
+          submit(optionId);
+        } else {
+          setError(res.message);
+        }
+      });
+    },
+    [mine, pollId, slug, total, submit]
+  );
+
   // ── Vote-intent replay (build plan 4.4) ────────────────────────────────────
   // The user tapped an option, was sent to Google, and came back. The vote must
   // land on the option they originally tapped. Runs once, on mount, only when
@@ -221,8 +265,18 @@ export function Board({
   }, [board]);
 
   function onSelect(optionId: string) {
-    if (closed || voted) return;
+    if (closed) return;
     setError(null);
+
+    /**
+     * Already voted, and this is a different name: ask before moving it. Tapping
+     * your own row again is a no-op rather than a dialog asking whether you want
+     * to change to what you already picked.
+     */
+    if (voted) {
+      if (optionId !== mine) setSwitchTo(optionId);
+      return;
+    }
 
     if (!signedIn) {
       // Written BEFORE the redirect. This ordering is the whole fix.
@@ -257,12 +311,12 @@ export function Board({
               movement={showCounts ? o.movement : undefined}
               mine={o.id === mine}
               onSelect={() => onSelect(o.id)}
-              disabled={closed || voted}
+              disabled={closed}
             />
             {gap && o.id === mine && (
               <p className="gap">
-                ↑ <b className="num">{n(gap.need)} votes</b> behind {gap.target}. Share to
-                close the gap.
+                ↑ <b className="num">{plural(gap.need, "vote")}</b> behind {gap.target}.
+                Share to close the gap.
               </p>
             )}
           </div>
@@ -290,8 +344,10 @@ export function Board({
         </p>
       )}
 
-      {!voted && !closed && (
-        <p className="hint lcenter">Tap a name to vote</p>
+      {!closed && (
+        <p className="hint lcenter">
+          {voted ? "Changed your mind? Tap another name." : "Tap a name to vote"}
+        </p>
       )}
 
       {under.length > 0 && (
@@ -302,7 +358,7 @@ export function Board({
           mine={mine}
           slug={slug}
           onSelect={onSelect}
-          disabled={closed || voted}
+          disabled={closed}
         />
       )}
 
@@ -338,6 +394,47 @@ export function Board({
           Just join, don&apos;t vote yet
         </button>
       </Sheet>
+
+      {/**
+       * Changing your vote. A confirmation and not a straight swap, because the
+       * board is a list of tappable names and the person tapping has already
+       * voted — without this, one mis-tap while scrolling silently moves their
+       * vote and the only clue is a badge that jumped rows.
+       *
+       * It names both options, so the sentence is checkable at a glance rather
+       * than a generic "are you sure?".
+       */}
+      <Sheet
+        open={switchTo !== null}
+        onOpenChange={(v) => !v && setSwitchTo(null)}
+        title="Change your vote?"
+        description={
+          switchTo
+            ? `${board.find((o) => o.id === mine)?.label ?? "Your pick"} → ${
+                board.find((o) => o.id === switchTo)?.label ?? ""
+              }`
+            : undefined
+        }
+      >
+        <p className="hint">
+          You get one vote on this poll. Moving it takes your vote off{" "}
+          <b>{board.find((o) => o.id === mine)?.label ?? "your current pick"}</b>.
+        </p>
+        <button
+          type="button"
+          className="btn pri sheetcta"
+          onClick={() => {
+            const opt = switchTo!;
+            setSwitchTo(null);
+            move(opt);
+          }}
+        >
+          Yes, vote for {board.find((o) => o.id === switchTo)?.label ?? "this"}
+        </button>
+        <button type="button" className="btn sec" onClick={() => setSwitchTo(null)}>
+          Keep my vote
+        </button>
+      </Sheet>
     </>
   );
 }
@@ -351,7 +448,7 @@ export function Board({
  * **These rows are votable.** They used to be hard-`disabled`, which read as a
  * styling detail and was not: a new option starts at 0 votes, sorts to the
  * bottom, lands here, and could then never be voted for by anyone — so it could
- * never climb out. That killed the add-option loop entirely (01-product counts
+ * never climb out. That killed the add-option loop entirely (RULES.md counts
  * "options added per 100 votes" as growth-loop health). `.opt.sm` is the `small`
  * as padding and font sizes; only the `locked` variant is non-interactive, and
  * that one is about voter names.
@@ -396,7 +493,7 @@ function UnderList({
           purchase that cannot deliver. */}
       {showCounts && !entitled && (
         <a className="btn accent unlockcta" href={`/p/${slug}/unlock`}>
-          See the exact names of voters · ₹9
+          See who voted · ₹9
         </a>
       )}
     </>

@@ -5,7 +5,7 @@
  * seen side by side in the same WhatsApp thread, and two different-looking cards
  * from the same product is the thing that reads as amateur.
  *
- * **Dark on purpose, and it stays dark** — DECISIONS D15 moved the site to a
+ * **Dark on purpose, and it stays dark** — the site moved to a
  * light page, but a share card is not a page. It lands in a WhatsApp thread
  * next to other people's cards, in either of WhatsApp's own themes, and dark
  * holds its edges in both where a near-white card dissolves into the light one.

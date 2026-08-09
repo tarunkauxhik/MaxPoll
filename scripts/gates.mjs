@@ -4,7 +4,7 @@
  *   pnpm gates
  *
  * Everything it creates, it deletes. Nothing here touches the browser — see
- * docs/STATE.md for the checks only a human can do (FLIP, x-vercel-cache, the
+ * docs/RULES.md for the checks only a human can do (FLIP, x-vercel-cache, the
  * Google round trip, 360px density).
  *
  * The point of running against the real database rather than mocks: the Gate 2
@@ -187,7 +187,7 @@ try {
     "second vote from the same account → ALREADY_VOTED"
   );
 
-  // DECISIONS A4 — the shared-laptop case. device_id is a signal, not a constraint.
+  // RULES.md — the shared-laptop case. device_id is a signal, not a constraint.
   const vote3 = await api("/rest/v1/rpc/cast_vote", PUB, {
     method: "POST",
     body: JSON.stringify({ p_poll: pollId, p_option: optB, p_device: "gate-device", p_user: bob.id }),
@@ -690,7 +690,7 @@ try {
   const dupOpen = await ins("orders", { user_id: alice.id, poll_id: pollId, kind: "poll_unlock" });
   ok(dupOpen.status >= 400, `second open order for the same poll blocked (${dupOpen.status})`);
 
-  // Column grants (DECISIONS D2b): RLS picks rows, not columns.
+  // Column grants (RULES.md, security): RLS picks rows, not columns.
   const escalate = await api(`/rest/v1/orders?id=eq.${orderId}`, PUB, {
     method: "PATCH",
     body: JSON.stringify({ kind: "pass_30d" }),
