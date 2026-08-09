@@ -76,7 +76,16 @@ export function Landing({
         {/* Static demo — clearly a sample, never presented as live data. The bars
             animate in via scaleX, so with animations off they are already at
             their final width rather than collapsed to nothing. */}
-        <div className="demo" aria-label="Example leaderboard">
+        <div className="demo" aria-label="Example poll">
+          {/* Without a question this was three names and three bars — a chart,
+              not a poll. The question is the product; the leaderboard is just
+              how it answers. Labelled as a sample so it is never mistaken for
+              live data. */}
+          <div className="demohead">
+            <span className="demotag">Sample</span>
+            <p className="demoq">Who is the strictest teacher in college?</p>
+          </div>
+
           <div className="drow g1">
             <span className="r num">01</span>
             <span className="nm">Rajma Sir</span>

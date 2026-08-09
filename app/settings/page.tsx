@@ -3,7 +3,6 @@ import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { signOut } from "@/lib/auth-actions";
 import { DeleteAccount } from "./DeleteAccount";
-import { ProfileEditForm } from "./ProfileEditForm";
 import { n } from "@/lib/format";
 import { activePass } from "@/lib/poll-queries";
 
@@ -36,7 +35,10 @@ export default async function SettingsPage() {
       <div className="setwrap">
         <h1 className="t-title">Settings</h1>
 
-        <section id="profile">
+        {/* Settings is a hub, not a form. The profile editor and the pass each
+            own a route — see /settings/profile and /settings/subscription — so
+            this page's job is to say what state you're in and get you there. */}
+        <section id="account">
           <h2 className="t-label">Account</h2>
           <dl className="setlist">
             <div>
@@ -47,37 +49,50 @@ export default async function SettingsPage() {
               <dt>Email</dt>
               <dd>{user.email}</dd>
             </div>
-            <div>
-              <dt>Date of birth</dt>
-              {/* Locked after set — it's the 18+ record, not a preference. */}
-              <dd className="t-sec">Locked</dd>
-            </div>
           </dl>
 
-          <ProfileEditForm
-            displayName={profile.display_name}
-            bio={profile.bio}
-            instagram={profile.instagram}
-            xHandle={profile.x_handle}
-            snapchat={profile.snapchat}
-          />
-        </section>
+          <nav className="setnav">
+            <a className="setrow" href="/settings/profile">
+              <span className="setrow-b">
+                <span className="setrow-t">Edit profile</span>
+                <span className="setrow-s">Name, bio and your social links</span>
+              </span>
+              <span className="setrow-c" aria-hidden="true">
+                ›
+              </span>
+            </a>
 
-        <section>
-          <h2 className="t-label">Access</h2>
-          <p className="t-sec">
-            {pass
-              ? `30-day pass active${
-                  pass.expires_at
-                    ? ` until ${new Date(pass.expires_at).toLocaleDateString("en-IN")}`
-                    : ""
-                }.`
-              : "No pass. Unlocks are per poll."}
-          </p>
-          <p className="hint">
-            <span className="num">{n(total)}</span> unlock{total === 1 ? "" : "s"} on this
-            account.
-          </p>
+            <a className="setrow" href="/settings/subscription">
+              <span className="setrow-b">
+                <span className="setrow-t">Subscription</span>
+                <span className="setrow-s">
+                  {pass
+                    ? `30-day pass active${
+                        pass.expires_at
+                          ? ` until ${new Date(pass.expires_at).toLocaleDateString("en-IN")}`
+                          : ""
+                      }`
+                    : "No pass — unlocks are per poll"}
+                </span>
+              </span>
+              <span className="setrow-c" aria-hidden="true">
+                ›
+              </span>
+            </a>
+
+            <a className="setrow" href={`/u/${profile.handle}`}>
+              <span className="setrow-b">
+                <span className="setrow-t">View public profile</span>
+                <span className="setrow-s">
+                  <span className="num">{n(total)}</span> unlock{total === 1 ? "" : "s"} on
+                  this account
+                </span>
+              </span>
+              <span className="setrow-c" aria-hidden="true">
+                ›
+              </span>
+            </a>
+          </nav>
         </section>
 
         <section>
@@ -104,7 +119,7 @@ export default async function SettingsPage() {
           </p>
         </section>
 
-        <section id="account">
+        <section>
           <form action={signOut}>
             <button type="submit" className="btn sec fullw">
               Sign out

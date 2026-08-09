@@ -169,10 +169,17 @@ safety `.dvalue` (the analogous admin field) already had.
 
 **Share text is plain now, on every poll and Space both:** `ShareButton`
 takes `path` + `text` instead of poll-specific props — the shared content is
-exactly `${text} : ${prettyUrl}`, nothing else (no title, no gap/leader
-framing, and no separate `url` field passed to `navigator.share()`, since
-that field still carries the `https://` scheme even when the text string
-doesn't). Spaces get the same button now, paired with Join in a `.btnrow`.
+exactly `${text} : ${url}`, nothing else (no title, no gap/leader framing).
+Spaces get the same button now, paired with Join in a `.btnrow`.
+
+> **Reversed 2026-08-09 — the scheme is back.** This originally stripped
+> `https://` and passed no `url` field to `navigator.share()`, because
+> `viratkohli.tech/p/x` reads better in a group chat. It reads better and it
+> does not unfurl: every share target resolves a bare host to plain text, so
+> the OG card never rendered and the link lost the leaderboard preview that is
+> the whole reason those images exist. `navigator.share({ text, url })` now
+> passes the real absolute URL in its own field. A preview is worth more than
+> eight characters.
 
 ## Phase 17 — polish, trust signals, two missing screens (2026-08-08)
 

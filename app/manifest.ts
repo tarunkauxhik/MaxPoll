@@ -24,20 +24,25 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     // Two different surfaces, deliberately — DECISIONS D15. `background_color` is
     // the splash behind a cold start, so it's the page (`--paper`).
-    // `theme_color` tints the Android status bar, which sits against the top bar,
-    // so it's the chrome (`--dark`) and must match `themeColor` in the root
+    // `theme_color` tints the Android status bar, which sits against the top
+    // bar, so it's the top bar's colour and must match `themeColor` in the root
     // viewport export.
     //
     // These were both `#FAFAF7` against a viewport of `#0A0E1C` for two phases,
     // under a comment insisting they matched. Nothing warns about it; the splash
     // just flashes the wrong colour. Check both when either moves.
     background_color: "#F4F6FA",
-    theme_color: "#121A2E",
+    theme_color: "#FFFFFF",
     lang: "en-IN",
     categories: ["social", "entertainment"],
+    // `apple-icon.png` is a full square on purpose — iOS applies its own corner
+    // mask, so a pre-rounded icon shows the wallpaper through its corners.
+    // `maskable` gets the same square for the same reason on Android.
     icons: [
-      { src: "/favicon.ico", sizes: "any", type: "image/x-icon" },
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
+      { src: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64 128x128 256x256", type: "image/x-icon" },
+      { src: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      { src: "/apple-icon.png", sizes: "180x180", type: "image/png", purpose: "maskable" },
     ],
   };
 }

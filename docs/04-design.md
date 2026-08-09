@@ -17,17 +17,23 @@ Rationale for anything below lives in [DECISIONS.md](DECISIONS.md) D15, which wi
 
 One theme. Light-based, with dark chrome. No toggle, no `prefers-color-scheme`.
 
-Light where you read — the page, cards, forms, the board, legal text. Dark where you
-navigate or where the design wants weight — the top bar, the nav, primary buttons, the
-timer panel, the landing hero.
+Light where you read — the page, cards, forms, the board, legal text — **and the top
+bar**. Dark where you navigate or where the design wants weight: the bottom nav,
+primary buttons, the timer panel, monogram tiles, your own chat bubbles.
+
+The two bars are treated differently on purpose. At the bottom, a dark bar separates
+navigation from content, sits where the thumb lives and grounds the page. At the top,
+the same treatment is a heavy slab across the thing you are reading, competing with the
+content on every screen — so the top bar recedes to a near-white surface with a hairline
+and a scroll shadow.
 
 ```css
 --paper: #F4F6FA   /* page */
---card:  #FFFFFF   /* cards, sheets, inputs */
+--card:  #FFFFFF   /* cards, sheets, inputs, the top bar */
 --line:  #E2E7F0   /* decorative hairlines */
 --line-strong: #79859F  /* form control borders — these are UI boundaries, 3:1 */
 
---dark:   #121A2E  /* chrome: top bar, nav, primary buttons, timer */
+--dark:   #121A2E  /* chrome: bottom nav, primary buttons, timer, tiles */
 --dark-2: #1E2942  /* the raised stop in a dark gradient */
 ```
 
@@ -73,28 +79,29 @@ border). Nudge it before adding anything near it.
 
 ## 4 · Type
 
-Three faces. That is the whole list.
+Two faces. That is the whole list.
 
 | Face | Token | Weights | Used for |
 |---|---|---|---|
-| **Instrument Serif** | `--font-display` | **400 only** | `.t-hero`, `.t-title` |
-| **Lora** | `--font-serif` | **400 / 500 — never 600+** | `.t-card`, sheet + card titles |
+| **Lora** | `--font-serif` | **400 / 500 — never 600+** | `.t-hero`, `.t-title`, `.t-card`, card titles |
 | **Inter** | `--font-ui` | 400–800 | everything else, including `.num` |
 
-Instrument Serif ships only `400` and `400i`, so it cannot go bold — which is why it
-takes the largest type, where a faux-bold serif would be most obvious. Lora is variable
-400–700 and therefore *can*, so **the cap is enforced by the gate**, not by memory:
-`check-contrast.mjs` fails the build if a rule setting `--font-serif` also sets a weight
-of 600 or more.
+Lora is variable 400–700 and *can* go bold, so **the cap is enforced by the gate**, not
+by memory: `check-contrast.mjs` fails the build if a rule setting `--font-serif` also
+sets a weight of 600 or more.
 
-`.wordmark` is pinned to Inter 800 and does not follow `--font-display`. A synthetically
+Lora is a *text* serif carrying display sizes, which changes how it wants to be set:
+more line-height and much less negative tracking than a display face would take.
+Squeezing it closes its counters and it stops reading as a serif.
+
+`.wordmark` is pinned to Inter 800 and does not follow `--font-serif`. A synthetically
 bolded serif logotype is worse than a logotype that doesn't match the headline face.
 
 **Every number goes in `.num`** — Inter with `font-variant-numeric: tabular-nums`.
 Proportional digits change width as counts tick, so live rows jitter without it, and
 that is the fastest way a leaderboard looks cheap.
 
-Scale: 13 · 14 · 15 · 16 (body floor) · 17 · 20 · 25 · 32 · clamp(34, 9vw, 46) for the
+Scale: 13 · 14 · 15 · 16 (body floor) · 17 · 27 · 40 · clamp(33, 8.8vw, 50) for the
 hero. Body line-height 1.5. Inputs never below 16px — iOS zooms the viewport otherwise.
 
 ## 5 · Geometry, elevation, motion
@@ -126,12 +133,20 @@ layer gets invented ad hoc.
 
 Designed at 360px. Everything else is a step up from there.
 
-| Width | Layout |
-|---|---|
-| **< 768** | Bottom nav. Single column, 14px gutters. |
-| **≥ 768** | Nav becomes an 88px icon rail. Column 560px. |
-| **≥ 1024** | Rail becomes a 220px labelled sidebar. Content 640px. Card lists go two-column. |
-| **≥ 1440** | Content caps at 1080px, gutters open up. |
+**One gutter, `--gut`.** Never hardcode a horizontal page padding — that is the single
+rule that keeps screens lining up with each other. There used to be three different
+values (the poll page on 12px, the feed on 14px, every `*wrap` page on 16px), so a
+card's left edge moved as you navigated. That is most of what reads as "congested".
+
+| Width | `--gut` | `--col` | Layout |
+|---|---|---|---|
+| **< 768** | 16px | 480px | Bottom nav. Single column. |
+| **≥ 768** | 24px | 600px | Nav becomes an 88px icon rail. |
+| **≥ 1024** | 24px | 760px | Rail becomes a 232px labelled sidebar. Card lists go two-column. |
+| **≥ 1280** | 32px | 880px | Gutters open up. |
+
+Ranked lists, chat and every form page cap at `--col-list` (620px) regardless — the cap
+sits on the **column**, not the list, so everything on a page shares one alignment.
 
 One DOM tree, media queries only — no JS breakpoint, no resize listener, no duplicate
 markup to drift apart.

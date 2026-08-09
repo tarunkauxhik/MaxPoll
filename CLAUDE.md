@@ -21,11 +21,15 @@ you which file answers which question.
 - **Visual source of truth** is `app/globals.css`, explained by
   [docs/04-design.md](docs/04-design.md) — which explains it and does not outrank it.
 - **One theme: light page, dark chrome.** Light where you read (page, cards, forms,
-  board); `--dark` where you navigate or the design wants weight (top bar, nav,
-  primary buttons, timer, hero). No toggle, no `prefers-color-scheme`.
-- **Three typefaces, and no fourth.** Instrument Serif (400 only) for `.t-hero` /
-  `.t-title`, Lora (**400/500, never 600+**) for `.t-card` and card titles, Inter for
-  everything else. The Lora cap is enforced by `pnpm check`, not by memory.
+  board) **and the top bar**; `--dark` where you navigate or the design wants weight
+  (bottom nav, primary buttons, timer, monogram tiles, your own chat bubbles). No
+  toggle, no `prefers-color-scheme`. The top bar is light on purpose — a dark slab
+  there competes with the content on every screen; at the bottom it grounds the page.
+- **Two typefaces, and no third.** Lora (**400/500, never 600+**) for `.t-hero`,
+  `.t-title`, `.t-card` and card titles; Inter for everything else, including every
+  number. The Lora cap is enforced by `pnpm check`, not by memory.
+- **One page gutter, `--gut`.** Never hardcode a horizontal page padding. Three
+  different gutters is what "congested" actually looked like.
 - **Every number** wrapped in `.num` (Inter, tabular figures). Live counts jitter
   otherwise, and that is the fastest way a leaderboard looks cheap.
 - **Colour has one job each.** Gold = rank 1 only. Indigo = movement only. Red = time

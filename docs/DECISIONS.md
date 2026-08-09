@@ -559,9 +559,25 @@ mobile-first, working on a laptop, and professional.
 
 **One theme, light-based, with dark chrome.** Not a toggle, not `prefers-color-scheme`
 — those double the QA surface, which is what C5 got right even though its conclusion
-didn't survive. The page and cards are light; the top bar, the nav, primary buttons,
-the timer panel and the hero are near-black navy. The mix is the design: light where
-you read, dark where you navigate.
+didn't survive. The page and cards are light; the nav, primary buttons, the timer
+panel, monogram tiles and your own chat bubbles are near-black navy. The mix is the
+design: light where you read, dark where you navigate.
+
+> **Revised 2026-08-09 — the top bar is light; only the bottom nav is dark.**
+> Both bars shipped dark and the owner kept the bottom one and rejected the top.
+> That is the right call and the reason generalises: at the bottom, a dark bar
+> separates navigation from content, sits where the thumb lives, and grounds the
+> page. At the top, the same treatment is a heavy slab laid across the thing you
+> are trying to read, and it competes with the content on every single screen.
+> The top bar is now a near-white surface with a hairline and a scroll shadow —
+> it recedes, and the wordmark carries the brand instead of the bar.
+>
+> Knock-ons, all of which had to move together: `.wordmark i` back to
+> `--brand-text` from `--brand-on-dark`; the bell to `--muted`; its badge ring to
+> `--card`; `.top` and `.lnav` out of the white-focus-ring list, since a white
+> ring is invisible on a white bar; and `themeColor` / `manifest.theme_color` to
+> `#FFFFFF`, because the Android status bar sits against the top bar and a navy
+> status bar above a white app bar is a seam, not a design.
 
 | | |
 |---|---|
@@ -583,20 +599,27 @@ Teal against navy read as two unrelated colours sharing a page; indigo against n
 reads as one system. Colour jobs are otherwise unchanged from C1: gold is rank 1 only,
 red is time only, green is gain only, and nothing gets a colour to decorate.
 
-**Three typefaces, and the constraint is enforced.**
+**Two typefaces, and the constraint is enforced.**
 
 | Face | Token | Weights | Where |
 |---|---|---|---|
-| Instrument Serif | `--font-display` | **400 only** | `.t-hero`, `.t-title` |
-| Lora | `--font-serif` | **400 / 500** | `.t-card`, sheet and card titles |
+| Lora | `--font-serif` | **400 / 500, never 600+** | `.t-hero`, `.t-title`, `.t-card`, card titles |
 | Inter | `--font-ui` | 400–800 | everything else, including `.num` |
 
-Instrument Serif ships `400` and `400i` and nothing else — it *cannot* go bold, which
-is why it takes the largest type, where a faux-bold serif would have been most
-obvious. Lora is variable 400–700 and therefore *can*, so the owner's "don't make Lora
-bold" is a check in `scripts/check-contrast.mjs`, not a note in a doc: the script
-fails the build if any rule setting `--font-serif` also sets a weight of 600 or more.
-Every constraint that has survived in this codebase survived by being executable.
+> **Revised 2026-08-09.** This shipped as *three* faces, with Instrument Serif on
+> `.t-hero` / `.t-title`, chosen because it ships `400` and `400i` and nothing else and
+> therefore *cannot* render faux-bold. The owner asked for it removed and for Lora to
+> take the display sizes. Lora is a text serif rather than a display one, so it wanted
+> re-setting rather than re-pointing: more line-height, much less negative tracking, and
+> a lower cap on the fluid hero (50px, not 56px) — a 500-weight text serif has more
+> presence per pixel than a 400-weight didone and started to shout at the old size.
+
+Lora is variable 400–700 and *can* go bold, so the owner's "don't make Lora bold" is a
+check in `scripts/check-contrast.mjs`, not a note in a doc: the script fails the build
+if any rule setting `--font-serif` also sets a weight of 600 or more. Every constraint
+that has survived in this codebase survived by being executable — and this one now
+matters more than it did, because the face that was structurally incapable of bold is
+the one that left.
 
 Space Mono is gone. `.num` keeps `font-variant-numeric: tabular-nums` and moves to
 Inter, which has real tabular figures — B6's guarantee intact, one font file fewer,

@@ -1,32 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Instrument_Serif, Lora } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import { Analytics } from "@/components/Analytics";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
 /**
- * Three faces, and no fourth — DECISIONS D15.
+ * Two faces. Inter for the interface, Lora for anything that reads as a
+ * headline — DECISIONS D15, revised.
  *
- * Inter and Lora are variable, so one file each covers every weight they're
- * allowed to use. Instrument Serif is not variable and ships `400` only, which
- * is exactly why it takes the largest type: it *cannot* render faux-bold, and
- * the hero is where that would show most.
+ * Both are variable, so one file each covers every weight they may use. Lora
+ * *can* reach 700 and must not: the cap of 500 is enforced in
+ * scripts/check-contrast.mjs, because a bundler cannot see a CSS weight and a
+ * rule nobody can run is a rule that stops being true.
  *
- * Lora can go to 700 and must not. That cap is enforced in
- * scripts/check-contrast.mjs, not here — a bundler can't see a CSS weight.
- *
- * Space Mono is gone; `.num` uses Inter's tabular figures instead.
+ * Instrument Serif was here and is gone; Lora now carries the display sizes it
+ * held. Space Mono is gone too — `.num` uses Inter's tabular figures.
  */
 const inter = Inter({
   variable: "--font-ui",
   subsets: ["latin"],
-  display: "swap",
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: "400",
   display: "swap",
 });
 
@@ -55,16 +47,31 @@ export const metadata: Metadata = {
       "Make a poll about anything. Watch names climb a live leaderboard. Every vote is on the record.",
   },
   twitter: { card: "summary_large_image" },
+  /**
+   * app/favicon.ico is generated, not drawn by hand — six real sizes (16 → 256)
+   * from the same geometry as public/icon.svg. Next picks it up by convention;
+   * this adds the SVG so anything modern gets the vector and only falls back to
+   * the raster when it has to. `apple-touch-icon` has no SVG support at all,
+   * which is why the 180px PNG points at the ICO's own large frame.
+   */
+  icons: {
+    // `app/favicon.ico` emits its own <link> by file convention, so listing it
+    // here too would ship two tags pointing at two URLs for one file. Only the
+    // things convention does NOT cover go here.
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  // The chrome, not the page — this is what tints the browser and Android status
-  // bar, and the bar it sits against is `--dark`. app/manifest.ts carries the
-  // same value for the same reason; its `background_color` is the page.
-  themeColor: "#121A2E",
+  // Matches the top bar, which is what the Android status bar sits against.
+  // The bar went light in D15's revision, so this did too — a navy status bar
+  // above a white app bar is a seam, not a design. app/manifest.ts must carry
+  // the same value; its `background_color` is the page behind a cold start.
+  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({
@@ -73,7 +80,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${instrumentSerif.variable} ${lora.variable}`}
+      className={`${inter.variable} ${lora.variable}`}
     >
       <body>
         {children}

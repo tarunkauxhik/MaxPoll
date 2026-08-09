@@ -5,7 +5,8 @@ import { EmptyState } from "@/components/ui/States";
 import { Emoji } from "@/components/ui/Emoji";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { buildFeedPolls, POLL_SELECT, type PollRow, type RankInput } from "@/lib/poll-queries";
-import { n } from "@/lib/format";
+import { tint } from "@/components/SpaceCard";
+import { monogram, n } from "@/lib/format";
 
 export async function generateMetadata({ params }: { params: Promise<{ handle: string }> }) {
   const { handle } = await params;
@@ -86,6 +87,14 @@ export default async function ProfilePage({
   return (
     <AppShell>
       <div className="feed prof">
+        {/* Still no uploaded photo — no storage cost, no moderation surface, no
+            compression problem. A monogram gives the page the face-shaped anchor
+            it was missing without reopening any of that. Same deterministic tint
+            a Space gets, so a person is the same colour everywhere. */}
+        <span className="pav" style={{ background: tint(profile.handle) }} aria-hidden="true">
+          {monogram(profile.display_name || profile.handle)}
+        </span>
+
         <h1 className="t-title">{profile.display_name}</h1>
         <p className="phandle">@{profile.handle}</p>
         {profile.bio && <p className="pbio">{profile.bio}</p>}
@@ -139,16 +148,20 @@ export default async function ProfilePage({
           </div>
         </div>
 
+        {/* Three buttons, three different destinations. "Edit profile" and
+            "Settings" both used to land on /settings — a different anchor on the
+            same page is not a separate screen, and it read as one button that
+            fired twice. Each now owns a route. */}
         {me && me.id === profile.id && (
-          <div className="btnrow">
-            <a className="btn sec" href="/settings#profile">
+          <div className="btnrow ownerrow">
+            <a className="btn sec" href="/settings/profile">
               Edit profile
             </a>
             <a className="btn sec" href="/settings/subscription">
               Subscription
             </a>
-            <a className="btn sec" href="/settings#account">
-              <Emoji char="⚙" /> Settings
+            <a className="btn sec" href="/settings">
+              Settings
             </a>
           </div>
         )}

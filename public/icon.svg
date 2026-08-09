@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MaxPoll">
   <!--
-    The product in one glyph: three bars, the leader in gold. It stays dark
-    even though the site is light now — DECISIONS D15. A homescreen icon and a
-    browser tab sit on someone else's wallpaper, not on our page, so this
-    follows the app's *chrome* (#0B1020, the same near-black the share cards
-    use) rather than its paper. A near-white icon disappears on a light
-    homescreen; a dark one holds its edges on both.
+    The product in one glyph: three bars, the leader in gold.
 
-    Gold is rank 1 only, here as everywhere. Kept in sync BY HAND with
-    app/og/shared.tsx's colour map and app/manifest.ts — none of the three can
-    read globals.css.
+    Dark even though the site is light — DECISIONS D15. A homescreen icon and a
+    browser tab sit on someone else's wallpaper, not on our page, so this follows
+    the app's *chrome* (#0B1020, the same near-black the share cards use) rather
+    than its paper. A near-white icon disappears on a light homescreen.
 
-    SVG rather than PNG so it stays crisp at every size a homescreen or tab asks
-    for, from one 1KB file.
+    Geometry is identical to app/favicon.ico, which is generated from the same
+    numbers — bars at y 15.0 / 27.5 / 40.0, height 9.3, left edge 13.1. The bars
+    are much chunkier than a "correct" scaled-down chart would be: at 16px the
+    thin version collapsed into a grey smear. If you change one, change both.
+
+    Gold is rank 1 only, here as everywhere.
   -->
   <rect width="64" height="64" rx="15" fill="#0B1020"/>
-  <rect x="14" y="18" width="36" height="7" rx="3.5" fill="#F0BE4A"/>
-  <rect x="14" y="30" width="25" height="7" rx="3.5" fill="#FFFFFF" opacity=".72"/>
-  <rect x="14" y="42" width="17" height="7" rx="3.5" fill="#FFFFFF" opacity=".38"/>
+  <rect x="13.1" y="15.0" width="37.8" height="9.3" rx="4.65" fill="#F0BE4A"/>
+  <rect x="13.1" y="27.5" width="26.6" height="9.3" rx="4.65" fill="#FFFFFF" opacity=".82"/>
+  <rect x="13.1" y="40.0" width="17.3" height="9.3" rx="4.65" fill="#FFFFFF" opacity=".45"/>
 </svg>

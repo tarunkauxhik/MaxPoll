@@ -42,7 +42,7 @@ export async function verifyOrder(_prev: AdminState, form: FormData): Promise<Ad
     return { error: "Couldn't verify. Try again." };
   }
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: "Verified — access granted." };
 }
 
@@ -67,7 +67,7 @@ export async function rejectOrder(_prev: AdminState, form: FormData): Promise<Ad
 
   if (error) return { error: "Couldn't reject. Try again." };
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: "Rejected." };
 }
 
@@ -103,7 +103,7 @@ export async function moderate(_prev: AdminState, form: FormData): Promise<Admin
       .eq("target_type", type)
       .eq("target_id", id);
     if (error) return { error: "Couldn't dismiss. Try again." };
-    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
     return { ok: "Dismissed — content left as it is." };
   }
 
@@ -120,7 +120,7 @@ export async function moderate(_prev: AdminState, form: FormData): Promise<Admin
 
   if (error) return { error: "Couldn't apply that. Try again." };
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: hide ? "Hidden." : "Restored." };
 }
 
@@ -149,7 +149,7 @@ export async function revokeAccess(_prev: AdminState, form: FormData): Promise<A
   const { error } = await supabase.from("entitlements").delete().eq("id", id);
   if (error) return { error: "Couldn't revoke. Try again." };
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: "Access revoked." };
 }
 
@@ -219,6 +219,6 @@ export async function grantAccess(_prev: AdminState, form: FormData): Promise<Ad
 
   if (error) return { error: "Couldn't grant. Try again." };
 
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: `Granted to @${handle} (${profile.display_name}).` };
 }

@@ -26,14 +26,20 @@ export default async function ActivityPage() {
   if (!user) redirect("/");
 
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("activity")
-    .select("id, type, payload, read, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
+  const [{ data }, { data: me }] = await Promise.all([
+    supabase
+      .from("activity")
+      .select("id, type, payload, read, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    // Only for routing `badge_earned` at your own profile — badges are shown
+    // there and nowhere else.
+    supabase.from("profiles").select("handle").eq("id", user.id).maybeSingle(),
+  ]);
 
   const rows = (data ?? []) as Row[];
+  const myHandle = (me as { handle: string } | null)?.handle ?? null;
 
   /**
    * Names and counts for every `same_as_you` row in one call.
@@ -106,6 +112,7 @@ export default async function ActivityPage() {
             key={r.id}
             row={r}
             same={sameInfo.get(String(r.payload?.poll_id ?? ""))}
+            myHandle={myHandle}
           />
         ))}
       </div>
@@ -116,9 +123,12 @@ export default async function ActivityPage() {
 function ActivityRow({
   row,
   same,
+  myHandle,
 }: {
   row: Row;
   same?: { total: number; names: string[] };
+  /** For `badge_earned`, whose destination is your own profile. */
+  myHandle: string | null;
 }) {
   const p = row.payload ?? {};
   const when = ago(new Date(row.created_at).getTime());
@@ -129,8 +139,19 @@ function ActivityRow({
     const slug = String(p.poll_slug ?? "");
     const hidden = Math.max(0, count - names.length);
 
+    /**
+     * The row is a link to the poll, like every other row. It used to be an
+     * inert `<div>` — the one notification type that converts best was the one
+     * you could not tap.
+     *
+     * The unlock CTA inside it is a *second*, different destination, so it stays
+     * its own `<a>`. Nesting one anchor inside another is invalid HTML and the
+     * browser un-nests it, so the row is a `<div>` wrapper holding two siblings:
+     * a link covering the body, and the CTA beside it.
+     */
     return (
       <div className="act same">
+        <a className="act-hit" href={`/p/${slug}`} aria-label={`Open ${String(p.poll_title ?? "the poll")}`} />
         <span className="ic">
           <Emoji char="👥" />
         </span>
@@ -192,9 +213,28 @@ function ActivityRow({
     chat_hot: "💬",
   };
 
-  const href = p.poll_slug ? `/p/${String(p.poll_slug)}` : undefined;
-  const inner = (
-    <>
+  /**
+   * Every row goes somewhere. A notification you cannot tap is a dead end, and
+   * three of these types used to render as inert `<div>`s whenever the payload
+   * happened to carry no `poll_slug`.
+   *
+   * The poll is the destination when there is one. `badge_earned` belongs on
+   * your own profile, where badges are actually shown. Anything unrecognised —
+   * including rows written by a version of the app that has since changed —
+   * falls back to the feed rather than to nothing.
+   */
+  const slug = p.poll_slug ? String(p.poll_slug) : null;
+  const chatTypes = row.type === "chat_hot";
+  const href = slug
+    ? chatTypes
+      ? `/p/${slug}/chat`
+      : `/p/${slug}`
+    : row.type === "badge_earned" && myHandle
+      ? `/u/${myHandle}`
+      : "/";
+
+  return (
+    <a className="act" href={href}>
       <span className="ic">
         <Emoji char={icons[row.type] ?? "🔔"} />
       </span>
@@ -202,14 +242,9 @@ function ActivityRow({
         <p>{copy[row.type] ?? "Something happened"}</p>
         <p className="atime">{when}</p>
       </div>
-    </>
-  );
-
-  return href ? (
-    <a className="act" href={href}>
-      {inner}
+      <span className="act-chev" aria-hidden="true">
+        ›
+      </span>
     </a>
-  ) : (
-    <div className="act">{inner}</div>
   );
 }

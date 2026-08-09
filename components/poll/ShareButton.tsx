@@ -3,12 +3,18 @@
 import { useState } from "react";
 
 /**
- * doc 03 §L. Native share where it exists, copy-link with a toast otherwise.
+ * Native share where it exists, copy-link with a toast otherwise.
  *
- * The shared text is exactly `${text} : ${prettyUrl}` — nothing else. No
- * title, no gap/leader framing: those used to be baked in here, but the
- * owner asked for the plain form specifically, so this component doesn't
- * invent anything beyond what's passed in.
+ * The shared text is exactly `${text} : ${url}` — nothing else. No title, no
+ * gap/leader framing: the owner asked for the plain form specifically, so this
+ * component invents nothing beyond what it is passed.
+ *
+ * **The URL keeps its `https://`, and that is load-bearing.** It used to be
+ * stripped because `viratkohli.tech/p/x` reads better in a group chat than the
+ * same thing with a scheme bolted on. It reads better and it does not unfurl:
+ * WhatsApp, iMessage and Slack all resolve a bare host to plain text, so the
+ * OG card never renders and the link loses the leaderboard preview that is the
+ * entire reason the card exists. A preview is worth more than eight characters.
  */
 export function ShareButton({
   path,
@@ -23,17 +29,14 @@ export function ShareButton({
 
   async function share() {
     const url = `${window.location.origin}${path}`;
-    // WhatsApp auto-links a bare host, and `viratkohli.tech/p/x` reads better
-    // in a group than the same thing with `https://` bolted on the front.
-    // Only the *text* loses the scheme — `navigator.share({ url })` would
-    // need the real absolute URL, so this never passes `url` at all; the
-    // pretty form is embedded directly in `text` instead.
-    const pretty = url.replace(/^https?:\/\//, "");
-    const full = `${text} : ${pretty}`;
+    const full = `${text} : ${url}`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ text: full });
+        // `url` as its own field, not only inside `text`. Every share target
+        // that builds a rich preview reads this field first; WhatsApp in
+        // particular will unfurl the `url` and still show `text` above it.
+        await navigator.share({ text, url });
         return;
       } catch {
         // User dismissed the sheet. Not an error, and not a reason to then
@@ -47,7 +50,7 @@ export function ShareButton({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      window.prompt("Copy this link", pretty);
+      window.prompt("Copy this link", full);
     }
   }
 

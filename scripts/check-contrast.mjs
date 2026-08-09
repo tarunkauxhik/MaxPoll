@@ -63,7 +63,7 @@ const PAIRS = [
   ['.wordmark i / .spacelink', '--brand-text', '--paper', 4.5],
   ['.pcard .space label', '--brand-text', '--card', 4.5],
   ['.gap line / .mv.new badge', '--brand-text', '--brand-soft', 4.5],
-  ['.wordmark i on the top bar', '--brand-on-dark', '--dark', 4.5],
+  ['.bub.me .who.anon on your own bubble', '--brand-on-dark', '--dark', 4.5],
   ['focus ring on a card', '--brand', '--card', 3],
   ['focus ring on the page', '--brand', '--paper', 3],
   ['label on a primary button', '--on-dark', '--brand', 4.5],
@@ -155,7 +155,7 @@ if (serifBlocks.length === 0) {
     const weight = block.match(/font-weight:\s*(\d{3})/)[1];
     console.error(
       `\nFAIL  Lora at ${weight} — "${selector}". ` +
-        `Lora is capped at 500 (DECISIONS D15). Use --font-display, or drop the weight.`
+        `Lora is capped at 500 (DECISIONS D15) — drop the weight, or use Inter.`
     );
   }
 }

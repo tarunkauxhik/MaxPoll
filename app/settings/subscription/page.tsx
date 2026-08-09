@@ -23,6 +23,9 @@ export default async function SubscriptionPage() {
   return (
     <AppShell>
       <div className="paywall">
+        <a className="backlink" href="/settings">
+          ← Settings
+        </a>
         <h1 className="t-title">Subscription</h1>
 
         {pass ? (

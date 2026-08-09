@@ -128,6 +128,18 @@
   /* ── layout ──────────────────────────────────────────────────────────────
      --col and --rail-w both grow at the breakpoints at the bottom of this
      file. Designed at 360px; everything above is a step up from there. */
+  /**
+   * The page gutter. One number for the space between content and the edge of
+   * the screen, everywhere.
+   *
+   * There used to be three: the poll page ran on 12px, the feed on 14px, and
+   * every `*wrap` page on 16px — so a card's left edge moved depending on which
+   * screen you were on, and nothing lined up when you navigated between them.
+   * That is most of what reads as "congested" on a phone. It widens with the
+   * viewport at the bottom of this file.
+   */
+  --gut: 16px;
+
   --col: 480px; /* centred content column */
   --topbar-h: 54px;
   --nav-h: 62px; /* bottom nav height, reserved as scroll inset */
@@ -265,8 +277,6 @@ a {
  * ring on `.btn.pri` would be drawn on the light page the button sits on — the
  * button being dark is irrelevant, and the ring would vanish.
  */
-.top :focus-visible,
-.lnav :focus-visible,
 .nav :focus-visible,
 .timerbar :focus-visible,
 .bub.me :focus-visible {
@@ -286,43 +296,46 @@ a {
 
 /* ============================ TYPOGRAPHY ============================ */
 /**
- * Three faces and no fourth — DECISIONS D15.
+ * Two faces and no third — DECISIONS D15, revised.
  *
- *   --font-display  Instrument Serif, 400 ONLY (the face ships nothing else)
- *   --font-serif    Lora, 400/500, NEVER 600+ — enforced by pnpm check
- *   --font-ui       Inter, everything else including every number
+ *   --font-serif  Lora, 400/500, NEVER 600+ — enforced by pnpm check
+ *   --font-ui     Inter, everything else including every number
  *
- * Instrument Serif takes the largest type precisely because it cannot render
- * faux-bold; the hero is where that would show most. Its letterforms are
- * high-contrast, so the tracking here is much looser than the old grotesque's
- * -.045em — squeezing a didone closes its counters and it stops being elegant.
+ * Lora carries every headline size now. It is a text serif rather than a
+ * display one, which changes how it wants to be set: it holds up at 17px where
+ * a high-contrast display face went thin and gritty, but it needs *more*
+ * line-height and *less* negative tracking at hero sizes than a display face
+ * would. Hence the near-zero letter-spacing below — squeezing Lora closes its
+ * counters and it stops looking like a serif at all.
+ *
+ * The weight cap is the constraint that matters: 500 is the ceiling, and the
+ * gate fails the build on anything higher. Lora's 600/700 exist and must not be
+ * used, here or anywhere.
  */
 
 .t-hero {
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 400;
-  font-size: 44px;
-  line-height: 1.02;
-  letter-spacing: -.015em;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 1.14;
+  letter-spacing: -.012em;
   margin: 0;
 }
 
 .t-title {
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 400;
-  font-size: 30px;
-  line-height: 1.12;
-  letter-spacing: -.01em;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  font-size: 27px;
+  line-height: 1.2;
+  letter-spacing: -.008em;
   margin: 0;
 }
 
-/* Lora, at 500. Sturdier than Instrument Serif at small sizes, which is the
-   whole reason there are two serifs: a didone at 17px goes thin and gritty. */
 .t-card {
   font-family: var(--font-serif), Georgia, serif;
   font-weight: 500;
   font-size: 17px;
-  line-height: 1.28;
+  line-height: 1.3;
   letter-spacing: -.003em;
   margin: 0;
 }
@@ -347,9 +360,9 @@ a {
 }
 
 /* Pinned to Inter on purpose, and the only place a weight this heavy appears.
-   Neither serif can carry a logotype: Instrument Serif has no bold at all, and
-   a synthetically-bolded Lora is worse than a wordmark that simply doesn't
-   follow the headline face. */
+   Lora cannot carry a logotype at the weight one needs — it is capped at 500,
+   and a synthetically-bolded serif wordmark is worse than one that simply
+   doesn't follow the headline face. */
 .wordmark {
   font-family: var(--font-ui), system-ui, sans-serif;
   font-weight: 800;
@@ -357,11 +370,11 @@ a {
   letter-spacing: -.04em;
 }
 
-/* Both containers the wordmark ever appears in — .top and .lnav — are dark, so
-   the accent uses the on-dark member of the family, not the light-surface one. */
+/* Both containers the wordmark appears in — .top and .lnav — are light surfaces,
+   so the accent takes the light-surface member of the family. */
 .wordmark i {
   font-style: normal;
-  color: var(--brand-on-dark);
+  color: var(--brand-text);
 }
 
 .top .wordmark {
@@ -388,17 +401,29 @@ a {
   padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
 }
 
-/* The chrome. Dark against a light page — this contrast IS the design, so the
-   bar keeps its own colour system rather than inheriting the page's. */
+/**
+ * The top bar is LIGHT. The bottom nav is dark.
+ *
+ * That asymmetry is deliberate and was arrived at the hard way. A dark bar at
+ * the top of a light page is a heavy slab across the thing you are trying to
+ * read, and it fights the content for attention every screen. At the bottom the
+ * same treatment does real work: it separates navigation from content, it is
+ * where the thumb lives, and it grounds the page instead of capping it.
+ *
+ * So the top bar recedes — a near-white surface, a hairline, and a shadow that
+ * only appears once content slides under it. The wordmark carries the brand;
+ * the bar itself does not need to.
+ */
 .top {
   position: sticky;
   top: 0;
   z-index: var(--z-top);
-  background: var(--grad-glow), var(--grad-ink);
-  color: var(--on-dark);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  padding: 13px 16px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -547,7 +572,7 @@ a {
 /* The most important component. Five variants. */
 
 .board {
-  padding: 2px 12px 0;
+  padding: 2px var(--gut) 0;
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -730,7 +755,7 @@ a {
 /* The growth engine. Always free, never blurred. */
 
 .gap {
-  margin: 1px 12px;
+  margin: 1px var(--gut);
   padding: 7px 12px;
   border-radius: var(--r-sm);
   background: var(--brand-soft);
@@ -758,7 +783,7 @@ a {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  margin: var(--s-2) var(--s-3) 0;
+  margin: var(--s-2) var(--gut) 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--muted);
@@ -787,7 +812,7 @@ a {
   color: var(--on-dark);
   border-radius: var(--r-lg);
   padding: var(--s-4);
-  margin: 0 12px 12px;
+  margin: 0 var(--gut) var(--s-3);
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-lift);
@@ -896,8 +921,8 @@ a {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  padding: 11px 14px;
-  margin: 0 12px 12px;
+  padding: 12px 14px;
+  margin: 0 var(--gut) var(--s-3);
   box-shadow: var(--ring), var(--shadow-1);
   text-decoration: none;
   color: inherit;
@@ -971,7 +996,7 @@ a {
 /* ============================ POLL CARD ============================ */
 
 .feed {
-  padding: 14px;
+  padding: var(--gut);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1392,7 +1417,7 @@ textarea.field {
   max-width: var(--col);
   margin: 0 auto;
   /* Room for the sticky CTA, so the footer is never trapped under it. */
-  padding: 0 var(--s-4) calc(var(--tap) + var(--s-6) * 2 + env(safe-area-inset-bottom));
+  padding: 0 var(--gut) calc(var(--tap) + var(--s-6) * 2 + env(safe-area-inset-bottom));
 }
 
 /**
@@ -1415,14 +1440,15 @@ textarea.field {
   gap: var(--s-3);
   min-height: var(--topbar-h);
   padding-block: var(--s-2);
-  padding-inline: max(var(--s-4), calc((100% - var(--col)) / 2 + var(--s-4)));
+  padding-inline: max(var(--gut), calc((100% - var(--col)) / 2 + var(--gut)));
   position: sticky;
   top: 0;
   z-index: var(--z-top);
-  background: var(--grad-glow), var(--grad-ink);
-  color: var(--on-dark);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
 }
 
 /* `.btn` is width:100% by default — right for a stacked single-column product,
@@ -1468,10 +1494,11 @@ textarea.field {
   margin: 0 0 var(--s-4);
 }
 
-/* Fluid rather than a breakpoint: 36px on a small phone, up to 56px where
-   there is room. Instrument Serif carries a large size well and needs one. */
+/* Fluid rather than a breakpoint: 33px on a small phone, up to 50px where there
+   is room. Capped lower than the old display face — Lora at 500 has more
+   presence per pixel than a 400-weight didone, and 56px started to shout. */
 .lhero .t-hero {
-  font-size: clamp(36px, 9.6vw, 56px);
+  font-size: clamp(33px, 8.8vw, 50px);
 }
 
 .lhero .t-hero i {
@@ -1488,14 +1515,45 @@ textarea.field {
   max-width: 34ch;
 }
 
-/* The demo board. Clearly a sample — never presented as live data. */
+/* The demo poll. Clearly a sample — never presented as live data. */
 .demo {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  padding: var(--s-3) var(--s-4) var(--s-4);
+  padding: var(--s-4);
   box-shadow: var(--ring), var(--shadow-1);
   margin-bottom: var(--s-6);
+}
+
+/* The question. Three names and three bars is a chart; the question is what
+   makes it a poll, and it is the thing a stranger has to understand first. */
+.demohead {
+  display: grid;
+  gap: 6px;
+  padding-bottom: var(--s-3);
+  margin-bottom: var(--s-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.demotag {
+  justify-self: start;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+
+.demoq {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.3;
+  margin: 0;
 }
 
 .drow {
@@ -1527,9 +1585,12 @@ textarea.field {
 /* It is the only thing on the page that shows a *race*, so it gets real width —
    but it yields to the name rather than truncating it, which is what
    `flex: 1 1 96px` on both did ("Verma Ma'am" became "Verma …"). */
+/* Basis trimmed from 104px: at 360px it left the name ~112px and "Verma Ma'am"
+   — eleven characters — came out as "Verma Ma'…" in the one board a stranger
+   actually looks at. The bar is the thing that can afford to be shorter. */
 .drow .bar {
-  flex: 0 1 104px;
-  min-width: 48px;
+  flex: 0 1 88px;
+  min-width: 42px;
   height: 6px;
   border-radius: 99px;
   background: var(--line);
@@ -1814,7 +1875,7 @@ textarea.field {
   right: 0;
   bottom: 0;
   z-index: var(--z-nav);
-  padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom));
+  padding: var(--s-3) var(--gut) calc(var(--s-3) + env(safe-area-inset-bottom));
   /* `transparent`, not a hardcoded page colour. The literal that used to be
      here was the old paper white and went stale silently through two retints,
      because a raw rgba is invisible to a token rename. */
@@ -1884,15 +1945,15 @@ textarea.field {
 }
 
 .boarderr {
-  padding: 0 var(--s-3);
+  padding: 0 var(--gut);
 }
 
 .underlbl {
-  padding: var(--s-4) var(--s-3) var(--s-2);
+  padding: var(--s-4) var(--gut) var(--s-2);
 }
 
 .unlockcta {
-  margin: var(--s-3) var(--s-3) 0;
+  margin: var(--s-3) var(--gut) 0;
   text-decoration: none;
   display: flex;
   flex-wrap: wrap;
@@ -1902,7 +1963,7 @@ textarea.field {
 .pollfoot {
   display: grid;
   gap: var(--s-2);
-  padding: var(--s-6) var(--s-3) var(--s-4);
+  padding: var(--s-6) var(--gut) var(--s-4);
 }
 
 .pollfoot .btn {
@@ -1944,12 +2005,12 @@ textarea.field {
 /* Rank and count are what actually stop the duplicate. */
 
 .addopen {
-  width: calc(100% - var(--s-6));
-  margin: var(--s-4) var(--s-3) 0;
+  width: calc(100% - var(--gut) * 2);
+  margin: var(--s-4) var(--gut) 0;
 }
 
 .addwrap {
-  padding: var(--s-4) var(--s-3) 0;
+  padding: var(--s-4) var(--gut) 0;
 }
 
 .sugg {
@@ -2039,20 +2100,22 @@ textarea.field {
 
 /* ============================ ACTIVITY BELL ============================ */
 
-/* Lives in .top and nowhere else, so it dresses for the dark chrome. */
+/* Lives in .top and nowhere else, so it dresses for the light bar. */
 .bell {
   position: relative;
   display: grid;
   place-items: center;
   width: var(--tap);
   height: var(--tap);
-  margin-right: -12px;
-  color: var(--on-dark-dim);
-  transition: color .18s var(--ease);
+  margin-right: -10px;
+  border-radius: 50%;
+  color: var(--muted);
+  transition: color .18s var(--ease), background .18s var(--ease);
 }
 
 .bell:hover {
-  color: var(--on-dark);
+  color: var(--ink);
+  background: var(--press);
 }
 
 .bell .dot {
@@ -2070,9 +2133,9 @@ textarea.field {
   font-variant-numeric: tabular-nums;
   display: grid;
   place-items: center;
-  /* Blends into whatever is directly behind it, which is the dark bar — not
+  /* Blends into whatever is directly behind it, which is the light bar — not
      the page. No overflow:hidden anywhere on .bell, so "99+" grows leftward. */
-  border: 2px solid var(--dark);
+  border: 2px solid var(--card);
 }
 
 /* ============================ UTILITIES ============================ */
@@ -2109,7 +2172,7 @@ textarea.field {
 /* ============================ PAY ============================ */
 
 .paywrap, .createwrap, .setwrap, .adminwrap, .paywall {
-  padding: var(--s-6) var(--s-4);
+  padding: var(--s-6) var(--gut);
 }
 
 .paysteps {
@@ -2233,6 +2296,82 @@ textarea.field {
 
 .adminwrap section { margin-top: var(--s-6); }
 .grantform .btn { width: 100%; margin-top: var(--s-4); }
+
+/* The standfirst under an admin sub-page's title. */
+.adminlede { margin: var(--s-2) 0 var(--s-4); line-height: 1.45; max-width: 56ch; }
+
+/**
+ * The admin hub. Four areas that used to be four stacked sections on one page,
+ * with nothing between them — as the queues filled the page just got longer and
+ * the boundaries disappeared. Each is a card and a route now.
+ */
+.adminhub {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-4);
+}
+
+.adminhub-card {
+  display: grid;
+  gap: 6px;
+  padding: var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--ring), var(--shadow-1);
+  color: inherit;
+  text-decoration: none;
+  transition: transform .16s var(--ease), box-shadow .16s var(--ease);
+}
+
+.adminhub-card:active {
+  transform: scale(.99);
+  box-shadow: var(--ring), var(--shadow-lift);
+}
+
+.adminhub-h {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+
+.adminhub-t {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
+}
+
+/* The count is the whole reason to look at this screen, so it is a real badge
+   rather than a parenthetical. Heat, because everything counted here is a queue
+   waiting on a person. */
+.adminhub-n {
+  flex: 0 0 auto;
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--heat-soft);
+  color: var(--heat-text);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.adminhub-s {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.adminhub-f {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-text);
+}
 
 .queue { list-style: none; display: grid; gap: var(--s-3); margin-top: var(--s-3); }
 
@@ -2438,7 +2577,7 @@ textarea.field {
 .pollmeta {
   display: flex;
   justify-content: center;
-  padding: 0 var(--s-3) var(--s-6);
+  padding: 0 var(--gut) var(--s-6);
 }
 
 .reportlink {
@@ -2637,22 +2776,23 @@ textarea.field {
 .scard:active { transform: scale(.985); background: var(--press); }
 
 /* The monogram tile — one of the small dark surfaces that carry the chrome
-   into the content. Instrument Serif at 400, which is all it has. */
+   into the content. Inter, not the serif: two letters at 17px is a piece of
+   UI furniture, and a serif monogram at that size reads as an accident. */
 .av {
   flex: 0 0 44px;
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 400;
-  font-size: 19px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: .01em;
   color: var(--on-dark);
   background: var(--grad-ink);
 }
 
-.av.lg { flex-basis: 52px; width: 52px; height: 52px; font-size: 23px; }
+.av.lg { flex-basis: 56px; width: 56px; height: 56px; border-radius: 18px; font-size: 20px; }
 
 .sbody { flex: 1; min-width: 0; display: grid; gap: 3px; }
 /* The Space card's top row. Not a "stop" — the name is historical. */
@@ -2690,9 +2830,64 @@ textarea.field {
 
 /* ============================ PROFILE ============================ */
 
-.prof { display: grid; gap: var(--s-2); justify-items: center; text-align: center; }
+.prof {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: center;
+  text-align: center;
+  padding-top: var(--s-2);
+}
+
+/**
+ * The face-shaped anchor. Still not a photo — no storage, no moderation, no
+ * compression — but a circle where a face goes is what makes the top of a
+ * profile read as a person rather than as a heading.
+ *
+ * Circular, unlike the Space monogram's rounded square: that difference is the
+ * only thing distinguishing a person from a Space at a glance, so it is doing
+ * real work and is not decoration.
+ */
+.pav {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: var(--on-dark);
+  /* A soft halo so the circle sits on the page rather than being stamped on it. */
+  box-shadow: 0 0 0 4px var(--card), 0 6px 18px -6px rgba(16, 24, 40, .35);
+  margin-bottom: var(--s-1);
+}
+
 .phandle { color: var(--brand-text); font-size: 14px; font-weight: 600; }
 .pbio { font-size: 14px; line-height: 1.45; color: var(--body); max-width: 32ch; }
+
+/**
+ * The owner's three actions. `.btnrow`'s `flex: 1 1 auto` let three buttons
+ * share one 360px row, which put "Subscription" in about 108px with its label
+ * touching both edges. Two per row with a real minimum instead — the third wraps
+ * and is full width, which is fine, because these are not equally weighted.
+ */
+/* `.prof` centres its grid items, which makes anything with a border shrink to
+   its content — the stat row's rules ended up 145px wide, floating. These are
+   full-bleed elements and say so. */
+.prof > .statrow,
+.prof > .ownerrow {
+  width: 100%;
+}
+
+.ownerrow {
+  margin-top: var(--s-3);
+}
+
+.ownerrow > .btn {
+  flex: 1 1 calc(50% - var(--s-2) / 2);
+  min-width: 9.5rem;
+  padding-inline: var(--s-3);
+}
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--s-2); justify-content: center; }
 
@@ -2757,15 +2952,53 @@ textarea.field {
 .acts { display: grid; gap: var(--s-2); }
 
 .act {
+  position: relative;
   display: flex;
+  align-items: center;
   gap: var(--s-3);
-  padding: 12px;
+  padding: var(--s-3);
+  min-height: var(--tap);
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   box-shadow: var(--ring);
   text-decoration: none;
   color: inherit;
+  transition: transform .16s var(--ease), background .16s var(--ease);
+}
+
+a.act:active { transform: scale(.99); background: var(--press); }
+
+/**
+ * The `same_as_you` row holds a second, different destination (the unlock CTA),
+ * and an anchor cannot legally nest inside an anchor — the browser un-nests it
+ * and the markup silently changes shape. So that row stays a `<div>` and this
+ * covers it: a stretched link that makes the whole card tappable while the CTA
+ * sits above it on the z-axis.
+ */
+.act-hit {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-md);
+  /* ABOVE the row's text, not below it — a stretched link under the content is
+     only clickable in the gaps between words. The one thing that has to stay
+     clickable in its own right is lifted above this in turn. */
+  z-index: 1;
+}
+
+.act-hit:active { background: var(--press); }
+
+.act.same .btn {
+  position: relative;
+  z-index: 2;
+}
+
+.act-chev {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
 }
 
 .act .ic {
@@ -2825,7 +3058,7 @@ textarea.field {
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
-  padding: var(--s-3);
+  padding: var(--gut);
 }
 
 .bub {
@@ -2867,7 +3100,7 @@ textarea.field {
   gap: var(--s-2);
   align-items: center;
   border-top: 1px solid var(--line);
-  padding: 10px 12px;
+  padding: 10px var(--gut);
   background: var(--paper);
   position: sticky;
   bottom: var(--nav-h);
@@ -2876,12 +3109,62 @@ textarea.field {
 .composer .field { flex: 1; min-width: 0; }
 
 .chatanon {
-  padding: 6px 12px 0;
+  padding: 6px var(--gut) 0;
 }
 
 /* ============================ SETTINGS ============================ */
 
 .setwrap section { margin-top: var(--s-6); }
+
+/**
+ * A settings hub row: title, one line of current state, chevron. The state line
+ * is the point — "Subscription ›" tells you nothing, "Subscription · No pass"
+ * answers the question you opened Settings to ask.
+ */
+.setnav {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+.setrow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--tap);
+  padding: var(--s-3) var(--s-4);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--ring);
+  color: inherit;
+  text-decoration: none;
+  transition: transform .16s var(--ease), background .16s var(--ease);
+}
+
+.setrow:active { transform: scale(.99); background: var(--press); }
+
+.setrow-b { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.setrow-t { font-size: 15px; font-weight: 600; }
+.setrow-s { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.setrow-c { flex: 0 0 auto; color: var(--muted); font-size: 20px; line-height: 1; }
+
+/* A real back affordance on the sub-pages. The bottom nav has no "up", and a
+   form reached from a profile needs a way back to it that isn't the browser. */
+.backlink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-sm);
+  margin: 0 0 var(--s-2) calc(var(--s-2) * -1);
+  padding: 0 var(--s-2);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color .15s, background .15s;
+}
+
+.backlink:hover { color: var(--ink); background: var(--press); }
 .setlist { display: grid; gap: var(--s-2); margin-top: var(--s-2); }
 .setlist > div { display: flex; justify-content: space-between; gap: var(--s-3); font-size: 14px; }
 .setlist dt { color: var(--muted); flex: 0 0 auto; }
@@ -2918,6 +3201,9 @@ textarea.field {
 @media (min-width: 768px) {
   :root {
     --col: 600px;
+    /* More room, so more air. A 16px gutter on a tablet reads as content jammed
+       against the bezel. */
+    --gut: 24px;
   }
 
   /* Same markup, now a left rail. */
@@ -3084,10 +3370,6 @@ textarea.field {
 @media (min-width: 1280px) {
   :root {
     --col: 880px;
-  }
-
-  .feed,
-  .lander {
-    padding-inline: var(--s-6);
+    --gut: 32px;
   }
 }
